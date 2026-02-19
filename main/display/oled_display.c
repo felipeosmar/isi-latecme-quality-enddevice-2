@@ -258,7 +258,21 @@ void oled_display_update(void)
     }
 }
 
-void oled_display_show_sensors(float temp, float hum, float tc_temp, const char *sensor_name)
+/**
+ * @brief Draw a vertical line in the framebuffer
+ */
+static void draw_vline(uint8_t x, uint8_t y_start, uint8_t y_end)
+{
+    for (uint8_t y = y_start; y <= y_end; y++) {
+        uint8_t page = y / 8;
+        uint8_t bit = y % 8;
+        if (x < OLED_WIDTH && page < 8) {
+            framebuffer[page * OLED_WIDTH + x] |= (1 << bit);
+        }
+    }
+}
+
+void oled_display_show_sensors(float temp, float hum, float tc_temp)
 {
     if (!oled_initialized) return;
 
@@ -266,31 +280,41 @@ void oled_display_show_sensors(float temp, float hum, float tc_temp, const char 
 
     oled_display_clear();
 
-    oled_display_text(0, 0, "=== SENSORS ===");
+    oled_display_text(0, 0, "--- SENSORS ---");
 
-    snprintf(line, sizeof(line), "Sensor: %s", sensor_name ? sensor_name : "None");
-    oled_display_text(0, 2, line);
-
+    // Left half: I2C sensor (T + H)
+    oled_display_text(2, 2, "DHT20");
     if (!isnan(temp)) {
-        snprintf(line, sizeof(line), "Temp: %.1f C", temp);
-        oled_display_text(0, 3, line);
+        snprintf(line, sizeof(line), "T:%.1f%cC", temp, 0x7E);  // degree approx
+        oled_display_text(2, 4, line);
+    } else {
+        oled_display_text(2, 4, "T: --");
     }
-
     if (!isnan(hum)) {
-        snprintf(line, sizeof(line), "Hum:  %.1f %%", hum);
-        oled_display_text(0, 4, line);
+        snprintf(line, sizeof(line), "H:%.1f%%", hum);
+        oled_display_text(2, 6, line);
+    } else {
+        oled_display_text(2, 6, "H: --");
     }
 
+    // Vertical separator at x=64
+    draw_vline(63, 8, 63);
+
+    // Right half: Thermocouple
+    oled_display_text(66, 2, "TC-K");
     if (!isnan(tc_temp)) {
-        snprintf(line, sizeof(line), "TC: %.1f C", tc_temp);
-        oled_display_text(0, 5, line);
+        snprintf(line, sizeof(line), "T:%.1f%cC", tc_temp, 0x7E);
+        oled_display_text(66, 4, line);
+    } else {
+        oled_display_text(66, 4, "T: --");
     }
 
     oled_display_update();
 }
 
-void oled_display_show_lorawan(bool joined, uint32_t dev_addr,
-                                uint32_t uplink_count, int16_t rssi, float snr)
+void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t free_heap,
+                               bool lora_joined, uint32_t dev_addr,
+                               uint32_t uplink_count, int16_t rssi, float snr)
 {
     if (!oled_initialized) return;
 
@@ -298,50 +322,38 @@ void oled_display_show_lorawan(bool joined, uint32_t dev_addr,
 
     oled_display_clear();
 
-    oled_display_text(0, 0, "=== LoRaWAN ===");
+    oled_display_text(0, 0, "--- SYSTEM ---");
 
-    snprintf(line, sizeof(line), "Status: %s", joined ? "Joined" : "Not Joined");
-    oled_display_text(0, 2, line);
+    // IP
+    snprintf(line, sizeof(line), "IP:%s", ip_addr ? ip_addr : "N/A");
+    oled_display_text(0, 1, line);
 
-    if (joined) {
-        snprintf(line, sizeof(line), "Addr: %08lX", (unsigned long)dev_addr);
-        oled_display_text(0, 3, line);
-
-        snprintf(line, sizeof(line), "Uplinks: %lu", (unsigned long)uplink_count);
-        oled_display_text(0, 4, line);
-
-        snprintf(line, sizeof(line), "RSSI: %d dBm", rssi);
-        oled_display_text(0, 5, line);
-
-        snprintf(line, sizeof(line), "SNR:  %.1f dB", snr);
-        oled_display_text(0, 6, line);
-    }
-
-    oled_display_update();
-}
-
-void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t free_heap)
-{
-    if (!oled_initialized) return;
-
-    char line[22];
-
-    oled_display_clear();
-
-    oled_display_text(0, 0, "=== SYSTEM ===");
-
-    snprintf(line, sizeof(line), "IP: %s", ip_addr ? ip_addr : "N/A");
-    oled_display_text(0, 2, line);
-
+    // Uptime
     uint32_t hours = uptime_s / 3600;
     uint32_t mins = (uptime_s % 3600) / 60;
     uint32_t secs = uptime_s % 60;
-    snprintf(line, sizeof(line), "Up: %luh %02lum %02lus",
+    snprintf(line, sizeof(line), "Up:%luh%02lum%02lus",
              (unsigned long)hours, (unsigned long)mins, (unsigned long)secs);
+    oled_display_text(0, 2, line);
+
+    // Heap
+    snprintf(line, sizeof(line), "Heap:%luKB", (unsigned long)(free_heap / 1024));
+    oled_display_text(0, 3, line);
+
+    // LoRaWAN status
+    snprintf(line, sizeof(line), "LoRa:%s", lora_joined ? "Joined" : "No Join");
     oled_display_text(0, 4, line);
 
-    snprintf(line, sizeof(line), "Heap: %lu KB", (unsigned long)(free_heap / 1024));
-    oled_display_text(0, 6, line);
+    if (lora_joined) {
+        snprintf(line, sizeof(line), "Addr:%08lX", (unsigned long)dev_addr);
+        oled_display_text(0, 5, line);
+
+        snprintf(line, sizeof(line), "Up:%lu R:%ddBm", (unsigned long)uplink_count, rssi);
+        oled_display_text(0, 6, line);
+
+        snprintf(line, sizeof(line), "SNR:%.1fdB", snr);
+        oled_display_text(0, 7, line);
+    }
 
     oled_display_update();
 }
