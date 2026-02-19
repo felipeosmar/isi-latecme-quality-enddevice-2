@@ -9,15 +9,15 @@ async function scanWiFi() {
         const d = await api('wifi/scan');
         const sel = document.getElementById('wifi-select');
         sel.innerHTML = '<option value="">Select network...</option>';
-        if (d.networks) {
-            d.networks.forEach(n => {
-                const opt = document.createElement('option');
-                opt.value = n.ssid;
-                opt.textContent = `${n.ssid} (${n.rssi}dBm)`;
-                sel.appendChild(opt);
-            });
-        }
-        toast('Scan complete', 'success');
+        // Backend returns an array directly, not {networks: [...]}
+        const networks = Array.isArray(d) ? d : (d.networks || []);
+        networks.forEach(n => {
+            const opt = document.createElement('option');
+            opt.value = n.ssid;
+            opt.textContent = `${n.ssid} (${n.rssi}dBm)`;
+            sel.appendChild(opt);
+        });
+        toast(`Scan complete: ${networks.length} network(s) found`, 'success');
     } catch (e) {
         toast('WiFi scan failed', 'error');
     }
