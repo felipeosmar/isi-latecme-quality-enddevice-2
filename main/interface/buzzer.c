@@ -1,14 +1,15 @@
 /**
  * @file buzzer.c
- * @brief Buzzer driver implementation
+ * @brief Buzzer driver implementation using LEDC PWM for tone generation
  *
- * Uses GPIO4 → BC817-25 transistor → buzzer (active HIGH).
- * Non-blocking patterns use vTaskDelay (requires FreeRTOS context).
+ * Uses GPIO4 → BC817-25 transistor → passive buzzer.
+ * Generates audible tone via PWM oscillation (LEDC peripheral).
+ * Default frequency: 2700 Hz (good audibility for small buzzers).
  */
 
 #include "buzzer.h"
 
-#include "driver/gpio.h"
+#include "driver/ledc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -16,70 +17,96 @@
 static const char *TAG = "BUZZER";
 static bool initialized = false;
 
+// LEDC configuration
+#define BUZZER_LEDC_TIMER       LEDC_TIMER_0
+#define BUZZER_LEDC_CHANNEL     LEDC_CHANNEL_0
+#define BUZZER_LEDC_MODE        LEDC_LOW_SPEED_MODE
+#define BUZZER_DUTY_RESOLUTION  LEDC_TIMER_10_BIT
+#define BUZZER_DEFAULT_FREQ     2700    // Hz — good for small passive buzzers
+#define BUZZER_DUTY_50PCT       512     // 50% duty cycle (10-bit: 1024/2)
+
 esp_err_t buzzer_init(void)
 {
     if (initialized) {
         return ESP_OK;
     }
 
-    gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << BUZZER_GPIO),
-        .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE,
+    // Configure LEDC timer
+    ledc_timer_config_t timer_cfg = {
+        .speed_mode = BUZZER_LEDC_MODE,
+        .duty_resolution = BUZZER_DUTY_RESOLUTION,
+        .timer_num = BUZZER_LEDC_TIMER,
+        .freq_hz = BUZZER_DEFAULT_FREQ,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
 
-    esp_err_t ret = gpio_config(&io_conf);
+    esp_err_t ret = ledc_timer_config(&timer_cfg);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure GPIO%d: %s", BUZZER_GPIO, esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Failed to configure LEDC timer: %s", esp_err_to_name(ret));
         return ret;
     }
 
-    gpio_set_level(BUZZER_GPIO, 0);
-    initialized = true;
+    // Configure LEDC channel (start with duty 0 = silent)
+    ledc_channel_config_t ch_cfg = {
+        .gpio_num = BUZZER_GPIO,
+        .speed_mode = BUZZER_LEDC_MODE,
+        .channel = BUZZER_LEDC_CHANNEL,
+        .timer_sel = BUZZER_LEDC_TIMER,
+        .duty = 0,
+        .hpoint = 0,
+    };
 
-    ESP_LOGI(TAG, "Buzzer initialized on GPIO%d", BUZZER_GPIO);
+    ret = ledc_channel_config(&ch_cfg);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure LEDC channel: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
+    initialized = true;
+    ESP_LOGI(TAG, "Buzzer initialized on GPIO%d (PWM %d Hz)", BUZZER_GPIO, BUZZER_DEFAULT_FREQ);
     return ESP_OK;
 }
 
 void buzzer_on(void)
 {
-    if (initialized) {
-        gpio_set_level(BUZZER_GPIO, 1);
-    }
+    if (!initialized) return;
+    ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, BUZZER_DUTY_50PCT);
+    ledc_update_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL);
 }
 
 void buzzer_off(void)
 {
-    if (initialized) {
-        gpio_set_level(BUZZER_GPIO, 0);
-    }
+    if (!initialized) return;
+    ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, 0);
+    ledc_update_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL);
+}
+
+void buzzer_tone(uint32_t freq_hz, uint32_t duration_ms)
+{
+    if (!initialized) return;
+
+    ledc_set_freq(BUZZER_LEDC_MODE, BUZZER_LEDC_TIMER, freq_hz);
+    ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, BUZZER_DUTY_50PCT);
+    ledc_update_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL);
+
+    vTaskDelay(pdMS_TO_TICKS(duration_ms));
+
+    ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, 0);
+    ledc_update_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL);
 }
 
 void buzzer_beep(uint32_t duration_ms)
 {
-    if (!initialized) {
-        return;
-    }
-
-    gpio_set_level(BUZZER_GPIO, 1);
-    vTaskDelay(pdMS_TO_TICKS(duration_ms));
-    gpio_set_level(BUZZER_GPIO, 0);
+    buzzer_tone(BUZZER_DEFAULT_FREQ, duration_ms);
 }
 
 void buzzer_beep_pattern(uint8_t count, uint32_t on_ms, uint32_t off_ms)
 {
-    if (!initialized || count == 0) {
-        return;
-    }
+    if (!initialized || count == 0) return;
 
     for (uint8_t i = 0; i < count; i++) {
-        gpio_set_level(BUZZER_GPIO, 1);
-        vTaskDelay(pdMS_TO_TICKS(on_ms));
-        gpio_set_level(BUZZER_GPIO, 0);
+        buzzer_beep(on_ms);
 
-        // Pause between beeps (skip after last beep)
         if (i < count - 1) {
             vTaskDelay(pdMS_TO_TICKS(off_ms));
         }

@@ -25,7 +25,14 @@ extern "C" {
 esp_err_t buzzer_init(void);
 
 /**
- * @brief Single short beep
+ * @brief Play a tone at specific frequency
+ * @param freq_hz Frequency in Hz (e.g. 2700)
+ * @param duration_ms Tone duration in milliseconds
+ */
+void buzzer_tone(uint32_t freq_hz, uint32_t duration_ms);
+
+/**
+ * @brief Single short beep at default frequency (2700 Hz)
  * @param duration_ms Beep duration in milliseconds
  */
 void buzzer_beep(uint32_t duration_ms);
