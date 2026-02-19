@@ -313,27 +313,27 @@ void oled_display_show_sensors(float temp, float hum, float tc_temp)
 
     oled_display_clear();
 
-    // Row 1 (pages 0-1): T: XX.X°C (I2C sensor)
+    // Row 1 (pages 0-1): TC (thermocouple)
+    if (!isnan(tc_temp)) {
+        snprintf(line, sizeof(line), "TC:%.1fC", tc_temp);
+    } else {
+        snprintf(line, sizeof(line), "TC: --");
+    }
+    oled_display_text_2x(0, 0, line);
+
+    // Row 2 (pages 2-3): T (I2C sensor)
     if (!isnan(temp)) {
         snprintf(line, sizeof(line), "T:%.1fC", temp);
     } else {
         snprintf(line, sizeof(line), "T: --");
     }
-    oled_display_text_2x(0, 0, line);
+    oled_display_text_2x(0, 2, line);
 
-    // Row 2 (pages 2-3): H: XX.X% (I2C sensor)
+    // Row 3 (pages 4-5): H (I2C sensor)
     if (!isnan(hum)) {
         snprintf(line, sizeof(line), "H:%.1f%%", hum);
     } else {
         snprintf(line, sizeof(line), "H: --");
-    }
-    oled_display_text_2x(0, 2, line);
-
-    // Row 3 (pages 4-5): TC: XX.X°C (thermocouple)
-    if (!isnan(tc_temp)) {
-        snprintf(line, sizeof(line), "TC:%.1fC", tc_temp);
-    } else {
-        snprintf(line, sizeof(line), "TC: --");
     }
     oled_display_text_2x(0, 4, line);
 
