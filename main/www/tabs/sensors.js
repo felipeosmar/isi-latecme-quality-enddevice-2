@@ -9,11 +9,6 @@ async function refreshSensors() {
         document.getElementById('sensor-hum').textContent = d.temp_hum_valid ? d.humidity.toFixed(1) + ' %' : 'N/A';
         document.getElementById('sensor-last-read').textContent = d.timestamp_ms ? formatUptime(d.timestamp_ms) : '--';
 
-        if (d.ds18b20_valid !== undefined) {
-            document.getElementById('ds18b20-temp').textContent = d.ds18b20_valid ? d.ds18b20_temp.toFixed(1) + ' \u00b0C' : 'N/A';
-            document.getElementById('ds18b20-status').textContent = d.ds18b20_valid ? 'Connected' : 'Not connected';
-        }
-
         if (d.thermocouple_valid !== undefined) {
             document.getElementById('tc-temp').textContent = d.thermocouple_valid ? d.thermocouple_temp.toFixed(1) + ' \u00b0C' : 'N/A';
             document.getElementById('tc-status').textContent = d.thermocouple_valid ? 'Connected' : 'Not connected';

@@ -4,7 +4,7 @@
  *
  * Initializes I2C bus on GPIO21 (SDA) / GPIO22 (SCL).
  * Auto-detects I2C sensors: SHT20 -> SHT3x -> AM2315C.
- * Reads DS18B20 if enabled in config.
+ * Reads MAX6675 thermocouple if enabled in config.
  * Stores results in mutex-protected sensor_data_t.
  */
 
@@ -12,7 +12,6 @@
 #include "sht20_driver.h"
 #include "sht3x_driver.h"
 #include "am2315c_driver.h"
-#include "ds18b20_driver.h"
 #include "max6675_driver.h"
 #include "config_manager.h"
 
@@ -129,16 +128,6 @@ esp_err_t sensor_manager_init(void)
     // Auto-detect I2C sensor
     detect_sensor();
 
-    // Initialize DS18B20 if enabled
-    if (config_get_ds18b20_enabled()) {
-        ESP_LOGI(TAG, "Initializing DS18B20 on GPIO%d...", DS18B20_GPIO);
-        if (ds18b20_init(DS18B20_GPIO) == ESP_OK) {
-            ESP_LOGI(TAG, "DS18B20 initialized");
-        } else {
-            ESP_LOGW(TAG, "DS18B20 not found or init failed");
-        }
-    }
-
     // Initialize MAX6675 thermocouple if enabled
     if (config_get_thermocouple_enabled()) {
         int sck = config_get_thermocouple_sck_pin();
@@ -154,7 +143,6 @@ esp_err_t sensor_manager_init(void)
 
     memset(&sensor_data, 0, sizeof(sensor_data));
     if (detected_sensor != SENSOR_NONE) {
-        // Restore sensor name after memset
         switch (detected_sensor) {
             case SENSOR_SHT20:   strncpy(sensor_data.sensor_name, "SHT20", sizeof(sensor_data.sensor_name)); break;
             case SENSOR_SHT3X:   strncpy(sensor_data.sensor_name, "SHT3x", sizeof(sensor_data.sensor_name)); break;
@@ -176,14 +164,13 @@ esp_err_t sensor_manager_read(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    float temp = 0, hum = 0, ds_temp = 0, tc_temp = 0;
-    bool th_valid = false, ds_valid = false, tc_valid = false;
+    float temp = 0, hum = 0, tc_temp = 0;
+    bool th_valid = false, tc_valid = false;
 
     // Read I2C sensor
     if (sensor_read != NULL) {
         esp_err_t ret = sensor_read(&temp, &hum);
         if (ret == ESP_OK) {
-            // Apply corrections
             temp += config_get_temp_correction();
             hum += config_get_hum_correction();
             if (hum < 0.0f) hum = 0.0f;
@@ -191,16 +178,6 @@ esp_err_t sensor_manager_read(void)
             th_valid = true;
         } else {
             ESP_LOGW(TAG, "I2C sensor read failed: %s", esp_err_to_name(ret));
-        }
-    }
-
-    // Read DS18B20
-    if (config_get_ds18b20_enabled() && ds18b20_is_connected()) {
-        esp_err_t ret = ds18b20_read(&ds_temp);
-        if (ret == ESP_OK) {
-            ds_valid = true;
-        } else {
-            ESP_LOGW(TAG, "DS18B20 read failed: %s", esp_err_to_name(ret));
         }
     }
 
@@ -218,10 +195,8 @@ esp_err_t sensor_manager_read(void)
     xSemaphoreTake(data_mutex, portMAX_DELAY);
     sensor_data.temperature = temp;
     sensor_data.humidity = hum;
-    sensor_data.ds18b20_temp = ds_temp;
     sensor_data.thermocouple_temp = tc_temp;
     sensor_data.temp_hum_valid = th_valid;
-    sensor_data.ds18b20_valid = ds_valid;
     sensor_data.thermocouple_valid = tc_valid;
     sensor_data.timestamp_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
     xSemaphoreGive(data_mutex);
@@ -229,14 +204,11 @@ esp_err_t sensor_manager_read(void)
     if (th_valid) {
         ESP_LOGI(TAG, "Sensor: %.1f°C, %.1f%%", temp, hum);
     }
-    if (ds_valid) {
-        ESP_LOGI(TAG, "DS18B20: %.1f°C", ds_temp);
-    }
     if (tc_valid) {
         ESP_LOGI(TAG, "Thermocouple: %.1f°C", tc_temp);
     }
 
-    return (th_valid || ds_valid || tc_valid) ? ESP_OK : ESP_FAIL;
+    return (th_valid || tc_valid) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t sensor_manager_get_data(sensor_data_t *data)
@@ -261,7 +233,6 @@ void sensor_task(void *param)
 {
     ESP_LOGI(TAG, "Sensor task started");
 
-    // Wait for system to settle
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     if (sensor_manager_init() != ESP_OK) {
@@ -270,7 +241,6 @@ void sensor_task(void *param)
         return;
     }
 
-    // Initial read
     sensor_manager_read();
 
     while (1) {

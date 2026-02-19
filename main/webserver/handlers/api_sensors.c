@@ -25,8 +25,6 @@ esp_err_t api_sensors_status_handler(httpd_req_t *req)
     cJSON_AddBoolToObject(root, "temp_hum_valid", data.temp_hum_valid);
     cJSON_AddNumberToObject(root, "temperature", data.temperature);
     cJSON_AddNumberToObject(root, "humidity", data.humidity);
-    cJSON_AddBoolToObject(root, "ds18b20_valid", data.ds18b20_valid);
-    cJSON_AddNumberToObject(root, "ds18b20_temp", data.ds18b20_temp);
     cJSON_AddBoolToObject(root, "thermocouple_valid", data.thermocouple_valid);
     cJSON_AddNumberToObject(root, "thermocouple_temp", data.thermocouple_temp);
     cJSON_AddNumberToObject(root, "timestamp_ms", data.timestamp_ms);
@@ -49,7 +47,6 @@ esp_err_t api_sensors_config_get_handler(httpd_req_t *req)
     cJSON_AddNumberToObject(root, "interval", config_get_sensor_interval());
     cJSON_AddNumberToObject(root, "temp_correction", config_get_temp_correction());
     cJSON_AddNumberToObject(root, "hum_correction", config_get_hum_correction());
-    cJSON_AddBoolToObject(root, "ds18b20_enabled", config_get_ds18b20_enabled());
     cJSON_AddStringToObject(root, "device_name", config_get_device_name());
     cJSON_AddBoolToObject(root, "thermocouple_enabled", config_get_thermocouple_enabled());
     cJSON_AddNumberToObject(root, "thermocouple_max_temp", config_get_thermocouple_max_temp());
@@ -94,9 +91,6 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req)
     }
     if ((item = cJSON_GetObjectItem(json, "hum_correction")) && cJSON_IsNumber(item)) {
         config_set_hum_correction((float)item->valuedouble);
-    }
-    if ((item = cJSON_GetObjectItem(json, "ds18b20_enabled")) && cJSON_IsBool(item)) {
-        config_set_ds18b20_enabled(cJSON_IsTrue(item));
     }
     if ((item = cJSON_GetObjectItem(json, "device_name")) && cJSON_IsString(item)) {
         config_set_device_name(item->valuestring);

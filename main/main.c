@@ -4,7 +4,7 @@
  *
  * This application provides:
  * - LoRaWAN communication via OTAA to ChirpStack
- * - Sensor data collection (temperature, humidity, DS18B20)
+ * - Sensor data collection (temperature, humidity, thermocouple)
  * - CayenneLPP payload encoding
  * - OLED display for status
  * - Web interface for configuration and monitoring
@@ -114,11 +114,10 @@ static void display_task(void *param)
             case OLED_PAGE_SENSORS: {
                 sensor_data_t data;
                 sensor_manager_get_data(&data);
-                float ds = data.ds18b20_valid ? data.ds18b20_temp : NAN;
                 float tc = data.thermocouple_valid ? data.thermocouple_temp : NAN;
                 float t = data.temp_hum_valid ? data.temperature : NAN;
                 float h = data.temp_hum_valid ? data.humidity : NAN;
-                oled_display_show_sensors(t, h, ds, tc, data.sensor_name);
+                oled_display_show_sensors(t, h, tc, data.sensor_name);
                 break;
             }
             case OLED_PAGE_LORAWAN: {
@@ -184,10 +183,6 @@ static void uplink_task(void *param)
         if (data.temp_hum_valid) {
             cayenne_lpp_add_temperature(&lpp, 1, data.temperature);
             cayenne_lpp_add_humidity(&lpp, 2, data.humidity);
-        }
-
-        if (data.ds18b20_valid) {
-            cayenne_lpp_add_temperature(&lpp, 3, data.ds18b20_temp);
         }
 
         if (data.thermocouple_valid) {

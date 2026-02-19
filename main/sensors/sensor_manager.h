@@ -1,9 +1,9 @@
 /**
  * @file sensor_manager.h
- * @brief Sensor manager for I2C temperature/humidity sensors and DS18B20
+ * @brief Sensor manager for I2C temperature/humidity sensors and MAX6675 thermocouple
  *
  * Auto-detects I2C sensors: SHT20 (0x40), SHT3x (0x44), AM2315C/AHT20 (0x38)
- * Also supports DS18B20 1-Wire temperature sensor.
+ * Also supports MAX6675 Type K thermocouple via SPI bit-bang.
  */
 
 #ifndef SENSOR_MANAGER_H
@@ -23,10 +23,8 @@ extern "C" {
 typedef struct {
     float temperature;       // from I2C sensor (°C)
     float humidity;          // from I2C sensor (%)
-    float ds18b20_temp;      // from DS18B20 (°C)
     float thermocouple_temp; // from MAX6675 thermocouple (°C)
     bool temp_hum_valid;     // true if I2C sensor data is valid
-    bool ds18b20_valid;      // true if DS18B20 data is valid
     bool thermocouple_valid; // true if thermocouple data is valid
     uint32_t timestamp_ms;   // millis when last read
     char sensor_name[16];    // "SHT20", "SHT3x", "AM2315C", "None"
@@ -44,7 +42,7 @@ esp_err_t sensor_manager_init(void);
 /**
  * @brief Read all sensors
  *
- * Reads I2C temp/humidity sensor and DS18B20 (if enabled).
+ * Reads I2C temp/humidity sensor and thermocouple (if enabled).
  * Applies correction offsets from config.
  *
  * @return ESP_OK if at least one sensor read succeeded

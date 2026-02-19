@@ -19,7 +19,6 @@
         "interval": 30,
         "temp_correction": 0.0,
         "hum_correction": 0.0,
-        "ds18b20_enabled": false,
         "device_name": "sensor-01",
         "thermocouple_enabled": true,
         "thermocouple_max_temp": 200.0,

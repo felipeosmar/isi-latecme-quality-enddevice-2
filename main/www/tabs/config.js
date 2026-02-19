@@ -51,7 +51,6 @@ async function loadSensorConfig() {
         document.getElementById('cfg-sensor-interval').value = d.interval || 30;
         document.getElementById('cfg-temp-corr').value = d.temp_correction || 0;
         document.getElementById('cfg-hum-corr').value = d.hum_correction || 0;
-        document.getElementById('cfg-ds18b20').checked = d.ds18b20_enabled !== false;
         document.getElementById('cfg-device-name').value = d.device_name || 'sensor-01';
         document.getElementById('cfg-thermocouple').checked = d.thermocouple_enabled !== false;
         document.getElementById('cfg-tc-max-temp').value = d.thermocouple_max_temp || 200;
@@ -68,7 +67,6 @@ async function saveSensorConfig() {
         interval: parseInt(document.getElementById('cfg-sensor-interval').value),
         temp_correction: parseFloat(document.getElementById('cfg-temp-corr').value),
         hum_correction: parseFloat(document.getElementById('cfg-hum-corr').value),
-        ds18b20_enabled: document.getElementById('cfg-ds18b20').checked,
         device_name: document.getElementById('cfg-device-name').value.trim(),
         thermocouple_enabled: document.getElementById('cfg-thermocouple').checked,
         thermocouple_max_temp: parseFloat(document.getElementById('cfg-tc-max-temp').value),

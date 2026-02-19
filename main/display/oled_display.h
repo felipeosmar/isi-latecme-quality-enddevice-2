@@ -63,11 +63,10 @@ void oled_display_update(void);
  *
  * @param temp Temperature in °C
  * @param hum Humidity in %
- * @param ds_temp DS18B20 temperature (or NAN if not available)
  * @param tc_temp Thermocouple temperature (or NAN if not available)
  * @param sensor_name Name of the detected sensor
  */
-void oled_display_show_sensors(float temp, float hum, float ds_temp, float tc_temp, const char *sensor_name);
+void oled_display_show_sensors(float temp, float hum, float tc_temp, const char *sensor_name);
 
 /**
  * @brief Show LoRaWAN status page

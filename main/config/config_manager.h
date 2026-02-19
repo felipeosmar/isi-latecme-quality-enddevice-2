@@ -80,13 +80,11 @@ void config_set_adr_enabled(bool enabled);
 uint32_t config_get_sensor_interval(void);
 float config_get_temp_correction(void);
 float config_get_hum_correction(void);
-bool config_get_ds18b20_enabled(void);
 const char* config_get_device_name(void);
 
 void config_set_sensor_interval(uint32_t seconds);
 void config_set_temp_correction(float correction);
 void config_set_hum_correction(float correction);
-void config_set_ds18b20_enabled(bool enabled);
 void config_set_device_name(const char *name);
 
 bool config_get_thermocouple_enabled(void);

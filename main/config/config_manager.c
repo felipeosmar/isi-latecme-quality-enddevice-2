@@ -36,7 +36,6 @@ typedef struct {
     uint32_t sensor_interval; // seconds between sensor reads
     float temp_correction;    // temperature correction offset
     float hum_correction;     // humidity correction offset
-    bool ds18b20_enabled;     // DS18B20 external temp sensor
     char device_name[32];     // device name / hostname
     bool thermocouple_enabled; // MAX6675 thermocouple
     float thermocouple_max_temp; // max temperature for thermocouple
@@ -117,7 +116,6 @@ void config_reset_defaults(void)
     s_config.sensor_interval = 30;
     s_config.temp_correction = 0.0f;
     s_config.hum_correction = 0.0f;
-    s_config.ds18b20_enabled = false;
     strcpy(s_config.device_name, "sensor-01");
     s_config.thermocouple_enabled = true;
     s_config.thermocouple_max_temp = 200.0f;
@@ -166,7 +164,6 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddNumberToObject(sensors, "interval", s_config.sensor_interval);
     cJSON_AddNumberToObject(sensors, "temp_correction", s_config.temp_correction);
     cJSON_AddNumberToObject(sensors, "hum_correction", s_config.hum_correction);
-    cJSON_AddBoolToObject(sensors, "ds18b20_enabled", s_config.ds18b20_enabled);
     cJSON_AddStringToObject(sensors, "device_name", s_config.device_name);
     cJSON_AddBoolToObject(sensors, "thermocouple_enabled", s_config.thermocouple_enabled);
     cJSON_AddNumberToObject(sensors, "thermocouple_max_temp", s_config.thermocouple_max_temp);
@@ -306,9 +303,6 @@ esp_err_t config_load(void)
         }
         if ((item = cJSON_GetObjectItem(sensors, "hum_correction")) && cJSON_IsNumber(item)) {
             s_config.hum_correction = (float)item->valuedouble;
-        }
-        if ((item = cJSON_GetObjectItem(sensors, "ds18b20_enabled")) && cJSON_IsBool(item)) {
-            s_config.ds18b20_enabled = cJSON_IsTrue(item);
         }
         if ((item = cJSON_GetObjectItem(sensors, "device_name")) && cJSON_IsString(item)) {
             strncpy(s_config.device_name, item->valuestring, sizeof(s_config.device_name) - 1);
@@ -456,13 +450,11 @@ void config_set_adr_enabled(bool enabled) { s_config.adr_enabled = enabled; }
 uint32_t config_get_sensor_interval(void) { return s_config.sensor_interval; }
 float config_get_temp_correction(void) { return s_config.temp_correction; }
 float config_get_hum_correction(void) { return s_config.hum_correction; }
-bool config_get_ds18b20_enabled(void) { return s_config.ds18b20_enabled; }
 const char* config_get_device_name(void) { return s_config.device_name; }
 
 void config_set_sensor_interval(uint32_t seconds) { s_config.sensor_interval = seconds; }
 void config_set_temp_correction(float correction) { s_config.temp_correction = correction; }
 void config_set_hum_correction(float correction) { s_config.hum_correction = correction; }
-void config_set_ds18b20_enabled(bool enabled) { s_config.ds18b20_enabled = enabled; }
 void config_set_device_name(const char *name) {
     if (name) strncpy(s_config.device_name, name, sizeof(s_config.device_name) - 1);
 }

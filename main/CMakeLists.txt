@@ -6,7 +6,6 @@ idf_component_register(
         "sensors/sht20_driver.c"
         "sensors/sht3x_driver.c"
         "sensors/am2315c_driver.c"
-        "sensors/ds18b20_driver.c"
         "sensors/max6675_driver.c"
         "payload/cayenne_lpp.c"
         "interface/buzzer.c"
