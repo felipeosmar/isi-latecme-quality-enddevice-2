@@ -305,42 +305,96 @@ void oled_display_update(void)
     }
 }
 
+/**
+ * @brief Draw a character scaled 3x (18x24 pixels, spans 3 pages)
+ */
+static void draw_char_3x(uint8_t x, uint8_t page, char c)
+{
+    if (c < 32 || c > 126) c = ' ';
+    int idx = c - 32;
+
+    for (int col = 0; col < 6; col++) {
+        uint8_t src = font_6x8[idx][col];
+        // Stretch each bit vertically: 1 src bit -> 3 dst bits
+        uint32_t stretched = 0;
+        for (int bit = 0; bit < 8; bit++) {
+            if (src & (1 << bit)) {
+                stretched |= (7U << (bit * 3));  // 3 bits per original bit
+            }
+        }
+        uint8_t b0 = (uint8_t)(stretched & 0xFF);
+        uint8_t b1 = (uint8_t)((stretched >> 8) & 0xFF);
+        uint8_t b2 = (uint8_t)((stretched >> 16) & 0xFF);
+
+        // Write 3 columns (horizontal stretch)
+        for (int dx = 0; dx < 3; dx++) {
+            uint8_t px = x + col * 3 + dx;
+            if (px >= OLED_WIDTH) break;
+            if (page < 8)     framebuffer[page * OLED_WIDTH + px] = b0;
+            if (page + 1 < 8) framebuffer[(page + 1) * OLED_WIDTH + px] = b1;
+            if (page + 2 < 8) framebuffer[(page + 2) * OLED_WIDTH + px] = b2;
+        }
+    }
+}
+
+/**
+ * @brief Write text at 3x scale (18x24 per char, spans 3 pages)
+ */
+static void oled_display_text_3x(uint8_t x, uint8_t page, const char *text)
+{
+    if (!text || page >= 6) return;
+
+    while (*text && x < OLED_WIDTH) {
+        draw_char_3x(x, page, *text);
+        x += 18;
+        text++;
+    }
+}
+
+// Sensor sub-page counter for alternating T/H on external sensor
+static uint8_t sensor_subpage = 0;
+
 void oled_display_show_sensors(float temp, float hum, float tc_temp)
 {
     if (!oled_initialized) return;
 
     char line[16];
+    uint8_t x;
 
     oled_display_clear();
 
-    uint8_t x;
-
-    // Row 1 (pages 0-1): TC (thermocouple)
+    // Row 1 (pages 0-2): TC — always visible, 3x font
+    oled_display_text(0, 0, "Int.");
     if (!isnan(tc_temp)) {
-        snprintf(line, sizeof(line), "TC:%.1fC", tc_temp);
+        snprintf(line, sizeof(line), "%.1fC", tc_temp);
     } else {
-        snprintf(line, sizeof(line), "TC: --");
+        snprintf(line, sizeof(line), "--");
     }
-    x = (OLED_WIDTH - strlen(line) * 12) / 2;
-    oled_display_text_2x(x, 0, line);
+    x = (OLED_WIDTH - strlen(line) * 18) / 2;
+    oled_display_text_3x(x, 1, line);
 
-    // Row 2 (pages 2-3): T (I2C sensor)
-    if (!isnan(temp)) {
-        snprintf(line, sizeof(line), "T:%.1fC", temp);
+    // Row 2 (pages 4-6): Alternate between T and H, 3x font
+    oled_display_text(0, 4, "Ext.");
+    if (sensor_subpage == 0) {
+        // Show temperature
+        if (!isnan(temp)) {
+            snprintf(line, sizeof(line), "%.1fC", temp);
+        } else {
+            snprintf(line, sizeof(line), "--");
+        }
     } else {
-        snprintf(line, sizeof(line), "T: --");
+        // Show humidity
+        if (!isnan(hum)) {
+            snprintf(line, sizeof(line), "%.1f%%", hum);
+        } else {
+            snprintf(line, sizeof(line), "--");
+        }
     }
-    x = (OLED_WIDTH - strlen(line) * 12) / 2;
-    oled_display_text_2x(x, 2, line);
+    x = (OLED_WIDTH - strlen(line) * 18) / 2;
+    oled_display_text_3x(x, 5, line);
 
-    // Row 3 (pages 4-5): H (I2C sensor)
-    if (!isnan(hum)) {
-        snprintf(line, sizeof(line), "H:%.1f%%", hum);
-    } else {
-        snprintf(line, sizeof(line), "H: --");
-    }
-    x = (OLED_WIDTH - strlen(line) * 12) / 2;
-    oled_display_text_2x(x, 4, line);
+    // Toggle subpage for next call
+    sensor_subpage = (sensor_subpage + 1) % 2;
 
     oled_display_update();
 }
