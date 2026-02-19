@@ -7,7 +7,9 @@ idf_component_register(
         "sensors/sht3x_driver.c"
         "sensors/am2315c_driver.c"
         "sensors/ds18b20_driver.c"
+        "sensors/max6675_driver.c"
         "payload/cayenne_lpp.c"
+        "interface/buzzer.c"
         "display/oled_display.c"
         "wifi/wifi_manager.c"
         "webserver/web_server.c"
@@ -33,6 +35,7 @@ idf_component_register(
         "config"
         "health"
         "logs"
+        "interface"
     REQUIRES
         driver
         nvs_flash

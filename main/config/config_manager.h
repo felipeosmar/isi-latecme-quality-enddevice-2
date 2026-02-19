@@ -89,6 +89,18 @@ void config_set_hum_correction(float correction);
 void config_set_ds18b20_enabled(bool enabled);
 void config_set_device_name(const char *name);
 
+bool config_get_thermocouple_enabled(void);
+float config_get_thermocouple_max_temp(void);
+uint8_t config_get_thermocouple_sck_pin(void);
+uint8_t config_get_thermocouple_so_pin(void);
+uint8_t config_get_thermocouple_cs_pin(void);
+
+void config_set_thermocouple_enabled(bool enabled);
+void config_set_thermocouple_max_temp(float max_temp);
+void config_set_thermocouple_sck_pin(uint8_t pin);
+void config_set_thermocouple_so_pin(uint8_t pin);
+void config_set_thermocouple_cs_pin(uint8_t pin);
+
 // ============================================================================
 // Web Server Configuration
 // ============================================================================

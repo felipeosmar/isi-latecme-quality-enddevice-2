@@ -29,6 +29,7 @@
 #include "lorawan_handler.h"
 #include "oled_display.h"
 #include "cayenne_lpp.h"
+#include "buzzer.h"
 
 static const char *TAG = "MAIN";
 
@@ -56,7 +57,10 @@ static esp_err_t init_wifi(void)
         ESP_LOGI(TAG, "Connecting to saved network: %s", ssid);
         ret = wifi_manager_connect(ssid, password);
 
-        if (ret != ESP_OK) {
+        if (ret == ESP_OK) {
+            // 2 short beeps on WiFi connection
+            buzzer_beep_pattern(2, 100, 150);
+        } else {
             ESP_LOGW(TAG, "Failed to connect, starting AP mode");
             ap_mode = true;
         }
@@ -109,9 +113,10 @@ static void display_task(void *param)
                 sensor_data_t data;
                 sensor_manager_get_data(&data);
                 float ds = data.ds18b20_valid ? data.ds18b20_temp : NAN;
+                float tc = data.thermocouple_valid ? data.thermocouple_temp : NAN;
                 float t = data.temp_hum_valid ? data.temperature : NAN;
                 float h = data.temp_hum_valid ? data.humidity : NAN;
-                oled_display_show_sensors(t, h, ds, data.sensor_name);
+                oled_display_show_sensors(t, h, ds, tc, data.sensor_name);
                 break;
             }
             case OLED_PAGE_LORAWAN: {
@@ -183,6 +188,10 @@ static void uplink_task(void *param)
             cayenne_lpp_add_temperature(&lpp, 3, data.ds18b20_temp);
         }
 
+        if (data.thermocouple_valid) {
+            cayenne_lpp_add_temperature(&lpp, 4, data.thermocouple_temp);
+        }
+
         size_t payload_size = cayenne_lpp_get_size(&lpp);
         if (payload_size > 0) {
             uint8_t port = config_get_lorawan_port();
@@ -208,6 +217,10 @@ void app_main(void)
     ESP_LOGI(TAG, "==========================================");
     ESP_LOGI(TAG, "  LoRaWAN End Device - Sensor Node");
     ESP_LOGI(TAG, "==========================================");
+
+    // Initialize buzzer and beep on startup (1 short beep)
+    buzzer_init();
+    buzzer_beep(100);
 
     // Initialize configuration manager (includes LittleFS)
     ESP_LOGI(TAG, "Initializing configuration...");

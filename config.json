@@ -20,7 +20,12 @@
         "temp_correction": 0.0,
         "hum_correction": 0.0,
         "ds18b20_enabled": true,
-        "device_name": "sensor-01"
+        "device_name": "sensor-01",
+        "thermocouple_enabled": true,
+        "thermocouple_max_temp": 200.0,
+        "thermocouple_sck_pin": 33,
+        "thermocouple_so_pin": 27,
+        "thermocouple_cs_pin": 32
     },
     "web": {
         "username": "admin",

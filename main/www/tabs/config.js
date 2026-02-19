@@ -53,6 +53,11 @@ async function loadSensorConfig() {
         document.getElementById('cfg-hum-corr').value = d.hum_correction || 0;
         document.getElementById('cfg-ds18b20').checked = d.ds18b20_enabled !== false;
         document.getElementById('cfg-device-name').value = d.device_name || 'sensor-01';
+        document.getElementById('cfg-thermocouple').checked = d.thermocouple_enabled !== false;
+        document.getElementById('cfg-tc-max-temp').value = d.thermocouple_max_temp || 200;
+        document.getElementById('cfg-tc-sck').value = d.thermocouple_sck_pin || 33;
+        document.getElementById('cfg-tc-so').value = d.thermocouple_so_pin || 27;
+        document.getElementById('cfg-tc-cs').value = d.thermocouple_cs_pin || 32;
     } catch (e) {
         console.error('Failed to load sensor config:', e);
     }
@@ -64,7 +69,12 @@ async function saveSensorConfig() {
         temp_correction: parseFloat(document.getElementById('cfg-temp-corr').value),
         hum_correction: parseFloat(document.getElementById('cfg-hum-corr').value),
         ds18b20_enabled: document.getElementById('cfg-ds18b20').checked,
-        device_name: document.getElementById('cfg-device-name').value.trim()
+        device_name: document.getElementById('cfg-device-name').value.trim(),
+        thermocouple_enabled: document.getElementById('cfg-thermocouple').checked,
+        thermocouple_max_temp: parseFloat(document.getElementById('cfg-tc-max-temp').value),
+        thermocouple_sck_pin: parseInt(document.getElementById('cfg-tc-sck').value),
+        thermocouple_so_pin: parseInt(document.getElementById('cfg-tc-so').value),
+        thermocouple_cs_pin: parseInt(document.getElementById('cfg-tc-cs').value)
     };
 
     try {

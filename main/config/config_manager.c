@@ -38,6 +38,11 @@ typedef struct {
     float hum_correction;     // humidity correction offset
     bool ds18b20_enabled;     // DS18B20 external temp sensor
     char device_name[32];     // device name / hostname
+    bool thermocouple_enabled; // MAX6675 thermocouple
+    float thermocouple_max_temp; // max temperature for thermocouple
+    uint8_t thermocouple_sck_pin; // SPI clock pin
+    uint8_t thermocouple_so_pin;  // SPI data out pin
+    uint8_t thermocouple_cs_pin;  // SPI chip select pin
 
     // Web
     char web_username[32];
@@ -114,6 +119,11 @@ void config_reset_defaults(void)
     s_config.hum_correction = 0.0f;
     s_config.ds18b20_enabled = true;
     strcpy(s_config.device_name, "sensor-01");
+    s_config.thermocouple_enabled = true;
+    s_config.thermocouple_max_temp = 200.0f;
+    s_config.thermocouple_sck_pin = 33;
+    s_config.thermocouple_so_pin = 27;
+    s_config.thermocouple_cs_pin = 32;
 
     // Web defaults
     strcpy(s_config.web_username, "admin");
@@ -158,6 +168,11 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddNumberToObject(sensors, "hum_correction", s_config.hum_correction);
     cJSON_AddBoolToObject(sensors, "ds18b20_enabled", s_config.ds18b20_enabled);
     cJSON_AddStringToObject(sensors, "device_name", s_config.device_name);
+    cJSON_AddBoolToObject(sensors, "thermocouple_enabled", s_config.thermocouple_enabled);
+    cJSON_AddNumberToObject(sensors, "thermocouple_max_temp", s_config.thermocouple_max_temp);
+    cJSON_AddNumberToObject(sensors, "thermocouple_sck_pin", s_config.thermocouple_sck_pin);
+    cJSON_AddNumberToObject(sensors, "thermocouple_so_pin", s_config.thermocouple_so_pin);
+    cJSON_AddNumberToObject(sensors, "thermocouple_cs_pin", s_config.thermocouple_cs_pin);
     cJSON_AddItemToObject(root, "sensors", sensors);
 
     // Web section
@@ -298,6 +313,21 @@ esp_err_t config_load(void)
         if ((item = cJSON_GetObjectItem(sensors, "device_name")) && cJSON_IsString(item)) {
             strncpy(s_config.device_name, item->valuestring, sizeof(s_config.device_name) - 1);
         }
+        if ((item = cJSON_GetObjectItem(sensors, "thermocouple_enabled")) && cJSON_IsBool(item)) {
+            s_config.thermocouple_enabled = cJSON_IsTrue(item);
+        }
+        if ((item = cJSON_GetObjectItem(sensors, "thermocouple_max_temp")) && cJSON_IsNumber(item)) {
+            s_config.thermocouple_max_temp = (float)item->valuedouble;
+        }
+        if ((item = cJSON_GetObjectItem(sensors, "thermocouple_sck_pin")) && cJSON_IsNumber(item)) {
+            s_config.thermocouple_sck_pin = (uint8_t)item->valueint;
+        }
+        if ((item = cJSON_GetObjectItem(sensors, "thermocouple_so_pin")) && cJSON_IsNumber(item)) {
+            s_config.thermocouple_so_pin = (uint8_t)item->valueint;
+        }
+        if ((item = cJSON_GetObjectItem(sensors, "thermocouple_cs_pin")) && cJSON_IsNumber(item)) {
+            s_config.thermocouple_cs_pin = (uint8_t)item->valueint;
+        }
     }
 
     // Web section
@@ -436,6 +466,18 @@ void config_set_ds18b20_enabled(bool enabled) { s_config.ds18b20_enabled = enabl
 void config_set_device_name(const char *name) {
     if (name) strncpy(s_config.device_name, name, sizeof(s_config.device_name) - 1);
 }
+
+bool config_get_thermocouple_enabled(void) { return s_config.thermocouple_enabled; }
+float config_get_thermocouple_max_temp(void) { return s_config.thermocouple_max_temp; }
+uint8_t config_get_thermocouple_sck_pin(void) { return s_config.thermocouple_sck_pin; }
+uint8_t config_get_thermocouple_so_pin(void) { return s_config.thermocouple_so_pin; }
+uint8_t config_get_thermocouple_cs_pin(void) { return s_config.thermocouple_cs_pin; }
+
+void config_set_thermocouple_enabled(bool enabled) { s_config.thermocouple_enabled = enabled; }
+void config_set_thermocouple_max_temp(float max_temp) { s_config.thermocouple_max_temp = max_temp; }
+void config_set_thermocouple_sck_pin(uint8_t pin) { s_config.thermocouple_sck_pin = pin; }
+void config_set_thermocouple_so_pin(uint8_t pin) { s_config.thermocouple_so_pin = pin; }
+void config_set_thermocouple_cs_pin(uint8_t pin) { s_config.thermocouple_cs_pin = pin; }
 
 // ============================================================================
 // Getters/Setters - Web

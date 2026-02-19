@@ -24,8 +24,10 @@ typedef struct {
     float temperature;       // from I2C sensor (°C)
     float humidity;          // from I2C sensor (%)
     float ds18b20_temp;      // from DS18B20 (°C)
+    float thermocouple_temp; // from MAX6675 thermocouple (°C)
     bool temp_hum_valid;     // true if I2C sensor data is valid
     bool ds18b20_valid;      // true if DS18B20 data is valid
+    bool thermocouple_valid; // true if thermocouple data is valid
     uint32_t timestamp_ms;   // millis when last read
     char sensor_name[16];    // "SHT20", "SHT3x", "AM2315C", "None"
 } sensor_data_t;

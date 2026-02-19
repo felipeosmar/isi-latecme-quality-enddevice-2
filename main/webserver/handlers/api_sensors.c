@@ -27,6 +27,8 @@ esp_err_t api_sensors_status_handler(httpd_req_t *req)
     cJSON_AddNumberToObject(root, "humidity", data.humidity);
     cJSON_AddBoolToObject(root, "ds18b20_valid", data.ds18b20_valid);
     cJSON_AddNumberToObject(root, "ds18b20_temp", data.ds18b20_temp);
+    cJSON_AddBoolToObject(root, "thermocouple_valid", data.thermocouple_valid);
+    cJSON_AddNumberToObject(root, "thermocouple_temp", data.thermocouple_temp);
     cJSON_AddNumberToObject(root, "timestamp_ms", data.timestamp_ms);
 
     char *json_str = cJSON_PrintUnformatted(root);
@@ -49,6 +51,11 @@ esp_err_t api_sensors_config_get_handler(httpd_req_t *req)
     cJSON_AddNumberToObject(root, "hum_correction", config_get_hum_correction());
     cJSON_AddBoolToObject(root, "ds18b20_enabled", config_get_ds18b20_enabled());
     cJSON_AddStringToObject(root, "device_name", config_get_device_name());
+    cJSON_AddBoolToObject(root, "thermocouple_enabled", config_get_thermocouple_enabled());
+    cJSON_AddNumberToObject(root, "thermocouple_max_temp", config_get_thermocouple_max_temp());
+    cJSON_AddNumberToObject(root, "thermocouple_sck_pin", config_get_thermocouple_sck_pin());
+    cJSON_AddNumberToObject(root, "thermocouple_so_pin", config_get_thermocouple_so_pin());
+    cJSON_AddNumberToObject(root, "thermocouple_cs_pin", config_get_thermocouple_cs_pin());
 
     char *json_str = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
@@ -93,6 +100,21 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req)
     }
     if ((item = cJSON_GetObjectItem(json, "device_name")) && cJSON_IsString(item)) {
         config_set_device_name(item->valuestring);
+    }
+    if ((item = cJSON_GetObjectItem(json, "thermocouple_enabled")) && cJSON_IsBool(item)) {
+        config_set_thermocouple_enabled(cJSON_IsTrue(item));
+    }
+    if ((item = cJSON_GetObjectItem(json, "thermocouple_max_temp")) && cJSON_IsNumber(item)) {
+        config_set_thermocouple_max_temp((float)item->valuedouble);
+    }
+    if ((item = cJSON_GetObjectItem(json, "thermocouple_sck_pin")) && cJSON_IsNumber(item)) {
+        config_set_thermocouple_sck_pin((uint8_t)item->valueint);
+    }
+    if ((item = cJSON_GetObjectItem(json, "thermocouple_so_pin")) && cJSON_IsNumber(item)) {
+        config_set_thermocouple_so_pin((uint8_t)item->valueint);
+    }
+    if ((item = cJSON_GetObjectItem(json, "thermocouple_cs_pin")) && cJSON_IsNumber(item)) {
+        config_set_thermocouple_cs_pin((uint8_t)item->valueint);
     }
 
     cJSON_Delete(json);

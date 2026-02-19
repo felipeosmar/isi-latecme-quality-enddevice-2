@@ -13,6 +13,7 @@
 #include "sht3x_driver.h"
 #include "am2315c_driver.h"
 #include "ds18b20_driver.h"
+#include "max6675_driver.h"
 #include "config_manager.h"
 
 #include <string.h>
@@ -138,6 +139,19 @@ esp_err_t sensor_manager_init(void)
         }
     }
 
+    // Initialize MAX6675 thermocouple if enabled
+    if (config_get_thermocouple_enabled()) {
+        int sck = config_get_thermocouple_sck_pin();
+        int so = config_get_thermocouple_so_pin();
+        int cs = config_get_thermocouple_cs_pin();
+        ESP_LOGI(TAG, "Initializing MAX6675 thermocouple (SCK=%d, SO=%d, CS=%d)...", sck, so, cs);
+        if (max6675_init(sck, so, cs) == ESP_OK) {
+            ESP_LOGI(TAG, "MAX6675 initialized");
+        } else {
+            ESP_LOGW(TAG, "MAX6675 init failed");
+        }
+    }
+
     memset(&sensor_data, 0, sizeof(sensor_data));
     if (detected_sensor != SENSOR_NONE) {
         // Restore sensor name after memset
@@ -162,8 +176,8 @@ esp_err_t sensor_manager_read(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    float temp = 0, hum = 0, ds_temp = 0;
-    bool th_valid = false, ds_valid = false;
+    float temp = 0, hum = 0, ds_temp = 0, tc_temp = 0;
+    bool th_valid = false, ds_valid = false, tc_valid = false;
 
     // Read I2C sensor
     if (sensor_read != NULL) {
@@ -190,13 +204,25 @@ esp_err_t sensor_manager_read(void)
         }
     }
 
+    // Read MAX6675 thermocouple
+    if (config_get_thermocouple_enabled()) {
+        esp_err_t ret = max6675_read(&tc_temp);
+        if (ret == ESP_OK) {
+            tc_valid = true;
+        } else {
+            ESP_LOGW(TAG, "MAX6675 read failed: %s", esp_err_to_name(ret));
+        }
+    }
+
     // Update shared data
     xSemaphoreTake(data_mutex, portMAX_DELAY);
     sensor_data.temperature = temp;
     sensor_data.humidity = hum;
     sensor_data.ds18b20_temp = ds_temp;
+    sensor_data.thermocouple_temp = tc_temp;
     sensor_data.temp_hum_valid = th_valid;
     sensor_data.ds18b20_valid = ds_valid;
+    sensor_data.thermocouple_valid = tc_valid;
     sensor_data.timestamp_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
     xSemaphoreGive(data_mutex);
 
@@ -206,8 +232,11 @@ esp_err_t sensor_manager_read(void)
     if (ds_valid) {
         ESP_LOGI(TAG, "DS18B20: %.1f°C", ds_temp);
     }
+    if (tc_valid) {
+        ESP_LOGI(TAG, "Thermocouple: %.1f°C", tc_temp);
+    }
 
-    return (th_valid || ds_valid) ? ESP_OK : ESP_FAIL;
+    return (th_valid || ds_valid || tc_valid) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t sensor_manager_get_data(sensor_data_t *data)

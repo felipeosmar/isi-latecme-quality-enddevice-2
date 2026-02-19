@@ -12,6 +12,11 @@
 <div class="form-row"><label>Hum Correction</label><input type="number" id="cfg-hum-corr" step="0.1" value="0.0"></div>
 <div class="form-row"><label>DS18B20</label><input type="checkbox" id="cfg-ds18b20" checked></div>
 <div class="form-row"><label>Device Name</label><input type="text" id="cfg-device-name" maxlength="31" value="sensor-01"></div>
+<div class="form-row"><label>Thermocouple</label><input type="checkbox" id="cfg-thermocouple" checked></div>
+<div class="form-row"><label>TC Max Temp (°C)</label><input type="number" id="cfg-tc-max-temp" step="1" min="0" max="1024" value="200"></div>
+<div class="form-row"><label>TC SCK Pin</label><input type="number" id="cfg-tc-sck" min="0" max="39" value="33"></div>
+<div class="form-row"><label>TC SO Pin</label><input type="number" id="cfg-tc-so" min="0" max="39" value="27"></div>
+<div class="form-row"><label>TC CS Pin</label><input type="number" id="cfg-tc-cs" min="0" max="39" value="32"></div>
 <button onclick="saveSensorConfig()" class="btn full mt-2">Save Sensor Config</button></div>
 
 <div class="card"><h3>Web Auth</h3>

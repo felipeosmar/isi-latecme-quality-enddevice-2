@@ -258,7 +258,7 @@ void oled_display_update(void)
     }
 }
 
-void oled_display_show_sensors(float temp, float hum, float ds_temp, const char *sensor_name)
+void oled_display_show_sensors(float temp, float hum, float ds_temp, float tc_temp, const char *sensor_name)
 {
     if (!oled_initialized) return;
 
@@ -283,6 +283,11 @@ void oled_display_show_sensors(float temp, float hum, float ds_temp, const char 
 
     if (!isnan(ds_temp)) {
         snprintf(line, sizeof(line), "DS18B20: %.1f C", ds_temp);
+        oled_display_text(0, 5, line);
+    }
+
+    if (!isnan(tc_temp)) {
+        snprintf(line, sizeof(line), "TC: %.1f C", tc_temp);
         oled_display_text(0, 6, line);
     }
 
