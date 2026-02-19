@@ -117,7 +117,7 @@ void config_reset_defaults(void)
     s_config.sensor_interval = 30;
     s_config.temp_correction = 0.0f;
     s_config.hum_correction = 0.0f;
-    s_config.ds18b20_enabled = true;
+    s_config.ds18b20_enabled = false;
     strcpy(s_config.device_name, "sensor-01");
     s_config.thermocouple_enabled = true;
     s_config.thermocouple_max_temp = 200.0f;

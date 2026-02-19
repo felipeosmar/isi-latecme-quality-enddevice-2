@@ -288,6 +288,12 @@ extern "C" esp_err_t lorawan_get_stats(lorawan_stats_t *out)
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (!lorawan_mutex) {
+        // Not initialized yet — return zeroed stats
+        memset(out, 0, sizeof(lorawan_stats_t));
+        return ESP_OK;
+    }
+
     xSemaphoreTake(lorawan_mutex, portMAX_DELAY);
     memcpy(out, &stats, sizeof(lorawan_stats_t));
     xSemaphoreGive(lorawan_mutex);
