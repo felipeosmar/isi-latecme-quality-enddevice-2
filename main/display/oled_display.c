@@ -236,6 +236,53 @@ void oled_display_text(uint8_t x, uint8_t page, const char *text)
     }
 }
 
+/**
+ * @brief Draw a character scaled 2x (12x16 pixels, spans 2 pages)
+ */
+static void draw_char_2x(uint8_t x, uint8_t page, char c)
+{
+    if (c < 32 || c > 126) c = ' ';
+    int idx = c - 32;
+
+    for (int col = 0; col < 6; col++) {
+        uint8_t src = font_6x8[idx][col];
+        // Stretch each bit vertically: 1 src bit -> 2 dst bits
+        uint16_t stretched = 0;
+        for (int bit = 0; bit < 8; bit++) {
+            if (src & (1 << bit)) {
+                stretched |= (3 << (bit * 2));  // 2 bits per original bit
+            }
+        }
+        uint8_t lo = (uint8_t)(stretched & 0xFF);
+        uint8_t hi = (uint8_t)((stretched >> 8) & 0xFF);
+
+        // Write 2 columns (horizontal stretch)
+        uint8_t dx = x + col * 2;
+        if (dx < OLED_WIDTH && page < 8) {
+            framebuffer[page * OLED_WIDTH + dx] = lo;
+            framebuffer[page * OLED_WIDTH + dx + 1] = lo;
+        }
+        if (dx < OLED_WIDTH && (page + 1) < 8) {
+            framebuffer[(page + 1) * OLED_WIDTH + dx] = hi;
+            framebuffer[(page + 1) * OLED_WIDTH + dx + 1] = hi;
+        }
+    }
+}
+
+/**
+ * @brief Write text at 2x scale (12x16 per char, spans 2 pages)
+ */
+static void oled_display_text_2x(uint8_t x, uint8_t page, const char *text)
+{
+    if (!text || page >= 7) return;
+
+    while (*text && x < OLED_WIDTH) {
+        draw_char_2x(x, page, *text);
+        x += 12;
+        text++;
+    }
+}
+
 void oled_display_update(void)
 {
     if (!oled_dev || !oled_initialized) return;
@@ -258,56 +305,37 @@ void oled_display_update(void)
     }
 }
 
-/**
- * @brief Draw a vertical line in the framebuffer
- */
-static void draw_vline(uint8_t x, uint8_t y_start, uint8_t y_end)
-{
-    for (uint8_t y = y_start; y <= y_end; y++) {
-        uint8_t page = y / 8;
-        uint8_t bit = y % 8;
-        if (x < OLED_WIDTH && page < 8) {
-            framebuffer[page * OLED_WIDTH + x] |= (1 << bit);
-        }
-    }
-}
-
 void oled_display_show_sensors(float temp, float hum, float tc_temp)
 {
     if (!oled_initialized) return;
 
-    char line[22];
+    char line[16];
 
     oled_display_clear();
 
-    oled_display_text(0, 0, "--- SENSORS ---");
-
-    // Left half: I2C sensor (T + H)
-    oled_display_text(2, 2, "DHT20");
+    // Row 1 (pages 0-1): T: XX.X°C (I2C sensor)
     if (!isnan(temp)) {
-        snprintf(line, sizeof(line), "T:%.1f%cC", temp, 0x7E);  // degree approx
-        oled_display_text(2, 4, line);
+        snprintf(line, sizeof(line), "T:%.1fC", temp);
     } else {
-        oled_display_text(2, 4, "T: --");
+        snprintf(line, sizeof(line), "T: --");
     }
+    oled_display_text_2x(0, 0, line);
+
+    // Row 2 (pages 2-3): H: XX.X% (I2C sensor)
     if (!isnan(hum)) {
         snprintf(line, sizeof(line), "H:%.1f%%", hum);
-        oled_display_text(2, 6, line);
     } else {
-        oled_display_text(2, 6, "H: --");
+        snprintf(line, sizeof(line), "H: --");
     }
+    oled_display_text_2x(0, 2, line);
 
-    // Vertical separator at x=64
-    draw_vline(63, 8, 63);
-
-    // Right half: Thermocouple
-    oled_display_text(66, 2, "TC-K");
+    // Row 3 (pages 4-5): TC: XX.X°C (thermocouple)
     if (!isnan(tc_temp)) {
-        snprintf(line, sizeof(line), "T:%.1f%cC", tc_temp, 0x7E);
-        oled_display_text(66, 4, line);
+        snprintf(line, sizeof(line), "TC:%.1fC", tc_temp);
     } else {
-        oled_display_text(66, 4, "T: --");
+        snprintf(line, sizeof(line), "TC: --");
     }
+    oled_display_text_2x(0, 4, line);
 
     oled_display_update();
 }
