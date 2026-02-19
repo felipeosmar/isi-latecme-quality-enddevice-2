@@ -1,0 +1,5 @@
+dependencies:
+  joltwallet/littlefs: "*"
+  jgromes/radiolib: "^7.5.0"
+  espressif/onewire_bus: "^1.0.4"
+  espressif/ds18b20: "^0.1.2"

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoRaWAN Sensor</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>LoRaWAN Sensor</h1>
+        <div class="status">
+            <span id="wifi-badge" class="badge">WiFi</span>
+            <span id="lorawan-badge" class="badge">LoRaWAN</span>
+        </div>
+    </header>
+
+    <div id="connection-banner" class="hidden"></div>
+
+    <nav>
+        <button class="nav-btn active" data-tab="sensors">Sensors</button>
+        <button class="nav-btn" data-tab="lorawan">LoRaWAN</button>
+        <button class="nav-btn" data-tab="system">System</button>
+        <button class="nav-btn" data-tab="tasks">Tasks</button>
+        <button class="nav-btn" data-tab="config">Config</button>
+        <button class="nav-btn" data-tab="files">Files</button>
+    </nav>
+
+    <main>
+        <section id="tab-sensors" class="tab active">
+            <div class="tab-loading">Loading...</div>
+        </section>
+        <section id="tab-lorawan" class="tab">
+            <div class="tab-loading">Loading...</div>
+        </section>
+        <section id="tab-system" class="tab">
+            <div class="tab-loading">Loading...</div>
+        </section>
+        <section id="tab-tasks" class="tab">
+            <div class="tab-loading">Loading...</div>
+        </section>
+        <section id="tab-config" class="tab">
+            <div class="tab-loading">Loading...</div>
+        </section>
+        <section id="tab-files" class="tab">
+            <div class="tab-loading">Loading...</div>
+        </section>
+    </main>
+
+    <div id="toast"></div>
+
+    <footer id="log-viewer" class="log-viewer collapsed">
+        <div class="log-header" onclick="toggleLogViewer()">
+            <span class="log-title">Logs</span>
+            <span class="log-badge" id="log-count">0</span>
+            <span class="log-toggle" id="log-toggle-icon">&#9650;</span>
+        </div>
+        <div class="log-content">
+            <div class="log-toolbar">
+                <select id="log-level-filter">
+                    <option value="0">All Levels</option>
+                    <option value="1">Error+</option>
+                    <option value="2">Warn+</option>
+                    <option value="3">Info+</option>
+                    <option value="4">Debug+</option>
+                </select>
+                <input type="text" id="log-tag-filter" placeholder="Filter by tag...">
+                <button class="btn btn-small" onclick="clearLogs()">Clear</button>
+                <label class="log-autoscroll">
+                    <input type="checkbox" id="log-autoscroll" checked> Auto-scroll
+                </label>
+            </div>
+            <div class="log-entries" id="log-entries"></div>
+        </div>
+    </footer>
+
+    <script src="core.js"></script>
+</body>
+</html>

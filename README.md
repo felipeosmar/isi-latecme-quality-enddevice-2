@@ -1,449 +1,347 @@
-# LoRa IoT End Device
+# LoRaWAN End Device - Sensor Node
 
-ESP32-based LoRa end device for IoT sensor data collection and transmission. Built with PlatformIO, supporting multiple hardware configurations and temperature/humidity sensors.
+ESP32-based LoRaWAN end device for environmental sensor data collection and transmission to a ChirpStack network server. Collects temperature and humidity data from I2C sensors and DS18B20, encodes it as CayenneLPP, and sends it via LoRaWAN Class A with OTAA activation.
 
 ## Features
 
-* **LoRa Communication**: SX12XX module with 915MHz frequency, SyncWord 0x12 for gateway compatibility
-* **Multi-Board Support**: JVTECHv40 and Heltec WiFi LoRa 32 V2 hardware configurations
-* **Multi-Sensor Support**: SHT20, SHT30, SHT40, and AM2315C temperature/humidity sensors
-* **OLED Display**: SSD1306 128x64 I2C display with real-time status and custom icons
-* **WiFiManager**: Web-based configuration portal for easy setup
-* **OTA Updates**: Over-the-air firmware updates support
-* **Sensor Management**: Single sensor per installation, defined at compile time
-* **Configuration Storage**: Persistent settings in SPIFFS
-* **JSON Data Format**: Standardized payload for gateway integration
+- **LoRaWAN Class A**: OTAA activation with RadioLib + SX1276/SX1278 (AU915, sub-band configurable)
+- **Auto-Detect Sensors**: SHT20, SHT3x (SHT30/SHT31/SHT40), AM2315C/AHT20 over I2C
+- **DS18B20**: 1-Wire temperature sensor support via RMT peripheral
+- **CayenneLPP Payload**: ChirpStack built-in decoder, zero custom codec needed
+- **OLED Display**: SSD1306 128x64 with auto-cycling pages (Sensors, LoRaWAN, System)
+- **Web Interface**: Configuration and real-time monitoring via browser
+- **Dual WiFi Modes**: Station (STA) or Access Point (AP) for configuration
+- **Persistent Configuration**: JSON-based config stored in LittleFS, preserved across firmware updates
+- **Industrial-Grade**: Watchdog timers, stack protection, coredump, brownout detection
 
-## Hardware Support
+## Hardware
 
-### Supported Boards
+### Required Components
 
-#### JVTECHv40 Series
-- JVTECHv40-SHT20
-- JVTECHv40-SHT30
-- JVTECHv40-SHT40
-- JVTECHv40-AM2315C
+| Component | Description |
+|-----------|-------------|
+| ESP32 Board | ESP32-WROOM-32, DevKitC, or compatible |
+| LoRa Module | SX1276/SX1278 (868/915 MHz) |
+| I2C Sensor | SHT20, SHT30, SHT40, or AM2315C (any one) |
+| DS18B20 | 1-Wire temperature sensor (optional) |
+| OLED Display | SSD1306 128x64 I2C (optional) |
 
-#### Heltec WiFi LoRa 32 V2 Series
-- Heltecv20-SHT20
-- Heltecv20-SHT30
-- Heltecv20-SHT40
-- Heltecv20-AM2315C
+### Pin Mapping
 
-### Supported Temperature/Humidity Sensors
-- **SHT20**: High accuracy sensor (I2C address 0x40)
-- **SHT30**: Premium accuracy sensor (I2C address 0x44)
-- **SHT40**: Next-generation sensor (I2C address 0x44)
-- **AM2315C**: AHT20-compatible sensor (I2C address 0x38)
+```
+LoRa SPI (SX1276/SX1278)
+  SCLK ........... GPIO18
+  MOSI ........... GPIO23
+  MISO ........... GPIO19
+  NSS  ........... GPIO5
+  RESET .......... GPIO14
+  DIO0 ........... GPIO26
+  DIO1 ........... GPIO13
 
-## Pin Configuration
+I2C Bus (Sensors + OLED)
+  SDA ............ GPIO21
+  SCL ............ GPIO22
 
-### JVTECHv40 Boards
+Peripherals
+  LED ............ GPIO2
+  Push Button .... GPIO25
+  Buzzer ......... GPIO4
+```
 
-#### LoRa Module (SPI)
-- SCK  - GPIO5
-- MISO - GPIO19
-- MOSI - GPIO27
-- SS   - GPIO18
-- RST  - GPIO14
-- DI0  - GPIO26
+### I2C Address Map
 
-#### OLED Display (I2C)
-- **SHT20/SHT30**:
-  - SDA - GPIO21
-  - SCL - GPIO22
-  - Address - 0x3C
-- **SHT40/AM2315C**:
-  - SDA - GPIO4
-  - SCL - GPIO15
-  - RST - GPIO16
-  - Address - 0x3C
+| Device | Address |
+|--------|---------|
+| SHT20 | 0x40 |
+| SHT3x (SHT30/SHT40) | 0x44 |
+| AM2315C / AHT20 | 0x38 |
+| SSD1306 OLED | 0x3C |
 
-#### Control & Status
-- Button - GPIO25
-- LED - GPIO2
+Sensors and OLED share the same I2C bus. On boot, the sensor manager probes addresses 0x40, 0x44, and 0x38 in order and uses the first one that responds.
 
-### Heltec WiFi LoRa 32 V2
+## Prerequisites
 
-#### LoRa Module (SPI)
-- SCK  - GPIO5
-- MISO - GPIO19
-- MOSI - GPIO27
-- SS   - GPIO18
-- RST  - GPIO14
-- DI0  - GPIO26
+**ESP-IDF v5.x** (tested with v5.5.0):
 
-#### OLED Display (I2C)
-- SDA - GPIO4
-- SCL - GPIO15
-- RST - GPIO16
-- Address - 0x3C
+```bash
+# Install dependencies (Ubuntu/Debian)
+sudo apt-get install git wget flex bison gperf python3 python3-pip \
+  python3-venv cmake ninja-build ccache libffi-dev libssl-dev \
+  dfu-util libusb-1.0-0
 
-#### Control & Status
-- Button - GPIO0
-- LED - GPIO25
+# Clone and install ESP-IDF
+mkdir -p ~/esp && cd ~/esp
+git clone -b v5.5 --recursive https://github.com/espressif/esp-idf.git
+cd esp-idf && ./install.sh esp32
+
+# Activate environment (run before each session)
+. ~/esp/esp-idf/export.sh
+```
+
+## Quick Start
+
+### 1. Build
+
+```bash
+. ~/esp/esp-idf/export.sh    # activate ESP-IDF
+idf.py build
+```
+
+### 2. Flash
+
+```bash
+idf.py -p /dev/ttyUSB0 flash monitor
+# Exit monitor: Ctrl+]
+```
+
+Or use the helper script:
+
+```bash
+./flash.sh all       # Full flash (factory reset)
+./flash.sh update    # Firmware + web UI (preserves config)
+./flash.sh app       # Firmware only
+./flash.sh www       # Web interface only
+```
+
+### 3. Initial Configuration
+
+1. Connect to WiFi AP **LoRaWAN-Sensor** (password: `12345678`)
+2. Open http://192.168.4.1 in a browser
+3. Default login: `admin` / `admin`
+
+### 4. Configure LoRaWAN
+
+Go to the **LoRaWAN** tab in the web interface and enter:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| DevEUI | Device EUI (16 hex chars) | `70B3D57ED0061234` |
+| JoinEUI | Application/Join EUI (16 hex chars) | `0000000000000000` |
+| AppKey | Application Key (32 hex chars) | `AABBCCDD...` |
+| Sub-Band | AU915 sub-band (1-8) | `2` |
+| Uplink Interval | Seconds between uplinks | `60` |
+| FPort | LoRaWAN port | `1` |
+
+Click **Save** then **Join**. The device will attempt an OTAA join.
+
+### 5. ChirpStack Setup
+
+In ChirpStack, create a device profile and device:
+
+1. **Device Profile**: LoRaWAN 1.0.x, Class A, CayenneLPP codec
+2. **Device**: Use the same DevEUI, JoinEUI, and AppKey configured on the device
+3. **Frequency Plan**: AU915 (or your region)
+
+Once joined, sensor data appears automatically in ChirpStack decoded as CayenneLPP:
+
+| Channel | Type | Field |
+|---------|------|-------|
+| 1 | Temperature (0x67) | I2C sensor temperature |
+| 2 | Humidity (0x68) | I2C sensor humidity |
+| 3 | Temperature (0x67) | DS18B20 temperature |
+
+## Web Interface
+
+The web interface has six tabs:
+
+| Tab | Description |
+|-----|-------------|
+| **Sensors** | Live temperature, humidity, DS18B20 readings |
+| **LoRaWAN** | Join status, DevAddr, RSSI/SNR, uplink count, config |
+| **System** | Uptime, memory, WiFi status, logs |
+| **Tasks** | FreeRTOS task monitoring, CPU usage, stack usage |
+| **Config** | WiFi, sensor corrections, device name, web auth |
+| **Files** | Browse/upload/download files on userdata partition |
+
+## REST API
+
+### Sensors
+
+```bash
+# Get current sensor readings
+curl http://<ip>/api/sensors/status
+
+# Get/set sensor configuration
+curl http://<ip>/api/sensors/config
+curl -X POST http://<ip>/api/sensors/config \
+  -H "Content-Type: application/json" \
+  -d '{"interval": 30, "temp_correction": -0.5}'
+```
+
+### LoRaWAN
+
+```bash
+# Get LoRaWAN status
+curl http://<ip>/api/lorawan/status
+
+# Get/set LoRaWAN configuration
+curl http://<ip>/api/lorawan/config
+curl -X POST http://<ip>/api/lorawan/config \
+  -H "Content-Type: application/json" \
+  -d '{"dev_eui": "70B3D57ED0061234", "join_eui": "0000000000000000", "app_key": "..."}'
+
+# Force re-join
+curl -X POST http://<ip>/api/lorawan/join
+```
+
+### System
+
+```bash
+curl http://<ip>/api/status          # System status
+curl http://<ip>/api/tasks           # FreeRTOS tasks
+curl http://<ip>/api/logs            # System logs
+curl -X POST http://<ip>/api/restart # Restart device
+```
+
+## Configuration
+
+User configuration is stored in `/userdata/config.json` on the ESP32:
+
+```json
+{
+    "wifi": {
+        "ssid": "",
+        "password": "",
+        "ap_mode": true,
+        "ap_ssid": "LoRaWAN-Sensor",
+        "ap_password": "12345678"
+    },
+    "lorawan": {
+        "dev_eui": "",
+        "join_eui": "",
+        "app_key": "",
+        "port": 1,
+        "uplink_interval": 60,
+        "sub_band": 2,
+        "adr_enabled": true
+    },
+    "sensors": {
+        "interval": 30,
+        "temp_correction": 0.0,
+        "hum_correction": 0.0,
+        "ds18b20_enabled": true,
+        "device_name": "sensor-01"
+    },
+    "web": {
+        "username": "admin",
+        "password": "admin",
+        "auth_enabled": true
+    }
+}
+```
+
+Edit via web interface (Config/Files tabs) or modify `config.json` in the project root before first flash.
 
 ## Project Structure
 
 ```
-src/
-├── communication/
-│   ├── I2CManager.*         # I2C bus management
-│   ├── LoRaHandler.*        # LoRa transmission handling
-│   └── WiFiConfigManager.*  # WiFi and web portal
-├── config/
-│   └── Config.*             # Configuration management
-├── hardware/
-│   ├── OLEDDisplay.*        # Display control
-│   └── PinDefinitions.h     # Pin mappings
-├── sensors/
-│   ├── SensorManager.*      # Single sensor management
-│   ├── SensorFactory.*      # Sensor auto-detection
-│   ├── SHT20Sensor.*        # SHT20 driver
-│   ├── SHT30Sensor.*        # SHT30 driver
-│   ├── SHT40Sensor.*        # SHT40 driver
-│   ├── AHT20Sensor.*        # AM2315C/AHT20 driver
-│   ├── DigitalSensor.*      # Digital input handling
-│   ├── AnalogSensor.*       # Analog input handling
-│   └── TemperatureSensor.*  # ESP32 internal temp
-└── utils/
-    └── Timer.*              # Timer and button debouncer
+lorawan-enddevice/
+├── main/
+│   ├── main.c                  # Entry point, FreeRTOS task creation
+│   ├── lorawan/
+│   │   ├── lorawan_handler.cpp # RadioLib LoRaWAN (OTAA, uplink/downlink)
+│   │   ├── lorawan_handler.h   # C API (extern "C")
+│   │   └── EspHal.h            # ESP32 HAL for RadioLib (SPI/GPIO)
+│   ├── sensors/
+│   │   ├── sensor_manager.c/h  # I2C bus, auto-detect, periodic reads
+│   │   ├── sht20_driver.c/h    # SHT20 (I2C 0x40)
+│   │   ├── sht3x_driver.c/h    # SHT30/SHT40 (I2C 0x44)
+│   │   ├── am2315c_driver.c/h  # AM2315C/AHT20 (I2C 0x38)
+│   │   └── ds18b20_driver.c/h  # DS18B20 (1-Wire via RMT)
+│   ├── payload/
+│   │   └── cayenne_lpp.c/h     # CayenneLPP encoder
+│   ├── display/
+│   │   └── oled_display.c/h    # SSD1306 OLED (I2C 0x3C)
+│   ├── wifi/
+│   │   └── wifi_manager.c/h    # WiFi AP/STA management
+│   ├── config/
+│   │   └── config_manager.c/h  # JSON config (LittleFS)
+│   ├── webserver/
+│   │   ├── web_server.c/h      # HTTP server, route registration
+│   │   └── handlers/           # API handlers (system, wifi, sensors, lorawan, files)
+│   ├── health/
+│   │   └── health_monitor.c/h  # Watchdog, heap monitoring
+│   ├── logs/
+│   │   └── log_buffer.c/h      # Ring buffer for ESP_LOG capture
+│   └── www/                    # Web interface (HTML/CSS/JS)
+├── config.json                 # Default configuration
+├── partitions.csv              # Custom partition table
+├── sdkconfig.defaults          # ESP-IDF defaults
+├── flash.sh                    # Flash helper script
+└── CMakeLists.txt              # Build configuration
 ```
 
-## Setup
+## FreeRTOS Tasks
 
-### Prerequisites
-- [PlatformIO](https://platformio.org/) installed
-- ESP32 board with LoRa module
-- Temperature/humidity sensor (SHT20/SHT30/SHT40/AM2315C)
-- OLED display (optional but recommended)
+| Task | Core | Priority | Stack | Function |
+|------|------|----------|-------|----------|
+| sensor | 0 | 5 | 4096 | Periodic sensor reads |
+| lorawan | 1 | 6 | 8192 | OTAA join, session management |
+| uplink | 0 | 4 | 4096 | Build CayenneLPP, send uplinks |
+| display | 0 | 3 | 4096 | OLED page cycling |
 
-### Installation
+## Partition Table
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd isi-latecme-quality-enddevice
-   ```
+| Name | Type | Offset | Size |
+|------|------|--------|------|
+| nvs | data/nvs | 0x9000 | 24 KB |
+| phy_init | data/phy | 0xF000 | 4 KB |
+| factory | app | 0x10000 | 1664 KB |
+| coredump | data/coredump | 0x1B0000 | 64 KB |
+| www | data/spiffs | 0x1C0000 | 192 KB |
+| userdata | data/spiffs | 0x1F0000 | 64 KB |
 
-2. Choose your environment based on hardware:
-   ```bash
-   # For JVTECHv40 with SHT20 sensor
-   pio run -e JVTECHv40-SHT20 -t upload --upload-port /dev/ttyUSB0
-
-   # For Heltec V2 with SHT30 sensor
-   pio run -e Heltecv20-SHT30 -t upload --upload-port /dev/ttyUSB0
-   ```
-
-3. Monitor serial output:
-   ```bash
-   pio run -e JVTECHv40-SHT20 -t monitor --monitor-port /dev/ttyUSB0
-   ```
-
-### Build Commands
-
-```bash
-# List all environments
-pio run --list-targets
-
-# Build specific environment
-pio run -e JVTECHv40-SHT30
-
-# Upload and monitor
-pio run -e Heltecv20-SHT40 -t upload --upload-port /dev/ttyUSB0 -t monitor --monitor-port /dev/ttyUSB0
-
-# Clean build
-pio run -e JVTECHv40-SHT20 -t clean
-```
-
-## Usage
-
-### First Boot
-
-1. Device powers on and shows boot screen on OLED
-2. If no WiFi configured, auto-creates access point "EndDevice"
-3. Connect to AP and navigate to 192.168.4.1
-4. Configure WiFi credentials and device settings
-5. Device reboots and connects to configured network
-
-### OLED Display Navigation
-
-**Button Controls:**
-- **Short press (< 2s)**: Navigate between display pages
-- **2-second press**: Open/close WiFiManager configuration portal
-- **5-second press**: Restart device
-- **7-second press**: Factory reset (clears SPIFFS and WiFi settings)
-
-**Display Pages:**
-- **Page 1 (Sensors)**: Temperature (XX.X°C) with thermometer icon | Humidity (XX%) with water drop icon
-- **Page 2 (WiFi)**: Connection status, IP address, signal strength (RSSI)
-- **Page 3 (LoRa)**: Communication status, frequency, packet count
-
-**Display Features:**
-- Auto-refresh every 1 second
-- Custom icons for temperature and humidity
-- Footer shows uptime and free heap memory
-
-### LoRa Transmission
-
-- **Frequency**: 915MHz (configurable)
-- **SyncWord**: 0x12 (matches gateway configuration)
-- **Default Interval**: 30 seconds (configurable via WiFiManager)
-- **Format**: JSON payload (see below)
-
-## Data Format
-
-### Transmitted Payload
-
-The end device transmits JSON data. The gateway adds RSSI, SNR, pferror, and packetSize fields.
-
-**End Device Transmits:**
-```json
-{
-  "model": "Heltec-LoraV4",
-  "id": "58:BF:25:8B:48:88",
-  "loraadd": 1,
-  "hn": "ED043",
-  "ut": 150,
-  "t_ic": 60.6,
-  "f_h": 235848,
-  "tamper": false,
-  "temp": 23.1,
-  "hum": 75.3
-}
-```
-
-**Gateway Adds (automatically):**
-```json
-{
-  "model": "Heltec-LoraV4",
-  "id": "58:BF:25:8B:48:88",
-  "loraadd": 1,
-  "hn": "ED043",
-  "ut": 150,
-  "t_ic": 60.6,
-  "f_h": 235848,
-  "tamper": false,
-  "temp": 23.1,
-  "hum": 75.3,
-  "rssi": -84,
-  "snr": 9.75,
-  "pferror": -3313,
-  "packetSize": 147
-}
-```
-
-### Field Descriptions
-
-| Field | Description | Unit | Source |
-|-------|-------------|------|--------|
-| `model` | Device model identifier | string | Device |
-| `id` | MAC address (device ID) | string | Device |
-| `loraadd` | LoRa local address | integer | Device |
-| `hn` | Device hostname | string | Device |
-| `ut` | Uptime since boot | seconds | Device |
-| `t_ic` | ESP32 internal chip temperature | °C | Device |
-| `f_h` | Free heap memory | bytes | Device |
-| `tamper` | Tamper detection flag | boolean | Device |
-| `temp` | Sensor temperature (corrected) | °C | Device |
-| `hum` | Sensor humidity (corrected) | % | Device |
-| `rssi` | Received signal strength | dBm | Gateway |
-| `snr` | Signal-to-noise ratio | dB | Gateway |
-| `pferror` | Packet frequency error | Hz | Gateway |
-| `packetSize` | Packet size received | bytes | Gateway |
-
-## Configuration
-
-### WiFiManager Portal
-
-Access via 2-second button press or connecting to "EndDevice" AP.
-
-**Configurable Parameters:**
-- WiFi SSID and Password
-- Device Hostname (e.g., "ED001")
-- LoRa Local Address (1-254)
-- Read Interval (seconds)
-- Temperature Correction (offset)
-- Humidity Correction (offset)
-- Sensor Enable Flags:
-  - Temperature/Humidity sensor
-  - Digital inputs (D1, D2, D3)
-  - Analog inputs (A1, A2)
-
-### Persistent Storage
-
-Configuration is stored in SPIFFS (`/config.json`):
-- Survives reboots
-- Can be reset via 7-second button press
-- Backed up before OTA updates
-
-## Architecture
-
-### Sensor Management
-
-**Single Sensor Design:**
-- One temperature/humidity sensor per device
-- Sensor type defined at compile time via PlatformIO environment
-- Automatic sensor initialization and health monitoring
-- Factory pattern for sensor instantiation
-- I2C bus shared with OLED display
-
-**Supported Sensors:**
-- SHT20: Via DFRobot SHT library
-- SHT30: Via DFRobot SHT library
-- SHT40: Via DFRobot SHT library
-- AM2315C: Via Adafruit AHTX0 library (AHT20 compatible)
-
-### LoRa Communication
-
-**Configuration:**
-- Frequency: 915MHz (LORA_BAND)
-- SyncWord: 0x12 (private network, matches gateway)
-- Spreading Factor: 7 (default)
-- Bandwidth: 125kHz
-- Coding Rate: 4/5
-
-**Packet Structure:**
-- Pure JSON payload (no header bytes)
-- Destination and source addresses removed (handled by LoRa layer)
-- Gateway adds RSSI, SNR, pferror, and packetSize fields
-
-### Display System
-
-**Multi-page OLED:**
-- 3 pages: Sensors, WiFi, LoRa
-- Custom bitmap icons for temperature and humidity
-- Footer with system information
-- 1Hz refresh rate
-
-**Button Debouncing:**
-- 50ms debounce delay
-- Duration tracking for multi-function button
-- Support for short press and long press actions
+- **www**: Web interface files (flashed with firmware, safe to update)
+- **userdata**: User config (preserved across firmware updates, auto-formatted on first boot)
 
 ## Troubleshooting
 
-### LoRa Issues
+### Device not joining LoRaWAN
 
-**Problem**: LoRa initialization failed
-- Check SPI wiring (SCK, MISO, MOSI, SS)
-- Verify RST and DI0 connections
-- Ensure adequate 3.3V power supply (min 500mA)
+1. Verify DevEUI, JoinEUI, and AppKey match ChirpStack device configuration
+2. Check sub-band setting matches your gateway (default: sub-band 2 for AU915)
+3. Ensure gateway is within range and on the correct frequency plan
+4. Check serial monitor for join attempt logs
+5. Verify antenna is connected to the LoRa module
 
-**Problem**: Gateway not receiving packets
-- Verify SyncWord matches gateway (0x12)
-- Check LoRa frequency (915MHz)
-- Ensure line of sight or reduce distance
-- Monitor serial output for transmission confirmations
+### No sensor data
 
-### Sensor Issues
+1. Check I2C wiring (SDA=GPIO21, SCL=GPIO22)
+2. Verify sensor is powered (3.3V)
+3. Check `/api/sensors/status` for detected sensor name
+4. If "None" is detected, verify I2C address with an I2C scanner
 
-**Problem**: Failed to read temperature/humidity sensor
-- Check I2C connections (SDA, SCL)
-- Verify sensor I2C address (use I2C scanner)
-- Ensure sensor is enabled in configuration
-- Check for I2C conflicts with OLED
-- Sensor read interval: minimum 2 seconds
+### OLED display blank
 
-**Problem**: No sensor detected
-- Run I2C scan (check serial output during boot)
-- Verify correct sensor library for hardware
-- Check pull-up resistors on I2C bus (4.7kΩ recommended)
+1. Verify I2C address is 0x3C (some modules use 0x3D)
+2. OLED shares the I2C bus with sensors; ensure both are wired correctly
+3. Display task waits 5s after boot for I2C bus initialization
 
-### Display Issues
+### System crashes
 
-**Problem**: OLED display not working
-- Check I2C connections (SDA, SCL, RST for Heltec)
-- Verify I2C address (0x3C is standard)
-- Ensure 3.3V power supply
-- Check for I2C address conflicts
-
-**Problem**: Display frozen
-- Device may be rebooting (check serial output)
-- I2C bus may be hung (power cycle device)
-- OLED may need hardware reset
-
-### WiFi Issues
-
-**Problem**: Cannot connect to WiFi
-- Verify SSID and password in configuration
-- Check WiFi signal strength
-- Ensure 2.4GHz network (ESP32 doesn't support 5GHz)
-- Try factory reset (7-second button press)
-
-**Problem**: Configuration portal not opening
-- Hold button for exactly 2 seconds
-- Look for "EndDevice" SSID in WiFi list
-- Try 7-second reset if portal is stuck
-
-### General Issues
-
-**Problem**: Device keeps rebooting
-- Check serial output for crash logs
-- Verify power supply is adequate (min 500mA)
-- May be brownout due to LoRa transmission (add capacitor)
-- Check for corrupted SPIFFS (try factory reset)
-
-**Problem**: High memory usage
-- Normal: ~47KB RAM used (14.4%)
-- If higher: Check for memory leaks in custom code
-- Reduce JSON buffer sizes if needed
-
-## Development
-
-### Adding New Sensors
-
-1. Create sensor class inheriting from `ITemperatureHumiditySensor`
-2. Implement required methods: `detectSensor()`, `readRawData()`, `validateData()`, `softReset()`
-3. Add sensor to `SensorFactory.cpp`
-4. Create new PlatformIO environment in `platformio.ini`
-5. Add sensor-specific library to `lib_deps`
-
-### Code Style
-
-- Follow existing naming conventions
-- Use `F()` macro for string literals
-- Prefer `Serial.println(F("text"))` over `Serial.println("text")`
-- Use namespaces: `Configuration::`, `Sensors::`, `Communication::`, `Hardware::`, `Utils::`
-
-### Serial Debugging
-
-Monitor output at 115200 baud:
 ```bash
-pio device monitor --port /dev/ttyUSB0 --baud 115200
+# Check serial monitor for panic messages
+idf.py -p /dev/ttyUSB0 monitor
+
+# Extract coredump
+idf.py coredump-info
 ```
 
-**Common Debug Messages:**
-- `SensorManager: Initializing...`
-- `LoRa initialized. Local address: 0xXX`
-- `LoRa SyncWord: 0x12`
-- `SHT20 read: XX.XX°C, XX.XX%RH`
-- `Sent packet #XX: {json...}`
+### Web interface not loading
+
+1. Clear browser cache
+2. Verify WiFi connection and IP address
+3. Reflash web interface: `./flash.sh www`
+
+## Dependencies
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| [RadioLib](https://github.com/jgromes/RadioLib) | ^7.5.0 | LoRaWAN + SX127x driver |
+| [LittleFS](https://github.com/joltwallet/esp_littlefs) | * | Filesystem for config and web UI |
+| [onewire_bus](https://components.espressif.com/components/espressif/onewire_bus) | ^1.0.4 | 1-Wire bus driver (RMT) |
+| [ds18b20](https://components.espressif.com/components/espressif/ds18b20) | ^0.1.2 | DS18B20 temperature sensor |
 
 ## License
 
 [Specify your license here]
-
-## Contributing
-
-[Contribution guidelines if applicable]
-
-## Support
-
-For issues and questions:
-- Check troubleshooting section above
-- Review serial debug output at 115200 baud
-- Check PlatformIO environment matches your hardware
-- Verify sensor type matches physical hardware
-
-## Credits
-
-Built with:
-- [PlatformIO](https://platformio.org/)
-- [Arduino-ESP32](https://github.com/espressif/arduino-esp32)
-- [LoRa Library](https://github.com/sandeepmistry/arduino-LoRa)
-- [WiFiManager](https://github.com/tzapu/WiFiManager)
-- [ArduinoJson](https://arduinojson.org/)
-- [Adafruit SSD1306](https://github.com/adafruit/Adafruit_SSD1306)
-- [DFRobot SHT](https://github.com/DFRobot/DFRobot_SHT)
-- [Adafruit AHTX0](https://github.com/adafruit/Adafruit_AHTX0)

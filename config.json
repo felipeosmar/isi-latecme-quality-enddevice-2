@@ -1,0 +1,30 @@
+{
+    "wifi": {
+        "ssid": "",
+        "password": "",
+        "ap_mode": true,
+        "ap_ssid": "LoRaWAN-Sensor",
+        "ap_password": "12345678"
+    },
+    "lorawan": {
+        "dev_eui": "",
+        "join_eui": "",
+        "app_key": "",
+        "port": 1,
+        "uplink_interval": 60,
+        "sub_band": 2,
+        "adr_enabled": true
+    },
+    "sensors": {
+        "interval": 30,
+        "temp_correction": 0.0,
+        "hum_correction": 0.0,
+        "ds18b20_enabled": true,
+        "device_name": "sensor-01"
+    },
+    "web": {
+        "username": "admin",
+        "password": "admin",
+        "auth_enabled": true
+    }
+}

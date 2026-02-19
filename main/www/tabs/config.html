@@ -1,0 +1,42 @@
+<div class="config-layout">
+<div class="config-sidebar">
+<div class="card"><h3>WiFi</h3>
+<div class="form-row"><select id="wifi-select"><option value="">Select network...</option></select>
+<button onclick="scanWiFi()" class="btn">Scan</button></div>
+<input type="password" id="wifi-pass" placeholder="Password">
+<button onclick="connectWiFi()" class="btn btn-primary full">Connect</button></div>
+
+<div class="card"><h3>Sensors</h3>
+<div class="form-row"><label>Read Interval (s)</label><input type="number" id="cfg-sensor-interval" min="5" max="3600" value="30"></div>
+<div class="form-row"><label>Temp Correction</label><input type="number" id="cfg-temp-corr" step="0.1" value="0.0"></div>
+<div class="form-row"><label>Hum Correction</label><input type="number" id="cfg-hum-corr" step="0.1" value="0.0"></div>
+<div class="form-row"><label>DS18B20</label><input type="checkbox" id="cfg-ds18b20" checked></div>
+<div class="form-row"><label>Device Name</label><input type="text" id="cfg-device-name" maxlength="31" value="sensor-01"></div>
+<button onclick="saveSensorConfig()" class="btn full mt-2">Save Sensor Config</button></div>
+
+<div class="card"><h3>Web Auth</h3>
+<div class="form-row"><label>Username</label><input type="text" id="cfg-web-user" value="admin"></div>
+<div class="form-row"><label>Password</label><input type="password" id="cfg-web-pass" value="admin"></div>
+<div class="form-row"><label>Enabled</label><input type="checkbox" id="cfg-web-auth" checked></div>
+<button onclick="saveWebAuth()" class="btn full mt-2">Save Auth</button></div>
+</div>
+
+<div class="config-main">
+<div class="card">
+<h3>LoRaWAN Configuration</h3>
+<div class="config-section">
+<div class="form-row"><label>DevEUI</label><input type="text" id="cfg-dev-eui" maxlength="16" placeholder="16 hex characters"></div>
+<div class="form-row"><label>JoinEUI (AppEUI)</label><input type="text" id="cfg-join-eui" maxlength="16" placeholder="16 hex characters"></div>
+<div class="form-row"><label>AppKey</label><input type="text" id="cfg-app-key" maxlength="32" placeholder="32 hex characters"></div>
+<div class="form-row"><label>FPort</label><input type="number" id="cfg-lora-port" min="1" max="223" value="1"></div>
+<div class="form-row"><label>Uplink Interval (s)</label><input type="number" id="cfg-uplink-interval" min="10" max="86400" value="60"></div>
+<div class="form-row"><label>Sub-band (AU915)</label><select id="cfg-sub-band">
+<option value="1">1</option><option value="2" selected>2</option>
+<option value="3">3</option><option value="4">4</option>
+<option value="5">5</option><option value="6">6</option>
+<option value="7">7</option><option value="8">8</option></select></div>
+<div class="form-row"><label>ADR</label><input type="checkbox" id="cfg-adr" checked></div>
+</div>
+<button onclick="saveLoRaConfig()" class="btn btn-primary full mt-2">Save LoRaWAN & Restart</button>
+</div>
+</div></div>
