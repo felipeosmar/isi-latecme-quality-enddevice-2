@@ -58,8 +58,10 @@ static esp_err_t init_wifi(void)
         ret = wifi_manager_connect(ssid, password);
 
         if (ret == ESP_OK) {
-            // 2 short beeps on WiFi connection
-            buzzer_beep_pattern(2, 100, 150);
+            // 2 rising tones on WiFi connection
+            buzzer_tone(2200, 80);
+            vTaskDelay(pdMS_TO_TICKS(60));
+            buzzer_tone(3000, 100);
         } else {
             ESP_LOGW(TAG, "Failed to connect, starting AP mode");
             ap_mode = true;
@@ -218,9 +220,13 @@ void app_main(void)
     ESP_LOGI(TAG, "  LoRaWAN End Device - Sensor Node");
     ESP_LOGI(TAG, "==========================================");
 
-    // Initialize buzzer and beep on startup (1 short beep)
+    // Initialize buzzer and play startup melody (3 rising tones)
     buzzer_init();
-    buzzer_beep(100);
+    buzzer_tone(1800, 80);
+    vTaskDelay(pdMS_TO_TICKS(60));
+    buzzer_tone(2400, 80);
+    vTaskDelay(pdMS_TO_TICKS(60));
+    buzzer_tone(3200, 100);
 
     // Initialize configuration manager (includes LittleFS)
     ESP_LOGI(TAG, "Initializing configuration...");
