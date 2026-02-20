@@ -274,7 +274,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting FreeRTOS tasks...");
 
     // Sensor task - Core 0, Priority 5, Stack 4096
-    xTaskCreatePinnedToCore(sensor_task, "sensor", 4096, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(sensor_task, "sensor", 6144, NULL, 5, NULL, 0);
 
     // LoRaWAN task - Core 1, Priority 6, Stack 8192
     xTaskCreatePinnedToCore(lorawan_task, "lorawan", 8192, NULL, 6, NULL, 1);

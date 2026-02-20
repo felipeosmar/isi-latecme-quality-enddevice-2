@@ -27,7 +27,7 @@
         "thermocouple_cs_pin": 17
     },
     "interface": {
-        "buzzer_volume": 80
+        "buzzer_volume": 30
     },
     "web": {
         "username": "admin",
