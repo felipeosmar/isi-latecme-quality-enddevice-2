@@ -134,11 +134,14 @@ esp_err_t sensor_manager_init(void)
         int so = config_get_thermocouple_so_pin();
         int cs = config_get_thermocouple_cs_pin();
         ESP_LOGI(TAG, "Initializing MAX6675 thermocouple (SCK=%d, SO=%d, CS=%d)...", sck, so, cs);
-        if (max6675_init(sck, so, cs) == ESP_OK) {
-            ESP_LOGI(TAG, "MAX6675 initialized");
+        esp_err_t tc_ret = max6675_init(sck, so, cs);
+        if (tc_ret == ESP_OK) {
+            ESP_LOGI(TAG, "MAX6675 initialized successfully");
         } else {
-            ESP_LOGW(TAG, "MAX6675 init failed");
+            ESP_LOGW(TAG, "MAX6675 init failed: %s (continuing without thermocouple)", esp_err_to_name(tc_ret));
         }
+    } else {
+        ESP_LOGI(TAG, "Thermocouple disabled in config, skipping MAX6675 init");
     }
 
     memset(&sensor_data, 0, sizeof(sensor_data));

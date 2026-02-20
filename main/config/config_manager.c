@@ -122,9 +122,9 @@ void config_reset_defaults(void)
     strcpy(s_config.device_name, "sensor-01");
     s_config.thermocouple_enabled = true;
     s_config.thermocouple_max_temp = 200.0f;
-    s_config.thermocouple_sck_pin = 16;
-    s_config.thermocouple_so_pin = 36;
-    s_config.thermocouple_cs_pin = 17;
+    s_config.thermocouple_sck_pin = 33;
+    s_config.thermocouple_so_pin = 27;
+    s_config.thermocouple_cs_pin = 32;
 
     // Interface defaults
     s_config.buzzer_volume = 80;
@@ -236,6 +236,7 @@ esp_err_t config_load(void)
     char *json_str = malloc(fsize + 1);
     if (json_str == NULL) {
         fclose(f);
+        if (s_config_mutex) xSemaphoreGive(s_config_mutex);
         return ESP_ERR_NO_MEM;
     }
 
@@ -248,10 +249,11 @@ esp_err_t config_load(void)
     free(json_str);
 
     if (root == NULL) {
-        ESP_LOGE(TAG, "Failed to parse config file");
+        ESP_LOGW(TAG, "Config file corrupt, resetting to defaults");
         config_reset_defaults();
+        _config_save_internal();
         if (s_config_mutex) xSemaphoreGive(s_config_mutex);
-        return ESP_FAIL;
+        return ESP_OK;
     }
 
     // WiFi section
@@ -361,6 +363,20 @@ esp_err_t config_load(void)
     }
 
     cJSON_Delete(root);
+
+    // --- Config migration: fix old wrong thermocouple pin defaults ---
+    // Old firmware had incorrect defaults (SCK=16, SO=36, CS=17).
+    // Correct pins per hardware wiring doc are (SCK=33, SO=27, CS=32).
+    if (s_config.thermocouple_sck_pin == 16 &&
+        s_config.thermocouple_so_pin == 36 &&
+        s_config.thermocouple_cs_pin == 17) {
+        ESP_LOGW(TAG, "Migrating thermocouple pins from 16/36/17 to 33/27/32");
+        s_config.thermocouple_sck_pin = 33;
+        s_config.thermocouple_so_pin = 27;
+        s_config.thermocouple_cs_pin = 32;
+        _config_save_internal();
+    }
+
     ESP_LOGI(TAG, "Configuration loaded");
     if (s_config_mutex) xSemaphoreGive(s_config_mutex);
     return ESP_OK;

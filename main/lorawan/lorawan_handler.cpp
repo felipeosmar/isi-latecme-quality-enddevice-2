@@ -109,14 +109,30 @@ extern "C" esp_err_t lorawan_init(void)
     }
 
     // Create HAL with SPI pins
+    ESP_LOGI(TAG, "Creating radio HAL (SCK=%d, MISO=%d, MOSI=%d)...", RADIO_SCLK, RADIO_MISO, RADIO_MOSI);
     hal = new EspHal(RADIO_SCLK, RADIO_MISO, RADIO_MOSI);
+    if (!hal) {
+        ESP_LOGE(TAG, "Failed to allocate EspHal");
+        return ESP_ERR_NO_MEM;
+    }
 
     // Create radio module: Module(hal, NSS, DIO0, RST, DIO1)
+    ESP_LOGI(TAG, "Creating Module (NSS=%d, DIO0=%d, RST=%d, DIO1=%d)...", RADIO_NSS, RADIO_DIO0, RADIO_RST, RADIO_DIO1);
     Module *mod = new Module(hal, RADIO_NSS, RADIO_DIO0, RADIO_RST, RADIO_DIO1);
+    if (!mod) {
+        ESP_LOGE(TAG, "Failed to allocate Module");
+        return ESP_ERR_NO_MEM;
+    }
+
+    ESP_LOGI(TAG, "Creating SX1276 instance...");
     radio = new SX1276(mod);
+    if (!radio) {
+        ESP_LOGE(TAG, "Failed to allocate SX1276");
+        return ESP_ERR_NO_MEM;
+    }
 
     // Initialize the radio
-    ESP_LOGI(TAG, "Initializing SX1276 radio...");
+    ESP_LOGI(TAG, "Calling radio->begin() (SPI init + chip detect)...");
     int state = radio->begin();
     if (state != RADIOLIB_ERR_NONE) {
         ESP_LOGE(TAG, "Radio init failed, code %d", state);
@@ -185,7 +201,10 @@ extern "C" esp_err_t lorawan_join(void)
     // For LoRaWAN 1.0.x, NwkKey = AppKey
     memcpy(nwk_key, app_key, 16);
 
-    xSemaphoreTake(lorawan_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(lorawan_mutex, pdMS_TO_TICKS(30000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire LoRaWAN mutex for join (timeout)");
+        return ESP_ERR_TIMEOUT;
+    }
 
     stats.last_join_attempt_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
     stats.join_attempts++;
@@ -226,7 +245,10 @@ extern "C" esp_err_t lorawan_send(const uint8_t *data, size_t len, uint8_t port,
         return ESP_ERR_INVALID_ARG;
     }
 
-    xSemaphoreTake(lorawan_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(lorawan_mutex, pdMS_TO_TICKS(30000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire LoRaWAN mutex for send (timeout)");
+        return ESP_ERR_TIMEOUT;
+    }
 
     // Set FPort
     node->setDutyCycle(true, 0);
@@ -294,7 +316,10 @@ extern "C" esp_err_t lorawan_get_stats(lorawan_stats_t *out)
         return ESP_OK;
     }
 
-    xSemaphoreTake(lorawan_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(lorawan_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        memset(out, 0, sizeof(lorawan_stats_t));
+        return ESP_ERR_TIMEOUT;
+    }
     memcpy(out, &stats, sizeof(lorawan_stats_t));
     xSemaphoreGive(lorawan_mutex);
 
@@ -307,7 +332,10 @@ extern "C" esp_err_t lorawan_force_rejoin(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    xSemaphoreTake(lorawan_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(lorawan_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire mutex for rejoin");
+        return ESP_ERR_TIMEOUT;
+    }
     stats.joined = false;
     stats.join_attempts = 0;
     xSemaphoreGive(lorawan_mutex);

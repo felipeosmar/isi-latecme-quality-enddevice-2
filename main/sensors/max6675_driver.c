@@ -52,6 +52,25 @@ esp_err_t max6675_init(int sck_gpio, int so_gpio, int cs_gpio)
 {
     esp_err_t ret;
 
+    // Validate GPIO numbers before configuring
+    if (sck_gpio < 0 || sck_gpio >= GPIO_NUM_MAX ||
+        so_gpio < 0 || so_gpio >= GPIO_NUM_MAX ||
+        cs_gpio < 0 || cs_gpio >= GPIO_NUM_MAX) {
+        ESP_LOGE(TAG, "Invalid GPIO numbers: SCK=%d, SO=%d, CS=%d", sck_gpio, so_gpio, cs_gpio);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Check for pins that are reserved for flash (6-11) or strapping (0, 2, 5, 12, 15)
+    for (int i = 0; i < 3; i++) {
+        int pin = (i == 0) ? sck_gpio : (i == 1) ? so_gpio : cs_gpio;
+        if (pin >= 6 && pin <= 11) {
+            ESP_LOGE(TAG, "GPIO %d is reserved for flash, cannot use for MAX6675", pin);
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    ESP_LOGI(TAG, "Configuring GPIOs: SCK=%d(out), SO=%d(in), CS=%d(out)", sck_gpio, so_gpio, cs_gpio);
+
     // Configure SCK as output
     gpio_config_t sck_cfg = {
         .pin_bit_mask = (1ULL << sck_gpio),
@@ -162,19 +181,9 @@ static uint16_t max6675_read_raw(void)
     // CS high - end read
     gpio_set_level(s_cs_gpio, 1);
 
-    ESP_LOGI(TAG, "SPI raw read: 0x%04X (bin: %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d)",
-             data,
-             (data >> 15) & 1, (data >> 14) & 1, (data >> 13) & 1, (data >> 12) & 1,
-             (data >> 11) & 1, (data >> 10) & 1, (data >> 9) & 1,  (data >> 8) & 1,
-             (data >> 7) & 1,  (data >> 6) & 1,  (data >> 5) & 1,  (data >> 4) & 1,
-             (data >> 3) & 1,  (data >> 2) & 1,  (data >> 1) & 1,  (data >> 0) & 1);
-    ESP_LOGI(TAG, "  Bit15(sign)=%d | Bits14-3(temp)=%u (%.2f°C) | Bit2(open)=%d | Bit1(ID)=%d | Bit0(tri)=%d",
-             (data >> 15) & 1,
-             (data >> 3) & 0x0FFF,
-             ((data >> 3) & 0x0FFF) * 0.25f,
-             (data >> 2) & 1,
-             (data >> 1) & 1,
-             data & 1);
+    ESP_LOGD(TAG, "SPI raw: 0x%04X, temp_raw=%u (%.2f°C), open=%d",
+             data, (data >> 3) & 0x0FFF, ((data >> 3) & 0x0FFF) * 0.25f,
+             (data >> 2) & 1);
 
     return data;
 }

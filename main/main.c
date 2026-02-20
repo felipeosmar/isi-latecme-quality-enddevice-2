@@ -207,7 +207,7 @@ void app_main(void)
     esp_log_level_set("MAIN", ESP_LOG_INFO);
     esp_log_level_set("LORAWAN", ESP_LOG_INFO);
     esp_log_level_set("SENSOR_MGR", ESP_LOG_INFO);
-    esp_log_level_set("MAX6675", ESP_LOG_DEBUG);
+    esp_log_level_set("MAX6675", ESP_LOG_INFO);
     esp_log_level_set("OLED", ESP_LOG_INFO);
 
     ESP_LOGI(TAG, "==========================================");
