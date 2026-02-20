@@ -26,6 +26,9 @@
         "thermocouple_so_pin": 36,
         "thermocouple_cs_pin": 17
     },
+    "interface": {
+        "buzzer_volume": 80
+    },
     "web": {
         "username": "admin",
         "password": "admin",
