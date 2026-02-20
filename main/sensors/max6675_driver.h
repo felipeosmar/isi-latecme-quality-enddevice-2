@@ -18,9 +18,9 @@ extern "C" {
 #endif
 
 // Default GPIO pins (HW-550 module)
-#define MAX6675_SCK_GPIO    33
-#define MAX6675_SO_GPIO     27
-#define MAX6675_CS_GPIO     32
+#define MAX6675_SCK_GPIO    16
+#define MAX6675_SO_GPIO     36
+#define MAX6675_CS_GPIO     17
 
 /**
  * @brief Initialize MAX6675 sensor (SPI bit-bang)

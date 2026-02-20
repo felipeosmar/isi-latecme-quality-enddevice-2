@@ -43,6 +43,9 @@ typedef struct {
     uint8_t thermocouple_so_pin;  // SPI data out pin
     uint8_t thermocouple_cs_pin;  // SPI chip select pin
 
+    // Interface
+    uint8_t buzzer_volume;    // 0-100%
+
     // Web
     char web_username[32];
     char web_password[64];
@@ -119,9 +122,12 @@ void config_reset_defaults(void)
     strcpy(s_config.device_name, "sensor-01");
     s_config.thermocouple_enabled = true;
     s_config.thermocouple_max_temp = 200.0f;
-    s_config.thermocouple_sck_pin = 33;
-    s_config.thermocouple_so_pin = 27;
-    s_config.thermocouple_cs_pin = 32;
+    s_config.thermocouple_sck_pin = 16;
+    s_config.thermocouple_so_pin = 36;
+    s_config.thermocouple_cs_pin = 17;
+
+    // Interface defaults
+    s_config.buzzer_volume = 80;
 
     // Web defaults
     strcpy(s_config.web_username, "admin");
@@ -171,6 +177,11 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddNumberToObject(sensors, "thermocouple_so_pin", s_config.thermocouple_so_pin);
     cJSON_AddNumberToObject(sensors, "thermocouple_cs_pin", s_config.thermocouple_cs_pin);
     cJSON_AddItemToObject(root, "sensors", sensors);
+
+    // Interface section
+    cJSON *interface = cJSON_CreateObject();
+    cJSON_AddNumberToObject(interface, "buzzer_volume", s_config.buzzer_volume);
+    cJSON_AddItemToObject(root, "interface", interface);
 
     // Web section
     cJSON *web = cJSON_CreateObject();
@@ -324,6 +335,16 @@ esp_err_t config_load(void)
         }
     }
 
+    // Interface section
+    cJSON *interface = cJSON_GetObjectItem(root, "interface");
+    if (interface) {
+        cJSON *item;
+        if ((item = cJSON_GetObjectItem(interface, "buzzer_volume")) && cJSON_IsNumber(item)) {
+            uint8_t vol = (uint8_t)item->valueint;
+            s_config.buzzer_volume = (vol > 100) ? 100 : vol;
+        }
+    }
+
     // Web section
     cJSON *web = cJSON_GetObjectItem(root, "web");
     if (web) {
@@ -470,6 +491,13 @@ void config_set_thermocouple_max_temp(float max_temp) { s_config.thermocouple_ma
 void config_set_thermocouple_sck_pin(uint8_t pin) { s_config.thermocouple_sck_pin = pin; }
 void config_set_thermocouple_so_pin(uint8_t pin) { s_config.thermocouple_so_pin = pin; }
 void config_set_thermocouple_cs_pin(uint8_t pin) { s_config.thermocouple_cs_pin = pin; }
+
+// ============================================================================
+// Getters/Setters - Interface
+// ============================================================================
+
+uint8_t config_get_buzzer_volume(void) { return s_config.buzzer_volume; }
+void config_set_buzzer_volume(uint8_t volume) { s_config.buzzer_volume = (volume > 100) ? 100 : volume; }
 
 // ============================================================================
 // Getters/Setters - Web

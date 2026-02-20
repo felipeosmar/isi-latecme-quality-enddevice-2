@@ -16,6 +16,7 @@
 
 static const char *TAG = "BUZZER";
 static bool initialized = false;
+static uint8_t s_volume = 30;  // default 30%
 
 // LEDC configuration
 #define BUZZER_LEDC_TIMER       LEDC_TIMER_0
@@ -24,6 +25,30 @@ static bool initialized = false;
 #define BUZZER_DUTY_RESOLUTION  LEDC_TIMER_10_BIT
 #define BUZZER_DEFAULT_FREQ     2700    // Hz — good for small passive buzzers
 #define BUZZER_DUTY_50PCT       512     // 50% duty cycle (10-bit: 1024/2)
+
+/**
+ * @brief Calculate LEDC duty from volume percentage
+ * Maps 0-100% to 0-512 (50% duty = max volume for passive buzzer)
+ */
+static uint32_t volume_to_duty(void)
+{
+    if (s_volume == 0) return 0;
+    // 50% duty cycle (512) = maximum volume for passive buzzer
+    // Scale linearly: volume 100 → duty 512, volume 1 → duty ~5
+    return (uint32_t)(((uint32_t)s_volume * BUZZER_DUTY_50PCT) / 100);
+}
+
+void buzzer_set_volume(uint8_t volume)
+{
+    if (volume > 100) volume = 100;
+    s_volume = volume;
+    ESP_LOGI(TAG, "Buzzer volume set to %u%%", volume);
+}
+
+uint8_t buzzer_get_volume(void)
+{
+    return s_volume;
+}
 
 esp_err_t buzzer_init(void)
 {
@@ -69,8 +94,8 @@ esp_err_t buzzer_init(void)
 
 void buzzer_on(void)
 {
-    if (!initialized) return;
-    ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, BUZZER_DUTY_50PCT);
+    if (!initialized || s_volume == 0) return;
+    ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, volume_to_duty());
     ledc_update_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL);
 }
 
@@ -83,10 +108,10 @@ void buzzer_off(void)
 
 void buzzer_tone(uint32_t freq_hz, uint32_t duration_ms)
 {
-    if (!initialized) return;
+    if (!initialized || s_volume == 0) return;
 
     ledc_set_freq(BUZZER_LEDC_MODE, BUZZER_LEDC_TIMER, freq_hz);
-    ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, BUZZER_DUTY_50PCT);
+    ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, volume_to_duty());
     ledc_update_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL);
 
     vTaskDelay(pdMS_TO_TICKS(duration_ms));

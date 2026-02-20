@@ -9,6 +9,7 @@
 
 #include "handlers.h"
 #include "sensor_manager.h"
+#include "buzzer.h"
 
 static const char *TAG = "API_SENSORS";
 
@@ -53,6 +54,7 @@ esp_err_t api_sensors_config_get_handler(httpd_req_t *req)
     cJSON_AddNumberToObject(root, "thermocouple_sck_pin", config_get_thermocouple_sck_pin());
     cJSON_AddNumberToObject(root, "thermocouple_so_pin", config_get_thermocouple_so_pin());
     cJSON_AddNumberToObject(root, "thermocouple_cs_pin", config_get_thermocouple_cs_pin());
+    cJSON_AddNumberToObject(root, "buzzer_volume", config_get_buzzer_volume());
 
     char *json_str = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
@@ -109,6 +111,11 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req)
     }
     if ((item = cJSON_GetObjectItem(json, "thermocouple_cs_pin")) && cJSON_IsNumber(item)) {
         config_set_thermocouple_cs_pin((uint8_t)item->valueint);
+    }
+    if ((item = cJSON_GetObjectItem(json, "buzzer_volume")) && cJSON_IsNumber(item)) {
+        uint8_t vol = (uint8_t)item->valueint;
+        config_set_buzzer_volume(vol);
+        buzzer_set_volume(vol);  // Apply immediately
     }
 
     cJSON_Delete(json);

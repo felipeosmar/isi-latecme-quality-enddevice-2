@@ -49,9 +49,9 @@ dedicado ao SX1276 (LoRa), usaremos **SPI por software (bit-bang)** em GPIOs liv
 |-------------|--------|-----------|----------|---------------|
 | **VCC** | Alimentação 3.3V | 3V3 (ESP32) | Pino 2, 21, 22 ou 32 | 3.3V direto do MIJ |
 | **GND** | Terra | GND | Pino 1, 15, 17 ou 18 | Qualquer GND |
-| **SCK** | SPI Clock | **GPIO 33** | Pino 9 | Livre, I/O, sem conflito |
-| **SO** | SPI Data Out (MISO) | **GPIO 27** | Pino 12 | Livre, I/O, sem conflito |
-| **CS** | Chip Select | **GPIO 32** | Pino 8 | Livre, I/O, sem conflito |
+| **SCK** | SPI Clock | **GPIO 16** | Pino 27 (RXD2) | Livre, I/O, sem conflito |
+| **SO** | SPI Data Out (MISO) | **GPIO 36** | Pino 4 (VP, input-only) | Input-only — OK para SO |
+| **CS** | Chip Select | **GPIO 17** | Pino 28 (TXD2) | Livre, I/O, sem conflito |
 
 ### Por que esses GPIOs?
 

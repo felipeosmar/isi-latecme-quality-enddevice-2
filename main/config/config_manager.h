@@ -100,6 +100,13 @@ void config_set_thermocouple_so_pin(uint8_t pin);
 void config_set_thermocouple_cs_pin(uint8_t pin);
 
 // ============================================================================
+// Interface Configuration
+// ============================================================================
+
+uint8_t config_get_buzzer_volume(void);
+void config_set_buzzer_volume(uint8_t volume);
+
+// ============================================================================
 // Web Server Configuration
 // ============================================================================
 

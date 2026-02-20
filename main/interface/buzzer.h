@@ -25,6 +25,19 @@ extern "C" {
 esp_err_t buzzer_init(void);
 
 /**
+ * @brief Set buzzer volume (0-100%)
+ * Controls PWM duty cycle. 0 = mute, 100 = max.
+ * @param volume Volume percentage (0-100)
+ */
+void buzzer_set_volume(uint8_t volume);
+
+/**
+ * @brief Get current buzzer volume
+ * @return Volume percentage (0-100)
+ */
+uint8_t buzzer_get_volume(void);
+
+/**
  * @brief Play a tone at specific frequency
  * @param freq_hz Frequency in Hz (e.g. 2700)
  * @param duration_ms Tone duration in milliseconds

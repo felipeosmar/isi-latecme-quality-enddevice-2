@@ -207,6 +207,7 @@ void app_main(void)
     esp_log_level_set("MAIN", ESP_LOG_INFO);
     esp_log_level_set("LORAWAN", ESP_LOG_INFO);
     esp_log_level_set("SENSOR_MGR", ESP_LOG_INFO);
+    esp_log_level_set("MAX6675", ESP_LOG_DEBUG);
     esp_log_level_set("OLED", ESP_LOG_INFO);
 
     ESP_LOGI(TAG, "==========================================");
@@ -227,6 +228,9 @@ void app_main(void)
         ESP_LOGE(TAG, "Failed to initialize configuration!");
         return;
     }
+
+    // Apply buzzer volume from config
+    buzzer_set_volume(config_get_buzzer_volume());
 
     // Initialize WiFi
     ESP_LOGI(TAG, "Initializing WiFi...");

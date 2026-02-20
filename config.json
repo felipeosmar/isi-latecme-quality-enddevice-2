@@ -22,9 +22,9 @@
         "device_name": "sensor-01",
         "thermocouple_enabled": true,
         "thermocouple_max_temp": 200.0,
-        "thermocouple_sck_pin": 33,
-        "thermocouple_so_pin": 27,
-        "thermocouple_cs_pin": 32
+        "thermocouple_sck_pin": 16,
+        "thermocouple_so_pin": 36,
+        "thermocouple_cs_pin": 17
     },
     "web": {
         "username": "admin",

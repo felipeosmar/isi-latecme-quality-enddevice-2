@@ -57,6 +57,9 @@ async function loadSensorConfig() {
         document.getElementById('cfg-tc-sck').value = d.thermocouple_sck_pin || 33;
         document.getElementById('cfg-tc-so').value = d.thermocouple_so_pin || 27;
         document.getElementById('cfg-tc-cs').value = d.thermocouple_cs_pin || 32;
+        const vol = d.buzzer_volume !== undefined ? d.buzzer_volume : 80;
+        document.getElementById('cfg-buzzer-vol').value = vol;
+        document.getElementById('cfg-buzzer-vol-val').textContent = vol;
     } catch (e) {
         console.error('Failed to load sensor config:', e);
     }
@@ -72,7 +75,8 @@ async function saveSensorConfig() {
         thermocouple_max_temp: parseFloat(document.getElementById('cfg-tc-max-temp').value),
         thermocouple_sck_pin: parseInt(document.getElementById('cfg-tc-sck').value),
         thermocouple_so_pin: parseInt(document.getElementById('cfg-tc-so').value),
-        thermocouple_cs_pin: parseInt(document.getElementById('cfg-tc-cs').value)
+        thermocouple_cs_pin: parseInt(document.getElementById('cfg-tc-cs').value),
+        buzzer_volume: parseInt(document.getElementById('cfg-buzzer-vol').value)
     };
 
     try {
@@ -151,6 +155,14 @@ function initConfig() {
     scanWiFi();
     loadSensorConfig();
     loadLoRaConfig();
+
+    // Buzzer volume slider live update
+    const volSlider = document.getElementById('cfg-buzzer-vol');
+    if (volSlider) {
+        volSlider.addEventListener('input', function() {
+            document.getElementById('cfg-buzzer-vol-val').textContent = this.value;
+        });
+    }
 }
 
 registerModule('config', initConfig);
