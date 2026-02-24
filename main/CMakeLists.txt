@@ -9,6 +9,7 @@ idf_component_register(
         "sensors/max6675_driver.c"
         "payload/cayenne_lpp.c"
         "interface/buzzer.c"
+        "interface/status_led.c"
         "display/oled_display.c"
         "wifi/wifi_manager.c"
         "webserver/web_server.c"
