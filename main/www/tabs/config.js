@@ -54,9 +54,9 @@ async function loadSensorConfig() {
         document.getElementById('cfg-device-name').value = d.device_name || 'sensor-01';
         document.getElementById('cfg-thermocouple').checked = d.thermocouple_enabled !== false;
         document.getElementById('cfg-tc-max-temp').value = d.thermocouple_max_temp || 200;
-        document.getElementById('cfg-tc-sck').value = d.thermocouple_sck_pin || 33;
-        document.getElementById('cfg-tc-so').value = d.thermocouple_so_pin || 27;
-        document.getElementById('cfg-tc-cs').value = d.thermocouple_cs_pin || 32;
+        document.getElementById('cfg-tc-sck').value = d.thermocouple_sck_pin || 32;
+        document.getElementById('cfg-tc-so').value = d.thermocouple_so_pin || 35;
+        document.getElementById('cfg-tc-cs').value = d.thermocouple_cs_pin || 33;
         const vol = d.buzzer_volume !== undefined ? d.buzzer_volume : 80;
         document.getElementById('cfg-buzzer-vol').value = vol;
         document.getElementById('cfg-buzzer-vol-val').textContent = vol;

@@ -214,13 +214,8 @@ void app_main(void)
     ESP_LOGI(TAG, "  LoRaWAN End Device - Sensor Node");
     ESP_LOGI(TAG, "==========================================");
 
-    // Initialize buzzer and play startup melody (3 rising tones)
+    // Initialize buzzer hardware (no sound yet)
     buzzer_init();
-    buzzer_tone(1800, 80);
-    vTaskDelay(pdMS_TO_TICKS(60));
-    buzzer_tone(2400, 80);
-    vTaskDelay(pdMS_TO_TICKS(60));
-    buzzer_tone(3200, 100);
 
     // Initialize configuration manager (includes LittleFS)
     ESP_LOGI(TAG, "Initializing configuration...");
@@ -229,8 +224,13 @@ void app_main(void)
         return;
     }
 
-    // Apply buzzer volume from config
+    // Apply buzzer volume from config, then play startup melody
     buzzer_set_volume(config_get_buzzer_volume());
+    buzzer_tone(1800, 80);
+    vTaskDelay(pdMS_TO_TICKS(60));
+    buzzer_tone(2400, 80);
+    vTaskDelay(pdMS_TO_TICKS(60));
+    buzzer_tone(3200, 100);
 
     // Initialize WiFi
     ESP_LOGI(TAG, "Initializing WiFi...");

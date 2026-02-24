@@ -1,12 +1,11 @@
 # LoRaWAN End Device - Sensor Node
 
-ESP32-based LoRaWAN end device for environmental sensor data collection and transmission to a ChirpStack network server. Collects temperature and humidity data from I2C sensors and DS18B20, encodes it as CayenneLPP, and sends it via LoRaWAN Class A with OTAA activation.
+ESP32-based LoRaWAN end device for environmental sensor data collection and transmission to a ChirpStack network server. Collects temperature and humidity data from I2C sensors and thermocouple temperature via MAX6675, encodes it as CayenneLPP, and sends it via LoRaWAN Class A with OTAA activation.
 
 ## Features
 
 - **LoRaWAN Class A**: OTAA activation with RadioLib + SX1276/SX1278 (AU915, sub-band configurable)
 - **Auto-Detect Sensors**: SHT20, SHT3x (SHT30/SHT31/SHT40), AM2315C/AHT20 over I2C
-- **DS18B20**: 1-Wire temperature sensor support via RMT peripheral
 - **CayenneLPP Payload**: ChirpStack built-in decoder, zero custom codec needed
 - **OLED Display**: SSD1306 128x64 with auto-cycling pages (Sensors, LoRaWAN, System)
 - **Web Interface**: Configuration and real-time monitoring via browser
@@ -23,7 +22,7 @@ ESP32-based LoRaWAN end device for environmental sensor data collection and tran
 | ESP32 Board | ESP32-WROOM-32, DevKitC, or compatible |
 | LoRa Module | SX1276/SX1278 (868/915 MHz) |
 | I2C Sensor | SHT20, SHT30, SHT40, or AM2315C (any one) |
-| DS18B20 | 1-Wire temperature sensor (optional) |
+| MAX6675 | Thermocouple temperature sensor (optional) |
 | OLED Display | SSD1306 128x64 I2C (optional) |
 
 ### Pin Mapping
@@ -41,6 +40,11 @@ LoRa SPI (SX1276/SX1278)
 I2C Bus (Sensors + OLED)
   SDA ............ GPIO21
   SCL ............ GPIO22
+
+MAX6675 Thermocouple (Software SPI)
+  SCK ............ GPIO32
+  SO  ............ GPIO35
+  CS  ............ GPIO33
 
 Peripherals
   LED ............ GPIO2
@@ -61,7 +65,7 @@ Sensors and OLED share the same I2C bus. On boot, the sensor manager probes addr
 
 ## Prerequisites
 
-**ESP-IDF v5.x** (tested with v5.5.0):
+**ESP-IDF v5.x** (tested with v5.5.3):
 
 ```bash
 # Install dependencies (Ubuntu/Debian)
@@ -138,7 +142,7 @@ Once joined, sensor data appears automatically in ChirpStack decoded as CayenneL
 |---------|------|-------|
 | 1 | Temperature (0x67) | I2C sensor temperature |
 | 2 | Humidity (0x68) | I2C sensor humidity |
-| 3 | Temperature (0x67) | DS18B20 temperature |
+| 4 | Temperature (0x67) | MAX6675 thermocouple temperature |
 
 ## Web Interface
 
@@ -146,7 +150,7 @@ The web interface has six tabs:
 
 | Tab | Description |
 |-----|-------------|
-| **Sensors** | Live temperature, humidity, DS18B20 readings |
+| **Sensors** | Live temperature, humidity, thermocouple readings |
 | **LoRaWAN** | Join status, DevAddr, RSSI/SNR, uplink count, config |
 | **System** | Uptime, memory, WiFi status, logs |
 | **Tasks** | FreeRTOS task monitoring, CPU usage, stack usage |
@@ -219,8 +223,15 @@ User configuration is stored in `/userdata/config.json` on the ESP32:
         "interval": 30,
         "temp_correction": 0.0,
         "hum_correction": 0.0,
-        "ds18b20_enabled": true,
-        "device_name": "sensor-01"
+        "device_name": "sensor-01",
+        "thermocouple_enabled": true,
+        "thermocouple_max_temp": 200.0,
+        "thermocouple_sck_pin": 32,
+        "thermocouple_so_pin": 35,
+        "thermocouple_cs_pin": 33
+    },
+    "interface": {
+        "buzzer_volume": 10
     },
     "web": {
         "username": "admin",
@@ -247,7 +258,7 @@ lorawan-enddevice/
 │   │   ├── sht20_driver.c/h    # SHT20 (I2C 0x40)
 │   │   ├── sht3x_driver.c/h    # SHT30/SHT40 (I2C 0x44)
 │   │   ├── am2315c_driver.c/h  # AM2315C/AHT20 (I2C 0x38)
-│   │   └── ds18b20_driver.c/h  # DS18B20 (1-Wire via RMT)
+│   │   └── max6675_driver.c/h  # MAX6675 thermocouple (SPI bit-bang)
 │   ├── payload/
 │   │   └── cayenne_lpp.c/h     # CayenneLPP encoder
 │   ├── display/
@@ -339,8 +350,6 @@ idf.py coredump-info
 |---------|---------|---------|
 | [RadioLib](https://github.com/jgromes/RadioLib) | ^7.5.0 | LoRaWAN + SX127x driver |
 | [LittleFS](https://github.com/joltwallet/esp_littlefs) | * | Filesystem for config and web UI |
-| [onewire_bus](https://components.espressif.com/components/espressif/onewire_bus) | ^1.0.4 | 1-Wire bus driver (RMT) |
-| [ds18b20](https://components.espressif.com/components/espressif/ds18b20) | ^0.1.2 | DS18B20 temperature sensor |
 
 ## License
 
