@@ -30,6 +30,7 @@
 #include "oled_display.h"
 #include "cayenne_lpp.h"
 #include "buzzer.h"
+#include "status_led.h"
 
 static const char *TAG = "MAIN";
 
@@ -231,6 +232,11 @@ void app_main(void)
     buzzer_tone(2400, 80);
     vTaskDelay(pdMS_TO_TICKS(60));
     buzzer_tone(3200, 100);
+
+    // Initialize status LED
+    if (status_led_init() != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to initialize status LED");
+    }
 
     // Initialize WiFi
     ESP_LOGI(TAG, "Initializing WiFi...");

@@ -15,6 +15,7 @@
 #include "esp_littlefs.h"
 
 #include "wifi_manager.h"
+#include "status_led.h"
 
 static const char *TAG = "HEALTH";
 
@@ -82,6 +83,9 @@ static void health_monitor_task(void *pvParameters)
                 log_counter = 0;
                 health_monitor_log_status();
             }
+
+            // Update status LED based on current health
+            status_led_update(&s_health);
         }
 
         // Wait 2 seconds (well under the 10s WDT timeout)
