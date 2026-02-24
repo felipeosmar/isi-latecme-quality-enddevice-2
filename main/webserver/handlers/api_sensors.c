@@ -115,7 +115,8 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req)
     if ((item = cJSON_GetObjectItem(json, "buzzer_volume")) && cJSON_IsNumber(item)) {
         uint8_t vol = (uint8_t)item->valueint;
         config_set_buzzer_volume(vol);
-        buzzer_set_volume(vol);  // Apply immediately
+        buzzer_set_volume(vol);
+        buzzer_beep(100);  // Test beep at new volume
     }
 
     cJSON_Delete(json);

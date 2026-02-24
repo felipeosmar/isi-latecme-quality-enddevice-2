@@ -5,6 +5,12 @@
  * Uses GPIO4 → BC817-25 transistor → passive buzzer.
  * Generates audible tone via PWM oscillation (LEDC peripheral).
  * Default frequency: 2700 Hz (good audibility for small buzzers).
+ *
+ * Volume control combines two mechanisms:
+ * 1. Frequency detuning — lower volumes shift the tone frequency away from
+ *    the piezo's resonance band (2-4 kHz), where the buzzer is physically
+ *    less efficient at converting electrical energy to sound.
+ * 2. PWM duty cycle — lower duty delivers less energy per cycle.
  */
 
 #include "buzzer.h"
@@ -23,26 +29,48 @@ static uint8_t s_volume = 30;  // default 30%
 #define BUZZER_LEDC_CHANNEL     LEDC_CHANNEL_0
 #define BUZZER_LEDC_MODE        LEDC_LOW_SPEED_MODE
 #define BUZZER_DUTY_RESOLUTION  LEDC_TIMER_10_BIT
-#define BUZZER_DEFAULT_FREQ     2700    // Hz — good for small passive buzzers
+#define BUZZER_DEFAULT_FREQ     2700    // Hz — near piezo resonance peak
 #define BUZZER_DUTY_50PCT       512     // 50% duty cycle (10-bit: 1024/2)
+#define BUZZER_MIN_FREQ         100     // Hz — floor for frequency scaling
+
+/**
+ * @brief Scale frequency based on volume to detune from piezo resonance
+ *
+ * At volume 100%: returns freq_hz unchanged (resonant, loudest).
+ * At lower volumes: shifts freq down proportionally — moving away from
+ * the 2-4 kHz resonance band makes the piezo physically quieter.
+ *
+ * Mapping: actual = freq_hz * (0.2 + 0.8 * volume/100)
+ *   volume 100% → 1.00x  (e.g. 2700 Hz)
+ *   volume  50% → 0.60x  (e.g. 1620 Hz)
+ *   volume  10% → 0.28x  (e.g.  756 Hz)
+ */
+static uint32_t volume_scale_freq(uint32_t freq_hz)
+{
+    if (s_volume >= 100) return freq_hz;
+    uint32_t scale = 200 + ((uint32_t)s_volume * 800) / 100;
+    uint32_t scaled = (freq_hz * scale) / 1000;
+    return (scaled < BUZZER_MIN_FREQ) ? BUZZER_MIN_FREQ : scaled;
+}
 
 /**
  * @brief Calculate LEDC duty from volume percentage
- * Maps 0-100% to 0-512 (50% duty = max volume for passive buzzer)
+ * Maps 0-100% to 0-512 (50% duty = max amplitude for passive buzzer)
  */
 static uint32_t volume_to_duty(void)
 {
     if (s_volume == 0) return 0;
-    // 50% duty cycle (512) = maximum volume for passive buzzer
-    // Scale linearly: volume 100 → duty 512, volume 1 → duty ~5
-    return (uint32_t)(((uint32_t)s_volume * BUZZER_DUTY_50PCT) / 100);
+    uint32_t duty = ((uint32_t)s_volume * BUZZER_DUTY_50PCT) / 100;
+    return (duty < 1) ? 1 : duty;
 }
 
 void buzzer_set_volume(uint8_t volume)
 {
     if (volume > 100) volume = 100;
     s_volume = volume;
-    ESP_LOGI(TAG, "Buzzer volume set to %u%%", volume);
+    ESP_LOGI(TAG, "Volume set to %u%% (duty=%lu, freq_scale=%.0f%%)",
+             volume, volume_to_duty(),
+             volume >= 100 ? 100.0 : (200 + (uint32_t)volume * 800 / 100) / 10.0);
 }
 
 uint8_t buzzer_get_volume(void)
@@ -95,6 +123,7 @@ esp_err_t buzzer_init(void)
 void buzzer_on(void)
 {
     if (!initialized || s_volume == 0) return;
+    ledc_set_freq(BUZZER_LEDC_MODE, BUZZER_LEDC_TIMER, volume_scale_freq(BUZZER_DEFAULT_FREQ));
     ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, volume_to_duty());
     ledc_update_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL);
 }
@@ -110,8 +139,11 @@ void buzzer_tone(uint32_t freq_hz, uint32_t duration_ms)
 {
     if (!initialized || s_volume == 0) return;
 
-    ledc_set_freq(BUZZER_LEDC_MODE, BUZZER_LEDC_TIMER, freq_hz);
-    ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, volume_to_duty());
+    uint32_t actual_freq = volume_scale_freq(freq_hz);
+    uint32_t duty = volume_to_duty();
+
+    ledc_set_freq(BUZZER_LEDC_MODE, BUZZER_LEDC_TIMER, actual_freq);
+    ledc_set_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL, duty);
     ledc_update_duty(BUZZER_LEDC_MODE, BUZZER_LEDC_CHANNEL);
 
     vTaskDelay(pdMS_TO_TICKS(duration_ms));
