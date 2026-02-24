@@ -106,6 +106,22 @@ void config_set_thermocouple_cs_pin(uint8_t pin);
 uint8_t config_get_buzzer_volume(void);
 void config_set_buzzer_volume(uint8_t volume);
 
+bool config_get_led_enabled(void);
+uint8_t config_get_led_brightness(void);
+uint32_t config_get_led_blink_interval_ms(void);
+const char* config_get_led_color_normal(void);
+const char* config_get_led_color_lorawan(void);
+const char* config_get_led_color_wifi(void);
+const char* config_get_led_color_error(void);
+
+void config_set_led_enabled(bool enabled);
+void config_set_led_brightness(uint8_t brightness);
+void config_set_led_blink_interval_ms(uint32_t ms);
+void config_set_led_color_normal(const char *color);
+void config_set_led_color_lorawan(const char *color);
+void config_set_led_color_wifi(const char *color);
+void config_set_led_color_error(const char *color);
+
 // ============================================================================
 // Web Server Configuration
 // ============================================================================

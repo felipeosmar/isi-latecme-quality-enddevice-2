@@ -46,6 +46,15 @@ typedef struct {
     // Interface
     uint8_t buzzer_volume;    // 0-100%
 
+    // LED
+    bool led_enabled;
+    uint8_t led_brightness;        // 0-100%
+    uint32_t led_blink_interval_ms;
+    char led_color_normal[8];      // "#RRGGBB" + null
+    char led_color_lorawan[8];
+    char led_color_wifi[8];
+    char led_color_error[8];
+
     // Web
     char web_username[32];
     char web_password[64];
@@ -128,6 +137,13 @@ void config_reset_defaults(void)
 
     // Interface defaults
     s_config.buzzer_volume = 30;
+    s_config.led_enabled = true;
+    s_config.led_brightness = 50;
+    s_config.led_blink_interval_ms = 30000;
+    strcpy(s_config.led_color_normal, "#FFFFFF");
+    strcpy(s_config.led_color_lorawan, "#FFB000");
+    strcpy(s_config.led_color_wifi, "#0000FF");
+    strcpy(s_config.led_color_error, "#FF0000");
 
     // Web defaults
     strcpy(s_config.web_username, "admin");
@@ -181,6 +197,15 @@ static esp_err_t _config_save_internal(void)
     // Interface section
     cJSON *interface = cJSON_CreateObject();
     cJSON_AddNumberToObject(interface, "buzzer_volume", s_config.buzzer_volume);
+    cJSON *led = cJSON_CreateObject();
+    cJSON_AddBoolToObject(led, "enabled", s_config.led_enabled);
+    cJSON_AddNumberToObject(led, "brightness", s_config.led_brightness);
+    cJSON_AddNumberToObject(led, "blink_interval_ms", s_config.led_blink_interval_ms);
+    cJSON_AddStringToObject(led, "color_normal", s_config.led_color_normal);
+    cJSON_AddStringToObject(led, "color_lorawan", s_config.led_color_lorawan);
+    cJSON_AddStringToObject(led, "color_wifi", s_config.led_color_wifi);
+    cJSON_AddStringToObject(led, "color_error", s_config.led_color_error);
+    cJSON_AddItemToObject(interface, "led", led);
     cJSON_AddItemToObject(root, "interface", interface);
 
     // Web section
@@ -345,6 +370,31 @@ esp_err_t config_load(void)
             uint8_t vol = (uint8_t)item->valueint;
             s_config.buzzer_volume = (vol > 100) ? 100 : vol;
         }
+        cJSON *led = cJSON_GetObjectItem(interface, "led");
+        if (led) {
+            if ((item = cJSON_GetObjectItem(led, "enabled")) && cJSON_IsBool(item)) {
+                s_config.led_enabled = cJSON_IsTrue(item);
+            }
+            if ((item = cJSON_GetObjectItem(led, "brightness")) && cJSON_IsNumber(item)) {
+                uint8_t b = (uint8_t)item->valueint;
+                s_config.led_brightness = (b > 100) ? 100 : b;
+            }
+            if ((item = cJSON_GetObjectItem(led, "blink_interval_ms")) && cJSON_IsNumber(item)) {
+                s_config.led_blink_interval_ms = (uint32_t)item->valueint;
+            }
+            if ((item = cJSON_GetObjectItem(led, "color_normal")) && cJSON_IsString(item)) {
+                strncpy(s_config.led_color_normal, item->valuestring, sizeof(s_config.led_color_normal) - 1);
+            }
+            if ((item = cJSON_GetObjectItem(led, "color_lorawan")) && cJSON_IsString(item)) {
+                strncpy(s_config.led_color_lorawan, item->valuestring, sizeof(s_config.led_color_lorawan) - 1);
+            }
+            if ((item = cJSON_GetObjectItem(led, "color_wifi")) && cJSON_IsString(item)) {
+                strncpy(s_config.led_color_wifi, item->valuestring, sizeof(s_config.led_color_wifi) - 1);
+            }
+            if ((item = cJSON_GetObjectItem(led, "color_error")) && cJSON_IsString(item)) {
+                strncpy(s_config.led_color_error, item->valuestring, sizeof(s_config.led_color_error) - 1);
+            }
+        }
     }
 
     // Web section
@@ -501,6 +551,30 @@ void config_set_thermocouple_cs_pin(uint8_t pin) { s_config.thermocouple_cs_pin 
 
 uint8_t config_get_buzzer_volume(void) { return s_config.buzzer_volume; }
 void config_set_buzzer_volume(uint8_t volume) { s_config.buzzer_volume = (volume > 100) ? 100 : volume; }
+
+bool config_get_led_enabled(void) { return s_config.led_enabled; }
+uint8_t config_get_led_brightness(void) { return s_config.led_brightness; }
+uint32_t config_get_led_blink_interval_ms(void) { return s_config.led_blink_interval_ms; }
+const char* config_get_led_color_normal(void) { return s_config.led_color_normal; }
+const char* config_get_led_color_lorawan(void) { return s_config.led_color_lorawan; }
+const char* config_get_led_color_wifi(void) { return s_config.led_color_wifi; }
+const char* config_get_led_color_error(void) { return s_config.led_color_error; }
+
+void config_set_led_enabled(bool enabled) { s_config.led_enabled = enabled; }
+void config_set_led_brightness(uint8_t brightness) { s_config.led_brightness = (brightness > 100) ? 100 : brightness; }
+void config_set_led_blink_interval_ms(uint32_t ms) { s_config.led_blink_interval_ms = ms; }
+void config_set_led_color_normal(const char *color) {
+    if (color) strncpy(s_config.led_color_normal, color, sizeof(s_config.led_color_normal) - 1);
+}
+void config_set_led_color_lorawan(const char *color) {
+    if (color) strncpy(s_config.led_color_lorawan, color, sizeof(s_config.led_color_lorawan) - 1);
+}
+void config_set_led_color_wifi(const char *color) {
+    if (color) strncpy(s_config.led_color_wifi, color, sizeof(s_config.led_color_wifi) - 1);
+}
+void config_set_led_color_error(const char *color) {
+    if (color) strncpy(s_config.led_color_error, color, sizeof(s_config.led_color_error) - 1);
+}
 
 // ============================================================================
 // Getters/Setters - Web
