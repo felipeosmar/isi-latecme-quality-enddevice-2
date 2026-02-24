@@ -54,9 +54,8 @@ async function loadSensorConfig() {
         document.getElementById('cfg-device-name').value = d.device_name || 'sensor-01';
         document.getElementById('cfg-thermocouple').checked = d.thermocouple_enabled !== false;
         document.getElementById('cfg-tc-max-temp').value = d.thermocouple_max_temp || 200;
-        document.getElementById('cfg-tc-sck').value = d.thermocouple_sck_pin || 32;
-        document.getElementById('cfg-tc-so').value = d.thermocouple_so_pin || 35;
-        document.getElementById('cfg-tc-cs').value = d.thermocouple_cs_pin || 33;
+        document.getElementById('cfg-tc-min-temp').value = d.thermocouple_min_temp || 0;
+        document.getElementById('cfg-tc-correction').value = d.thermocouple_correction || 0;
         const vol = d.buzzer_volume !== undefined ? d.buzzer_volume : 80;
         document.getElementById('cfg-buzzer-vol').value = vol;
         document.getElementById('cfg-buzzer-vol-val').textContent = vol;
@@ -73,10 +72,8 @@ async function saveSensorConfig() {
         device_name: document.getElementById('cfg-device-name').value.trim(),
         thermocouple_enabled: document.getElementById('cfg-thermocouple').checked,
         thermocouple_max_temp: parseFloat(document.getElementById('cfg-tc-max-temp').value),
-        thermocouple_sck_pin: parseInt(document.getElementById('cfg-tc-sck').value),
-        thermocouple_so_pin: parseInt(document.getElementById('cfg-tc-so').value),
-        thermocouple_cs_pin: parseInt(document.getElementById('cfg-tc-cs').value),
-        buzzer_volume: parseInt(document.getElementById('cfg-buzzer-vol').value)
+        thermocouple_min_temp: parseFloat(document.getElementById('cfg-tc-min-temp').value),
+        thermocouple_correction: parseFloat(document.getElementById('cfg-tc-correction').value)
     };
 
     try {
@@ -88,6 +85,27 @@ async function saveSensorConfig() {
         }
     } catch (e) {
         toast('Failed to save sensor config', 'error');
+    }
+}
+
+// ============================================================================
+// Buzzer Configuration
+// ============================================================================
+
+async function saveBuzzerConfig() {
+    const config = {
+        buzzer_volume: parseInt(document.getElementById('cfg-buzzer-vol').value)
+    };
+
+    try {
+        const r = await api('sensors/config', 'POST', config);
+        if (r.success) {
+            toast('Buzzer config saved', 'success');
+        } else {
+            toast(r.message || 'Failed to save', 'error');
+        }
+    } catch (e) {
+        toast('Failed to save buzzer config', 'error');
     }
 }
 

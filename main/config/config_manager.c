@@ -42,6 +42,8 @@ typedef struct {
     uint8_t thermocouple_sck_pin; // SPI clock pin
     uint8_t thermocouple_so_pin;  // SPI data out pin
     uint8_t thermocouple_cs_pin;  // SPI chip select pin
+    float thermocouple_min_temp;  // min temperature for thermocouple
+    float thermocouple_correction; // temperature correction offset
 
     // Interface
     uint8_t buzzer_volume;    // 0-100%
@@ -134,6 +136,8 @@ void config_reset_defaults(void)
     s_config.thermocouple_sck_pin = 32;
     s_config.thermocouple_so_pin = 35;
     s_config.thermocouple_cs_pin = 33;
+    s_config.thermocouple_min_temp = 0.0f;
+    s_config.thermocouple_correction = 0.0f;
 
     // Interface defaults
     s_config.buzzer_volume = 30;
@@ -192,6 +196,8 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddNumberToObject(sensors, "thermocouple_sck_pin", s_config.thermocouple_sck_pin);
     cJSON_AddNumberToObject(sensors, "thermocouple_so_pin", s_config.thermocouple_so_pin);
     cJSON_AddNumberToObject(sensors, "thermocouple_cs_pin", s_config.thermocouple_cs_pin);
+    cJSON_AddNumberToObject(sensors, "thermocouple_min_temp", s_config.thermocouple_min_temp);
+    cJSON_AddNumberToObject(sensors, "thermocouple_correction", s_config.thermocouple_correction);
     cJSON_AddItemToObject(root, "sensors", sensors);
 
     // Interface section
@@ -359,6 +365,12 @@ esp_err_t config_load(void)
         }
         if ((item = cJSON_GetObjectItem(sensors, "thermocouple_cs_pin")) && cJSON_IsNumber(item)) {
             s_config.thermocouple_cs_pin = (uint8_t)item->valueint;
+        }
+        if ((item = cJSON_GetObjectItem(sensors, "thermocouple_min_temp")) && cJSON_IsNumber(item)) {
+            s_config.thermocouple_min_temp = (float)item->valuedouble;
+        }
+        if ((item = cJSON_GetObjectItem(sensors, "thermocouple_correction")) && cJSON_IsNumber(item)) {
+            s_config.thermocouple_correction = (float)item->valuedouble;
         }
     }
 
@@ -544,6 +556,10 @@ void config_set_thermocouple_max_temp(float max_temp) { s_config.thermocouple_ma
 void config_set_thermocouple_sck_pin(uint8_t pin) { s_config.thermocouple_sck_pin = pin; }
 void config_set_thermocouple_so_pin(uint8_t pin) { s_config.thermocouple_so_pin = pin; }
 void config_set_thermocouple_cs_pin(uint8_t pin) { s_config.thermocouple_cs_pin = pin; }
+float config_get_thermocouple_min_temp(void) { return s_config.thermocouple_min_temp; }
+float config_get_thermocouple_correction(void) { return s_config.thermocouple_correction; }
+void config_set_thermocouple_min_temp(float min_temp) { s_config.thermocouple_min_temp = min_temp; }
+void config_set_thermocouple_correction(float correction) { s_config.thermocouple_correction = correction; }
 
 // ============================================================================
 // Getters/Setters - Interface

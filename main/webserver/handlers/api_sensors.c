@@ -54,6 +54,8 @@ esp_err_t api_sensors_config_get_handler(httpd_req_t *req)
     cJSON_AddNumberToObject(root, "thermocouple_sck_pin", config_get_thermocouple_sck_pin());
     cJSON_AddNumberToObject(root, "thermocouple_so_pin", config_get_thermocouple_so_pin());
     cJSON_AddNumberToObject(root, "thermocouple_cs_pin", config_get_thermocouple_cs_pin());
+    cJSON_AddNumberToObject(root, "thermocouple_min_temp", config_get_thermocouple_min_temp());
+    cJSON_AddNumberToObject(root, "thermocouple_correction", config_get_thermocouple_correction());
     cJSON_AddNumberToObject(root, "buzzer_volume", config_get_buzzer_volume());
 
     char *json_str = cJSON_PrintUnformatted(root);
@@ -111,6 +113,12 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req)
     }
     if ((item = cJSON_GetObjectItem(json, "thermocouple_cs_pin")) && cJSON_IsNumber(item)) {
         config_set_thermocouple_cs_pin((uint8_t)item->valueint);
+    }
+    if ((item = cJSON_GetObjectItem(json, "thermocouple_min_temp")) && cJSON_IsNumber(item)) {
+        config_set_thermocouple_min_temp((float)item->valuedouble);
+    }
+    if ((item = cJSON_GetObjectItem(json, "thermocouple_correction")) && cJSON_IsNumber(item)) {
+        config_set_thermocouple_correction((float)item->valuedouble);
     }
     if ((item = cJSON_GetObjectItem(json, "buzzer_volume")) && cJSON_IsNumber(item)) {
         uint8_t vol = (uint8_t)item->valueint;

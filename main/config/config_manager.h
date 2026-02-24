@@ -98,6 +98,10 @@ void config_set_thermocouple_max_temp(float max_temp);
 void config_set_thermocouple_sck_pin(uint8_t pin);
 void config_set_thermocouple_so_pin(uint8_t pin);
 void config_set_thermocouple_cs_pin(uint8_t pin);
+float config_get_thermocouple_min_temp(void);
+float config_get_thermocouple_correction(void);
+void config_set_thermocouple_min_temp(float min_temp);
+void config_set_thermocouple_correction(float correction);
 
 // ============================================================================
 // Interface Configuration
