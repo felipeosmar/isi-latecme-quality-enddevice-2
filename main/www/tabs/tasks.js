@@ -2,8 +2,7 @@
 
 async function refreshTasks() {
     try {
-        const response = await fetch('/api/tasks');
-        const data = await response.json();
+        const data = await api('tasks');
 
         document.getElementById('heap-free').textContent = formatBytes(data.heap_free);
         document.getElementById('heap-min').textContent = formatBytes(data.heap_min);
