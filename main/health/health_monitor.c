@@ -13,6 +13,7 @@
 #include "esp_timer.h"
 #include "esp_task_wdt.h"
 #include "esp_littlefs.h"
+#include "esp_ota_ops.h"
 
 #include "wifi_manager.h"
 #include "status_led.h"
@@ -86,6 +87,20 @@ static void health_monitor_task(void *pvParameters)
 
             // Update status LED based on current health
             status_led_update(&s_health);
+
+            // OTA rollback validation: mark firmware valid once WiFi is connected and healthy
+            static bool s_ota_validated = false;
+            if (!s_ota_validated) {
+                if (s_health.wifi_connected && health_monitor_is_healthy()) {
+                    if (esp_ota_check_rollback_is_possible()) {
+                        esp_err_t ota_err = esp_ota_mark_app_valid_cancel_rollback();
+                        if (ota_err == ESP_OK) {
+                            ESP_LOGI(TAG, "OTA firmware validated (WiFi OK, system healthy)");
+                        }
+                    }
+                    s_ota_validated = true;
+                }
+            }
         }
 
         // Wait 2 seconds (well under the 10s WDT timeout)
