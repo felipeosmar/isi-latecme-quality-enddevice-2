@@ -99,6 +99,7 @@ esp_err_t api_wifi_status_handler(httpd_req_t *req);
 // ============================================================================
 
 esp_err_t api_sensors_status_handler(httpd_req_t *req);
+esp_err_t api_sensors_status_options_handler(httpd_req_t *req);
 esp_err_t api_sensors_config_get_handler(httpd_req_t *req);
 esp_err_t api_sensors_config_post_handler(httpd_req_t *req);
 
@@ -107,8 +108,10 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req);
 // ============================================================================
 
 esp_err_t api_lorawan_status_handler(httpd_req_t *req);
+esp_err_t api_lorawan_status_options_handler(httpd_req_t *req);
 esp_err_t api_lorawan_config_get_handler(httpd_req_t *req);
 esp_err_t api_lorawan_config_post_handler(httpd_req_t *req);
+esp_err_t api_lorawan_config_options_handler(httpd_req_t *req);
 esp_err_t api_lorawan_join_handler(httpd_req_t *req);
 
 // ============================================================================
