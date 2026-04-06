@@ -9,7 +9,7 @@
 </head>
 <body>
     <header>
-        <button id="menu-toggle">&#9776;</button>
+        <button id="menu-toggle" aria-label="Toggle navigation menu">&#9776;</button>
         <h1>LoRaWAN Sensor</h1>
         <div class="status">
             <span id="wifi-badge" class="badge">WiFi</span>
@@ -18,7 +18,7 @@
     </header>
 
     <div id="connection-banner" class="hidden"></div>
-    <div id="sidebar-overlay"></div>
+    <div id="sidebar-overlay" aria-hidden="true"></div>
 
     <aside id="sidebar">
         <button class="nav-btn active" data-tab="sensors">
