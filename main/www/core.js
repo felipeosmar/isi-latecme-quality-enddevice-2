@@ -11,7 +11,8 @@ const modules = {
     system: { loaded: false, init: null },
     tasks: { loaded: false, init: null },
     config: { loaded: false, init: null },
-    files: { loaded: false, init: null }
+    files: { loaded: false, init: null },
+    ota: { loaded: false, init: null }
 };
 
 // ============================================================================

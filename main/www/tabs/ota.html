@@ -1,0 +1,68 @@
+<div class="tab-content">
+    <h2>OTA Update</h2>
+
+    <div class="card">
+        <h3>Current Firmware</h3>
+        <div class="status-grid">
+            <div class="status-item">
+                <span class="status-label">Partition</span>
+                <span class="status-value" id="ota-partition">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">App Version</span>
+                <span class="status-value" id="ota-app-version">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">IDF Version</span>
+                <span class="status-value" id="ota-idf-version">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">State</span>
+                <span class="status-value" id="ota-state">-</span>
+            </div>
+        </div>
+        <div id="ota-rollback-section" class="hidden" style="margin-top:12px;">
+            <button class="btn btn-danger" onclick="otaRollback()">Rollback to Previous Firmware</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Update Firmware</h3>
+        <div class="form-group">
+            <label>Upload .bin file</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input type="file" id="ota-firmware-file" accept=".bin">
+                <button class="btn btn-primary" onclick="otaUploadFirmware()">Flash</button>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:16px;">
+            <label>Pull from URL</label>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="ota-firmware-url" class="form-control"
+                       placeholder="http://192.168.1.100/firmware.bin" style="flex:1;">
+                <button class="btn btn-primary" onclick="otaFirmwareUrl()">Update</button>
+            </div>
+        </div>
+        <div id="ota-firmware-progress" class="hidden" style="margin-top:12px;">
+            <div style="background:#eee;border-radius:4px;height:8px;">
+                <div id="ota-firmware-bar" style="background:#2196F3;height:8px;border-radius:4px;width:0%;transition:width 0.3s;"></div>
+            </div>
+            <p id="ota-firmware-status-msg" style="margin-top:6px;font-size:0.85em;color:#666;"></p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Update Web Interface</h3>
+        <p style="font-size:0.85em;color:#888;margin-bottom:12px;">
+            Upload a new <code>www.bin</code> partition image.
+            The device will be unreachable for ~30 seconds while writing.
+        </p>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <input type="file" id="ota-www-file" accept=".bin">
+            <button class="btn btn-secondary" onclick="otaUploadWww()">Flash Web UI</button>
+        </div>
+        <div id="ota-www-progress" class="hidden" style="margin-top:8px;">
+            <p id="ota-www-status-msg" style="font-size:0.85em;color:#666;"></p>
+        </div>
+    </div>
+</div>
