@@ -1,5 +1,4 @@
 // Sensors Tab Module
-let sensorPollTimer = null;
 
 async function refreshSensors() {
     try {
@@ -27,8 +26,6 @@ async function refreshSensors() {
 
 function initSensors() {
     refreshSensors();
-    if (sensorPollTimer) clearInterval(sensorPollTimer);
-    sensorPollTimer = setInterval(refreshSensors, 5000);
 }
 
-registerModule('sensors', initSensors);
+registerModule('sensors', initSensors, { pollFn: refreshSensors, pollInterval: 5000 });
