@@ -45,7 +45,7 @@ esp_err_t api_sensors_status_options_handler(httpd_req_t *req)
 {
     // NO check_auth — browsers never send credentials in preflight
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, OPTIONS");
     httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Authorization, Content-Type");
     httpd_resp_send(req, NULL, 0);
     return ESP_OK;
