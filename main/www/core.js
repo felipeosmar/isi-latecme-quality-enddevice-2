@@ -6,13 +6,13 @@
 // ============================================================================
 
 const modules = {
-    sensors: { loaded: false, init: null },
-    lorawan: { loaded: false, init: null },
-    system: { loaded: false, init: null },
-    tasks: { loaded: false, init: null },
-    config: { loaded: false, init: null },
-    files: { loaded: false, init: null },
-    ota: { loaded: false, init: null }
+    sensors: { loaded: false, init: null, pollFn: null, pollInterval: 5000 },
+    lorawan: { loaded: false, init: null, pollFn: null, pollInterval: 5000 },
+    system:  { loaded: false, init: null, pollFn: null, pollInterval: 5000 },
+    tasks:   { loaded: false, init: null, pollFn: null, pollInterval: 5000 },
+    config:  { loaded: false, init: null, pollFn: null, pollInterval: 5000 },
+    files:   { loaded: false, init: null, pollFn: null, pollInterval: 5000 },
+    ota:     { loaded: false, init: null, pollFn: null, pollInterval: 5000 },
 };
 
 // ============================================================================
@@ -171,44 +171,53 @@ async function updateStatusBadges() {
 // Lazy Loading System
 // ============================================================================
 
-async function loadModule(name) {
-    if (modules[name].loaded) {
-        if (modules[name].init) modules[name].init();
-        return;
-    }
+function loadModule(name) {
+    return new Promise((resolve, reject) => {
+        // Módulo já carregado: resolve imediatamente sem re-fetch nem re-init
+        if (modules[name].loaded) {
+            resolve();
+            return;
+        }
 
-    const container = document.getElementById('tab-' + name);
+        const container = document.getElementById('tab-' + name);
 
-    try {
-        // Load HTML
-        const htmlRes = await fetch(`tabs/${name}.html`);
-        if (!htmlRes.ok) throw new Error('HTML not found');
-        const html = await htmlRes.text();
-        container.innerHTML = html;
+        fetch(`tabs/${name}.html`)
+            .then(r => {
+                if (!r.ok) throw new Error('HTML not found');
+                return r.text();
+            })
+            .then(html => {
+                container.innerHTML = html;
 
-        // Load JS
-        const script = document.createElement('script');
-        script.src = `tabs/${name}.js`;
-        script.onload = () => {
-            modules[name].loaded = true;
-            // Call init function if registered
-            if (modules[name].init) modules[name].init();
-        };
-        script.onerror = () => {
-            console.error(`Failed to load ${name}.js`);
-            toast(`Failed to load ${name} module`, 'error');
-        };
-        document.body.appendChild(script);
-    } catch (e) {
-        console.error(`Failed to load module ${name}:`, e);
-        container.innerHTML = `<div class="tab-error">Failed to load module</div>`;
-    }
+                const script = document.createElement('script');
+                script.src = `tabs/${name}.js`;
+                script.onload = () => {
+                    // registerModule() já foi chamado pelo script, que define
+                    // modules[name].loaded = true e modules[name].init
+                    if (modules[name].init) modules[name].init();
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error(`Failed to load ${name}.js`);
+                    toast(`Failed to load ${name} module`, 'error');
+                    reject(new Error(`Failed to load ${name}.js`));
+                };
+                document.body.appendChild(script);
+            })
+            .catch(e => {
+                console.error(`Failed to load module ${name}:`, e);
+                container.innerHTML = `<div class="tab-error">Failed to load module</div>`;
+                reject(e);
+            });
+    });
 }
 
 // Register module init function (called by each module)
-function registerModule(name, initFn) {
+function registerModule(name, initFn, options = {}) {
     modules[name].init = initFn;
     modules[name].loaded = true;
+    if (options.pollFn)       modules[name].pollFn = options.pollFn;
+    if (options.pollInterval) modules[name].pollInterval = options.pollInterval;
 }
 
 // ============================================================================
