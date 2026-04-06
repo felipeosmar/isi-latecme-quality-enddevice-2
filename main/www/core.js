@@ -16,6 +16,39 @@ const modules = {
 };
 
 // ============================================================================
+// Poll Manager
+// ============================================================================
+
+const pollManager = {
+    activeTab: null,
+    timer: null,
+
+    start(tabName) {
+        const mod = modules[tabName];
+        if (!mod || !mod.pollFn) return;
+        this.stop();
+        this.activeTab = tabName;
+        this.timer = setInterval(mod.pollFn, mod.pollInterval);
+    },
+
+    stop() {
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = null;
+        }
+    }
+};
+
+// Pausa ao esconder a página (tela bloqueada, outra aba do browser, etc.)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        pollManager.stop();
+    } else if (pollManager.activeTab) {
+        pollManager.start(pollManager.activeTab);
+    }
+});
+
+// ============================================================================
 // Utilities
 // ============================================================================
 
