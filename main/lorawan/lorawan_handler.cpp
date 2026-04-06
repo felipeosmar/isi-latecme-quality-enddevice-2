@@ -18,6 +18,8 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 
 static const char *TAG = "LORAWAN";
 
@@ -52,7 +54,99 @@ static SemaphoreHandle_t lorawan_mutex = nullptr;
 static lorawan_stats_t stats = {};
 static bool initialized = false;
 
-// TODO: NVM buffer for LoRaWAN session persistence (future enhancement)
+// ============================================================================
+// NVS Session Persistence
+// ============================================================================
+
+#define LORAWAN_NVS_NAMESPACE   "lorawan"
+#define LORAWAN_NVS_KEY_NONCES  "nonces"
+#define LORAWAN_NVS_KEY_SESSION "session"
+
+static void nvs_save_session(void)
+{
+    nvs_handle_t h;
+    esp_err_t err = nvs_open(LORAWAN_NVS_NAMESPACE, NVS_READWRITE, &h);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "NVS open failed: %s", esp_err_to_name(err));
+        return;
+    }
+
+    uint8_t *nonces = node->getBufferNonces();
+    err = nvs_set_blob(h, LORAWAN_NVS_KEY_NONCES, nonces, RADIOLIB_LORAWAN_NONCES_BUF_SIZE);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "NVS write nonces failed: %s", esp_err_to_name(err));
+        nvs_close(h);
+        return;
+    }
+
+    uint8_t *session = node->getBufferSession();
+    err = nvs_set_blob(h, LORAWAN_NVS_KEY_SESSION, session, RADIOLIB_LORAWAN_SESSION_BUF_SIZE);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "NVS write session failed: %s", esp_err_to_name(err));
+        nvs_close(h);
+        return;
+    }
+
+    nvs_commit(h);
+    nvs_close(h);
+    ESP_LOGD(TAG, "Session saved to NVS (%d + %d bytes)",
+             RADIOLIB_LORAWAN_NONCES_BUF_SIZE, RADIOLIB_LORAWAN_SESSION_BUF_SIZE);
+}
+
+static int16_t nvs_restore_session(void)
+{
+    nvs_handle_t h;
+    esp_err_t err = nvs_open(LORAWAN_NVS_NAMESPACE, NVS_READONLY, &h);
+    if (err != ESP_OK) {
+        ESP_LOGI(TAG, "No NVS session found (first boot)");
+        return RADIOLIB_ERR_UNKNOWN;
+    }
+
+    uint8_t nonces[RADIOLIB_LORAWAN_NONCES_BUF_SIZE] = {};
+    size_t nonces_size = RADIOLIB_LORAWAN_NONCES_BUF_SIZE;
+    err = nvs_get_blob(h, LORAWAN_NVS_KEY_NONCES, nonces, &nonces_size);
+    if (err != ESP_OK) {
+        ESP_LOGI(TAG, "No nonces in NVS");
+        nvs_close(h);
+        return RADIOLIB_ERR_UNKNOWN;
+    }
+
+    uint8_t session[RADIOLIB_LORAWAN_SESSION_BUF_SIZE] = {};
+    size_t session_size = RADIOLIB_LORAWAN_SESSION_BUF_SIZE;
+    err = nvs_get_blob(h, LORAWAN_NVS_KEY_SESSION, session, &session_size);
+    nvs_close(h);
+
+    if (err != ESP_OK) {
+        ESP_LOGI(TAG, "No session in NVS");
+        return RADIOLIB_ERR_UNKNOWN;
+    }
+
+    int16_t state = node->setBufferNonces(nonces);
+    if (state != RADIOLIB_ERR_NONE) {
+        ESP_LOGW(TAG, "setBufferNonces failed: %d (credentials changed?)", state);
+        return state;
+    }
+
+    state = node->setBufferSession(session);
+    if (state != RADIOLIB_ERR_NONE) {
+        ESP_LOGW(TAG, "setBufferSession failed: %d", state);
+        return state;
+    }
+
+    ESP_LOGI(TAG, "Session buffers restored from NVS");
+    return RADIOLIB_ERR_NONE;
+}
+
+static void nvs_clear_session(void)
+{
+    nvs_handle_t h;
+    if (nvs_open(LORAWAN_NVS_NAMESPACE, NVS_READWRITE, &h) == ESP_OK) {
+        nvs_erase_all(h);
+        nvs_commit(h);
+        nvs_close(h);
+        ESP_LOGI(TAG, "NVS session cleared");
+    }
+}
 
 // ============================================================================
 // Helper: Parse hex string to byte array
@@ -216,13 +310,26 @@ extern "C" esp_err_t lorawan_join(void)
     // Begin OTAA provisioning
     node->beginOTAA(join_eui, dev_eui, nwk_key, app_key);
 
-    // Attempt activation
+    // Try to restore a previously saved session from NVS (avoids full re-join)
+    nvs_restore_session();
+
+    // Attempt activation (restores session if pending, or does full OTAA join)
     int state = node->activateOTAA();
 
-    if (state == RADIOLIB_ERR_NONE) {
+    // RADIOLIB_LORAWAN_NEW_SESSION (-1118): fresh OTAA join succeeded
+    // RADIOLIB_LORAWAN_SESSION_RESTORED (-1117): existing session resumed from NVS
+    if (state == RADIOLIB_ERR_NONE || state == RADIOLIB_LORAWAN_NEW_SESSION || state == RADIOLIB_LORAWAN_SESSION_RESTORED) {
         stats.joined = true;
         stats.dev_addr = (uint32_t)node->getDevAddr();
-        ESP_LOGI(TAG, "OTAA join successful! DevAddr: 0x%08lX", (unsigned long)stats.dev_addr);
+
+        if (state == RADIOLIB_LORAWAN_SESSION_RESTORED) {
+            ESP_LOGI(TAG, "Session restored from NVS! DevAddr: 0x%08lX", (unsigned long)stats.dev_addr);
+        } else {
+            ESP_LOGI(TAG, "OTAA join successful! DevAddr: 0x%08lX (code %d)", (unsigned long)stats.dev_addr, state);
+        }
+
+        // Save session so DevNonce is persisted for next boot
+        nvs_save_session();
 
         xSemaphoreGive(lorawan_mutex);
         return ESP_OK;
@@ -267,21 +374,27 @@ extern "C" esp_err_t lorawan_send(const uint8_t *data, size_t len, uint8_t port,
         state = node->sendReceive((uint8_t *)data, len, port, downlink_data, &downlink_len);
     }
 
-    if (state == RADIOLIB_ERR_NONE) {
+    // state >= 0: uplink sent OK
+    //   state == 0 (RADIOLIB_ERR_NONE): no downlink received
+    //   state == 1 or 2: downlink received in RX window 1 or 2
+    // state == RADIOLIB_ERR_RX_TIMEOUT (-6): legacy no-downlink path
+    // state < 0 (other): actual error
+    if (state >= RADIOLIB_ERR_NONE || state == RADIOLIB_ERR_RX_TIMEOUT) {
         stats.uplink_count++;
         stats.last_uplink_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
-        ESP_LOGI(TAG, "Uplink #%lu sent successfully", (unsigned long)stats.uplink_count);
 
-        // Check for downlink
-        if (downlink_len > 0) {
+        if (state > 0) {
+            // Downlink received in RX window `state`
             stats.downlink_count++;
-            ESP_LOGI(TAG, "Downlink received (%zu bytes)", downlink_len);
+            ESP_LOGI(TAG, "Uplink #%lu sent, downlink received in RX%d (%zu bytes)",
+                     (unsigned long)stats.uplink_count, state, downlink_len);
+        } else {
+            ESP_LOGI(TAG, "Uplink #%lu sent (no downlink, code %d)",
+                     (unsigned long)stats.uplink_count, state);
         }
-    } else if (state == RADIOLIB_ERR_RX_TIMEOUT) {
-        // No downlink received, but uplink was sent
-        stats.uplink_count++;
-        stats.last_uplink_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
-        ESP_LOGD(TAG, "Uplink #%lu sent (no downlink)", (unsigned long)stats.uplink_count);
+
+        // Persist session after each uplink to keep FCnt current across reboots
+        nvs_save_session();
     } else {
         ESP_LOGE(TAG, "Uplink failed, code %d", state);
 
@@ -339,6 +452,9 @@ extern "C" esp_err_t lorawan_force_rejoin(void)
     stats.joined = false;
     stats.join_attempts = 0;
     xSemaphoreGive(lorawan_mutex);
+
+    // Clear saved session so we do a fresh OTAA join
+    nvs_clear_session();
 
     return lorawan_join();
 }

@@ -7,6 +7,12 @@ set -e
 PORT="${PORT:-/dev/ttyUSB0}"
 BAUD="${BAUD:-460800}"
 
+# IMPORTANT: First-time migration from factory to OTA partition scheme
+# If the device currently runs firmware with the old 'factory' partition layout,
+# you MUST use './flash.sh all' for the initial update. Using 'app' or 'update'
+# will NOT flash the new partition table, leaving OTA rollback silently non-functional.
+# After the first './flash.sh all', subsequent updates can use './flash.sh update'.
+
 show_help() {
     echo "Usage: $0 [OPTION]"
     echo ""
@@ -55,7 +61,7 @@ flash_www() {
         echo "Error: www.bin not found. Run 'idf.py build' first."
         exit 1
     fi
-    esptool.py -p "$PORT" -b "$BAUD" write_flash 0x1D0000 build/www.bin
+    esptool.py -p "$PORT" -b "$BAUD" write_flash 0x370000 build/www.bin
 }
 
 flash_update() {
@@ -69,7 +75,7 @@ flash_update() {
     # Flash www partition
     if [ -f "build/www.bin" ]; then
         echo "Flashing web interface..."
-        esptool.py -p "$PORT" -b "$BAUD" write_flash 0x1D0000 build/www.bin
+        esptool.py -p "$PORT" -b "$BAUD" write_flash 0x370000 build/www.bin
     fi
 
     echo "=== Update Complete ==="

@@ -371,6 +371,7 @@ esp_err_t api_ota_firmware_url_handler(httpd_req_t *req)
     s_ota.bytes_written = 0;
     s_ota.total_bytes = 0;
     s_ota.error_msg[0] = '\0';
+    s_ota.state = OTA_STATE_IN_PROGRESS;
 
     BaseType_t ret = xTaskCreate(ota_url_task, "ota_url", 8192, params, 5, NULL);
     if (ret != pdPASS) {
@@ -379,8 +380,6 @@ esp_err_t api_ota_firmware_url_handler(httpd_req_t *req)
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to start OTA task");
         return ESP_FAIL;
     }
-
-    s_ota.state = OTA_STATE_IN_PROGRESS;
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddBoolToObject(resp, "success", true);
@@ -426,7 +425,10 @@ esp_err_t api_ota_www_upload_handler(httpd_req_t *req)
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "www erase failed: %s", esp_err_to_name(err));
         esp_vfs_littlefs_conf_t www_conf = { .base_path = "/www", .partition_label = "www", .format_if_mount_failed = false };
-        esp_vfs_littlefs_register(&www_conf);
+        esp_err_t remount_err = esp_vfs_littlefs_register(&www_conf);
+        if (remount_err != ESP_OK) {
+            ESP_LOGE(TAG, "www remount failed: %s", esp_err_to_name(remount_err));
+        }
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Erase failed");
         return ESP_FAIL;
     }
@@ -434,7 +436,10 @@ esp_err_t api_ota_www_upload_handler(httpd_req_t *req)
     char *buf = malloc(OTA_CHUNK_SIZE);
     if (!buf) {
         esp_vfs_littlefs_conf_t www_conf = { .base_path = "/www", .partition_label = "www", .format_if_mount_failed = false };
-        esp_vfs_littlefs_register(&www_conf);
+        esp_err_t remount_err = esp_vfs_littlefs_register(&www_conf);
+        if (remount_err != ESP_OK) {
+            ESP_LOGE(TAG, "www remount failed: %s", esp_err_to_name(remount_err));
+        }
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Out of memory");
         return ESP_FAIL;
     }
@@ -471,7 +476,10 @@ esp_err_t api_ota_www_upload_handler(httpd_req_t *req)
 
     if (write_error) {
         esp_vfs_littlefs_conf_t www_conf = { .base_path = "/www", .partition_label = "www", .format_if_mount_failed = false };
-        esp_vfs_littlefs_register(&www_conf);
+        esp_err_t remount_err = esp_vfs_littlefs_register(&www_conf);
+        if (remount_err != ESP_OK) {
+            ESP_LOGE(TAG, "www remount failed: %s", esp_err_to_name(remount_err));
+        }
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Write failed");
         return ESP_FAIL;
     }
