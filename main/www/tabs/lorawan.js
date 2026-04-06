@@ -1,5 +1,4 @@
 // LoRaWAN Tab Module
-let lorawanPollTimer = null;
 
 async function refreshLoRaWAN() {
     try {
@@ -68,8 +67,6 @@ async function forceJoin() {
 function initLoRaWAN() {
     refreshLoRaWAN();
     loadLoRaWANConfig();
-    if (lorawanPollTimer) clearInterval(lorawanPollTimer);
-    lorawanPollTimer = setInterval(refreshLoRaWAN, 5000);
 }
 
-registerModule('lorawan', initLoRaWAN);
+registerModule('lorawan', initLoRaWAN, { pollFn: refreshLoRaWAN, pollInterval: 5000 });
