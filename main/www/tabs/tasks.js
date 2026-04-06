@@ -7,7 +7,7 @@ async function refreshTasks() {
 
         document.getElementById('heap-free').textContent = formatBytes(data.heap_free);
         document.getElementById('heap-min').textContent = formatBytes(data.heap_min);
-        document.getElementById('uptime').textContent = formatUptime(data.uptime_s);
+        document.getElementById('uptime').textContent = formatUptime(data.uptime_s * 1000);
         document.getElementById('task-count').textContent = data.task_count;
 
         const tasks = data.tasks.sort((a, b) => b.cpu_percent - a.cpu_percent);
