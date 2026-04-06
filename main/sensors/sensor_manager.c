@@ -188,6 +188,11 @@ esp_err_t sensor_manager_read(void)
     if (config_get_thermocouple_enabled()) {
         esp_err_t ret = max6675_read(&tc_temp);
         if (ret == ESP_OK) {
+            tc_temp += config_get_thermocouple_correction();
+            float min_temp = config_get_thermocouple_min_temp();
+            float max_temp = config_get_thermocouple_max_temp();
+            if (tc_temp < min_temp) tc_temp = min_temp;
+            if (tc_temp > max_temp) tc_temp = max_temp;
             tc_valid = true;
         } else {
             ESP_LOGW(TAG, "MAX6675 read failed: %s", esp_err_to_name(ret));

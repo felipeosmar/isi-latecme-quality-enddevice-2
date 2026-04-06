@@ -31,10 +31,6 @@ static const char *TAG = "MAX6675";
 // Minimum time between reads (microseconds)
 #define MAX6675_MIN_READ_INTERVAL_US    (220 * 1000)
 
-// Temperature range for this application
-#define MAX6675_TEMP_MIN    0.0f
-#define MAX6675_TEMP_MAX    200.0f
-
 // SPI bit-bang clock half-period (microseconds)
 #define SPI_CLK_DELAY_US    5
 
@@ -276,10 +272,6 @@ esp_err_t max6675_read(float *temperature)
     // Extract temperature: bits 14-3 (12 bits), resolution 0.25°C
     uint16_t temp_raw = (raw >> 3) & 0x0FFF;
     float temp_c = temp_raw * 0.25f;
-
-    // Clamp to application range
-    if (temp_c < MAX6675_TEMP_MIN) temp_c = MAX6675_TEMP_MIN;
-    if (temp_c > MAX6675_TEMP_MAX) temp_c = MAX6675_TEMP_MAX;
 
     *temperature = temp_c;
     s_connected = true;
