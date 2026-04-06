@@ -284,7 +284,7 @@ function switchTab(tabName) {
     closeSidebar();
 
     loadModule(tabName).then(() => {
-        pollManager.start(tabName);
+        if (currentTab === tabName) pollManager.start(tabName);
     }).catch(() => {
         // error already shown by loadModule
     });
@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load initial tab
     loadModule('sensors').then(() => {
-        pollManager.start('sensors');
+        if (currentTab === 'sensors') pollManager.start('sensors');
     });
 
     // Log filters
