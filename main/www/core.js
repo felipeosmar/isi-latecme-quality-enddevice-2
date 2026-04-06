@@ -187,6 +187,18 @@ async function checkConnection() {
 }
 
 // ============================================================================
+// Sidebar
+// ============================================================================
+
+function toggleSidebar() {
+    document.body.classList.toggle('sidebar-open');
+}
+
+function closeSidebar() {
+    document.body.classList.remove('sidebar-open');
+}
+
+// ============================================================================
 // Status Badge Updates
 // ============================================================================
 
@@ -260,24 +272,23 @@ function registerModule(name, initFn, options = {}) {
 let currentTab = 'sensors';
 
 function switchTab(tabName) {
-    // Update nav buttons
+    pollManager.stop();
+
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.querySelector(`.nav-btn[data-tab="${tabName}"]`).classList.add('active');
 
-    // Update tab visibility
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + tabName).classList.add('active');
 
     currentTab = tabName;
+    closeSidebar();
 
-    // Load module if needed
-    loadModule(tabName);
+    loadModule(tabName).then(() => {
+        pollManager.start(tabName);
+    }).catch(() => {
+        // error already shown by loadModule
+    });
 }
-
-// Setup navigation listeners
-document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-});
 
 // ============================================================================
 // Log Viewer
@@ -447,14 +458,25 @@ function updateLogFilter() {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Update status badges
+    // Status badges
     updateStatusBadges();
     setInterval(updateStatusBadges, 10000);
 
-    // Load initial tab (sensors)
-    loadModule('sensors');
+    // Sidebar
+    document.getElementById('menu-toggle').addEventListener('click', toggleSidebar);
+    document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
 
-    // Setup log filter listeners
+    // Nav buttons
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    // Load initial tab
+    loadModule('sensors').then(() => {
+        pollManager.start('sensors');
+    });
+
+    // Log filters
     document.getElementById('log-level-filter').addEventListener('change', updateLogFilter);
     document.getElementById('log-tag-filter').addEventListener('input', updateLogFilter);
 });
