@@ -20,6 +20,7 @@ idf_component_register(
         "webserver/handlers/api_wifi.c"
         "webserver/handlers/api_lorawan.c"
         "webserver/handlers/api_sensors.c"
+        "webserver/handlers/api_ota.c"
         "config/config_manager.c"
         "health/health_monitor.c"
         "logs/log_buffer.c"
@@ -45,4 +46,6 @@ idf_component_register(
         mbedtls
         esp_timer
         freertos
+        app_update
+        esp_http_client
 )
