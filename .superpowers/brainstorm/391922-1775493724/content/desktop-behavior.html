@@ -1,0 +1,87 @@
+<h2>No desktop, a sidebar fica sempre aberta?</h2>
+<p class="subtitle">No mobile é sempre hamburger. No desktop (tela ≥ 768px), qual comportamento?</p>
+
+<div class="split">
+
+  <div class="mockup">
+    <div class="mockup-header">A — Sidebar sempre visível no desktop</div>
+    <div class="mockup-body" style="background:#0d1117;padding:0;border-radius:6px;overflow:hidden;height:260px;display:flex;flex-direction:column">
+      <!-- header sem hamburger no desktop -->
+      <div style="background:#161b22;border-bottom:1px solid #30363d;padding:10px 16px;display:flex;align-items:center;justify-content:space-between">
+        <span style="color:#58a6ff;font-size:12px;font-weight:600">LoRaWAN Sensor</span>
+        <div style="display:flex;gap:6px">
+          <span style="padding:2px 7px;background:#3fb950;color:#fff;font-size:9px;border-radius:10px">WiFi</span>
+          <span style="padding:2px 7px;background:#f85149;color:#fff;font-size:9px;border-radius:10px">LoRa</span>
+        </div>
+      </div>
+      <div style="display:flex;flex:1;overflow:hidden">
+        <!-- sidebar sempre visível -->
+        <div style="width:180px;background:#161b22;border-right:1px solid #30363d;padding:8px;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(88,166,255,0.1);border-radius:6px;margin-bottom:2px;border-left:2px solid #58a6ff">
+            <span style="font-size:12px">📡</span><span style="font-size:11px;color:#58a6ff">Sensors</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;margin-bottom:2px">
+            <span style="font-size:12px">🔗</span><span style="font-size:11px;color:#8b949e">LoRaWAN</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;margin-bottom:2px">
+            <span style="font-size:12px">💻</span><span style="font-size:11px;color:#8b949e">System</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;margin-bottom:2px">
+            <span style="font-size:12px">📋</span><span style="font-size:11px;color:#8b949e">Tasks</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;margin-bottom:2px">
+            <span style="font-size:12px">⚙️</span><span style="font-size:11px;color:#8b949e">Config</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;margin-bottom:2px">
+            <span style="font-size:12px">📁</span><span style="font-size:11px;color:#8b949e">Files</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px">
+            <span style="font-size:12px">🔄</span><span style="font-size:11px;color:#8b949e">OTA</span>
+          </div>
+        </div>
+        <!-- content -->
+        <div style="flex:1;padding:12px">
+          <div style="height:4px;background:#30363d;border-radius:2px;margin-bottom:5px"></div>
+          <div style="height:4px;background:#30363d;border-radius:2px;margin-bottom:5px;width:75%"></div>
+          <div style="height:4px;background:#30363d;border-radius:2px;width:55%"></div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#8b949e;margin-top:8px;text-align:center">Header limpo, sidebar sempre visível — sem hamburger necessário</p>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">B — Hamburger em todos os tamanhos</div>
+    <div class="mockup-body" style="background:#0d1117;padding:0;border-radius:6px;overflow:hidden;height:260px;display:flex;flex-direction:column">
+      <!-- header com hamburger mesmo no desktop -->
+      <div style="background:#161b22;border-bottom:1px solid #30363d;padding:10px 16px;display:flex;align-items:center;gap:10px">
+        <span style="color:#c9d1d9;font-size:16px;cursor:pointer">☰</span>
+        <span style="color:#58a6ff;font-size:12px;font-weight:600;flex:1">LoRaWAN Sensor</span>
+        <div style="display:flex;gap:6px">
+          <span style="padding:2px 7px;background:#3fb950;color:#fff;font-size:9px;border-radius:10px">WiFi</span>
+          <span style="padding:2px 7px;background:#f85149;color:#fff;font-size:9px;border-radius:10px">LoRa</span>
+        </div>
+      </div>
+      <!-- full content, sidebar collapsed -->
+      <div style="flex:1;padding:12px">
+        <div style="color:#8b949e;font-size:10px;margin-bottom:8px">Conteúdo ocupa tela inteira — sidebar aparece ao clicar ☰</div>
+        <div style="height:4px;background:#30363d;border-radius:2px;margin-bottom:5px"></div>
+        <div style="height:4px;background:#30363d;border-radius:2px;margin-bottom:5px;width:75%"></div>
+        <div style="height:4px;background:#30363d;border-radius:2px;width:55%"></div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#8b949e;margin-top:8px;text-align:center">Máximo conteúdo sempre — troca de aba exige 2 cliques em qualquer tela</p>
+  </div>
+
+</div>
+
+<div class="options" style="margin-top:16px">
+  <div class="option" data-choice="persistent-desktop" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>Sidebar fixa no desktop</h3><p>Desktop = sempre visível. Mobile = hamburger.</p></div>
+  </div>
+  <div class="option" data-choice="always-hamburger" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>Hamburger em todos os tamanhos</h3><p>Mesmo comportamento em qualquer tela. Máximo espaço de conteúdo.</p></div>
+  </div>
+</div>

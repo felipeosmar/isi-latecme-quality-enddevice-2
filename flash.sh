@@ -2,6 +2,8 @@
 # Flash helper script for lorawan-enddevice
 # Supports partial flashing to preserve user configuration
 
+. /home/felipe/.espressif/v5.5.3/esp-idf/export.sh >/dev/null
+
 set -e
 
 PORT="${PORT:-/dev/ttyUSB0}"
