@@ -206,6 +206,16 @@ esp_err_t api_logs_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+// OPTIONS /api/restart — CORS preflight (no auth check)
+esp_err_t api_restart_options_handler(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Authorization, Content-Type");
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
+}
+
 // POST /api/logs/clear - Clear log buffer
 esp_err_t api_logs_clear_handler(httpd_req_t *req)
 {

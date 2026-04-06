@@ -161,12 +161,14 @@ esp_err_t web_server_init(const web_server_config_t *config)
     httpd_uri_t status = { .uri = "/api/status", .method = HTTP_GET, .handler = api_status_handler };
     httpd_uri_t tasks = { .uri = "/api/tasks", .method = HTTP_GET, .handler = api_tasks_handler };
     httpd_uri_t restart = { .uri = "/api/restart", .method = HTTP_POST, .handler = api_restart_handler };
+    httpd_uri_t restart_options = { .uri = "/api/restart", .method = HTTP_OPTIONS, .handler = api_restart_options_handler };
     httpd_uri_t logs = { .uri = "/api/logs", .method = HTTP_GET, .handler = api_logs_handler };
     httpd_uri_t logs_clear = { .uri = "/api/logs/clear", .method = HTTP_POST, .handler = api_logs_clear_handler };
 
     httpd_register_uri_handler(s_server, &status);
     httpd_register_uri_handler(s_server, &tasks);
     httpd_register_uri_handler(s_server, &restart);
+    httpd_register_uri_handler(s_server, &restart_options);
     httpd_register_uri_handler(s_server, &logs);
     httpd_register_uri_handler(s_server, &logs_clear);
 
