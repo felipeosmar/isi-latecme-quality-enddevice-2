@@ -211,6 +211,14 @@ static void ota_url_task(void *pvParameters)
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&http_config);
+    if (!client) {
+        ESP_LOGE(TAG, "Failed to init HTTP client");
+        snprintf(s_ota.error_msg, sizeof(s_ota.error_msg), "HTTP client init failed");
+        s_ota.state = OTA_STATE_FAILED;
+        free(params);
+        vTaskDelete(NULL);
+        return;
+    }
     esp_err_t err = esp_http_client_open(client, 0);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "HTTP open failed: %s", esp_err_to_name(err));
@@ -317,8 +325,7 @@ static void ota_url_task(void *pvParameters)
     s_ota.state = OTA_STATE_REBOOTING;
     vTaskDelay(pdMS_TO_TICKS(1000));
     esp_restart();
-
-    vTaskDelete(NULL);
+    /* unreachable */
 }
 
 esp_err_t api_ota_firmware_url_handler(httpd_req_t *req)
@@ -361,7 +368,6 @@ esp_err_t api_ota_firmware_url_handler(httpd_req_t *req)
     params->url[sizeof(params->url) - 1] = '\0';
     cJSON_Delete(json);
 
-    s_ota.state = OTA_STATE_IN_PROGRESS;
     s_ota.bytes_written = 0;
     s_ota.total_bytes = 0;
     s_ota.error_msg[0] = '\0';
@@ -373,6 +379,8 @@ esp_err_t api_ota_firmware_url_handler(httpd_req_t *req)
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to start OTA task");
         return ESP_FAIL;
     }
+
+    s_ota.state = OTA_STATE_IN_PROGRESS;
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddBoolToObject(resp, "success", true);
@@ -417,12 +425,16 @@ esp_err_t api_ota_www_upload_handler(httpd_req_t *req)
     esp_err_t err = esp_partition_erase_range(www_partition, 0, www_partition->size);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "www erase failed: %s", esp_err_to_name(err));
+        esp_vfs_littlefs_conf_t www_conf = { .base_path = "/www", .partition_label = "www", .format_if_mount_failed = false };
+        esp_vfs_littlefs_register(&www_conf);
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Erase failed");
         return ESP_FAIL;
     }
 
     char *buf = malloc(OTA_CHUNK_SIZE);
     if (!buf) {
+        esp_vfs_littlefs_conf_t www_conf = { .base_path = "/www", .partition_label = "www", .format_if_mount_failed = false };
+        esp_vfs_littlefs_register(&www_conf);
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Out of memory");
         return ESP_FAIL;
     }
@@ -458,6 +470,8 @@ esp_err_t api_ota_www_upload_handler(httpd_req_t *req)
     free(buf);
 
     if (write_error) {
+        esp_vfs_littlefs_conf_t www_conf = { .base_path = "/www", .partition_label = "www", .format_if_mount_failed = false };
+        esp_vfs_littlefs_register(&www_conf);
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Write failed");
         return ESP_FAIL;
     }
