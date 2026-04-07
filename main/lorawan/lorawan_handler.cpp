@@ -459,6 +459,30 @@ extern "C" esp_err_t lorawan_force_rejoin(void)
     return lorawan_join();
 }
 
+extern "C" esp_err_t lorawan_add_app_package(uint8_t package_id, lorawan_package_cb_t callback)
+{
+    if (!initialized || !node) {
+        ESP_LOGE(TAG, "lorawan_add_app_package: not initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (xSemaphoreTake(lorawan_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "lorawan_add_app_package: mutex timeout");
+        return ESP_ERR_TIMEOUT;
+    }
+
+    int16_t state = node->addAppPackage(package_id, (PackageCb_t)callback);
+    xSemaphoreGive(lorawan_mutex);
+
+    if (state != RADIOLIB_ERR_NONE) {
+        ESP_LOGE(TAG, "addAppPackage failed: %d", state);
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "App package %d registered", package_id);
+    return ESP_OK;
+}
+
 extern "C" void lorawan_task(void *param)
 {
     ESP_LOGI(TAG, "LoRaWAN task started");

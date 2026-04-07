@@ -61,6 +61,17 @@ typedef struct {
     char web_username[32];
     char web_password[64];
     bool web_auth_enabled;
+
+    // Alarm thresholds
+    bool  alarm_temp_enabled;
+    float alarm_temp_low;
+    float alarm_temp_high;
+    bool  alarm_hum_enabled;
+    float alarm_hum_low;
+    float alarm_hum_high;
+    bool  alarm_tc_enabled;
+    float alarm_tc_low;
+    float alarm_tc_high;
 } config_t;
 
 static config_t s_config;
@@ -154,6 +165,17 @@ void config_reset_defaults(void)
     strcpy(s_config.web_password, "admin");
     s_config.web_auth_enabled = true;
 
+    // Alarm thresholds (all disabled by default)
+    s_config.alarm_temp_enabled = false;
+    s_config.alarm_temp_low     = 0.0f;
+    s_config.alarm_temp_high    = 0.0f;
+    s_config.alarm_hum_enabled  = false;
+    s_config.alarm_hum_low      = 0.0f;
+    s_config.alarm_hum_high     = 0.0f;
+    s_config.alarm_tc_enabled   = false;
+    s_config.alarm_tc_low       = 0.0f;
+    s_config.alarm_tc_high      = 0.0f;
+
     ESP_LOGI(TAG, "Configuration reset to defaults");
 }
 
@@ -198,6 +220,17 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddNumberToObject(sensors, "thermocouple_cs_pin", s_config.thermocouple_cs_pin);
     cJSON_AddNumberToObject(sensors, "thermocouple_min_temp", s_config.thermocouple_min_temp);
     cJSON_AddNumberToObject(sensors, "thermocouple_correction", s_config.thermocouple_correction);
+    cJSON *alarms = cJSON_CreateObject();
+    cJSON_AddBoolToObject(alarms, "temp_enabled", s_config.alarm_temp_enabled);
+    cJSON_AddNumberToObject(alarms, "temp_low",   s_config.alarm_temp_low);
+    cJSON_AddNumberToObject(alarms, "temp_high",  s_config.alarm_temp_high);
+    cJSON_AddBoolToObject(alarms, "hum_enabled",  s_config.alarm_hum_enabled);
+    cJSON_AddNumberToObject(alarms, "hum_low",    s_config.alarm_hum_low);
+    cJSON_AddNumberToObject(alarms, "hum_high",   s_config.alarm_hum_high);
+    cJSON_AddBoolToObject(alarms, "tc_enabled",   s_config.alarm_tc_enabled);
+    cJSON_AddNumberToObject(alarms, "tc_low",     s_config.alarm_tc_low);
+    cJSON_AddNumberToObject(alarms, "tc_high",    s_config.alarm_tc_high);
+    cJSON_AddItemToObject(sensors, "alarms", alarms);
     cJSON_AddItemToObject(root, "sensors", sensors);
 
     // Interface section
@@ -371,6 +404,27 @@ esp_err_t config_load(void)
         }
         if ((item = cJSON_GetObjectItem(sensors, "thermocouple_correction")) && cJSON_IsNumber(item)) {
             s_config.thermocouple_correction = (float)item->valuedouble;
+        }
+        cJSON *alarms = cJSON_GetObjectItem(sensors, "alarms");
+        if (alarms) {
+            if ((item = cJSON_GetObjectItem(alarms, "temp_enabled")) && cJSON_IsBool(item))
+                s_config.alarm_temp_enabled = cJSON_IsTrue(item);
+            if ((item = cJSON_GetObjectItem(alarms, "temp_low")) && cJSON_IsNumber(item))
+                s_config.alarm_temp_low = (float)item->valuedouble;
+            if ((item = cJSON_GetObjectItem(alarms, "temp_high")) && cJSON_IsNumber(item))
+                s_config.alarm_temp_high = (float)item->valuedouble;
+            if ((item = cJSON_GetObjectItem(alarms, "hum_enabled")) && cJSON_IsBool(item))
+                s_config.alarm_hum_enabled = cJSON_IsTrue(item);
+            if ((item = cJSON_GetObjectItem(alarms, "hum_low")) && cJSON_IsNumber(item))
+                s_config.alarm_hum_low = (float)item->valuedouble;
+            if ((item = cJSON_GetObjectItem(alarms, "hum_high")) && cJSON_IsNumber(item))
+                s_config.alarm_hum_high = (float)item->valuedouble;
+            if ((item = cJSON_GetObjectItem(alarms, "tc_enabled")) && cJSON_IsBool(item))
+                s_config.alarm_tc_enabled = cJSON_IsTrue(item);
+            if ((item = cJSON_GetObjectItem(alarms, "tc_low")) && cJSON_IsNumber(item))
+                s_config.alarm_tc_low = (float)item->valuedouble;
+            if ((item = cJSON_GetObjectItem(alarms, "tc_high")) && cJSON_IsNumber(item))
+                s_config.alarm_tc_high = (float)item->valuedouble;
         }
     }
 
@@ -607,3 +661,27 @@ void config_set_web_password(const char *password) {
     if (password) strncpy(s_config.web_password, password, sizeof(s_config.web_password) - 1);
 }
 void config_set_web_auth_enabled(bool enabled) { s_config.web_auth_enabled = enabled; }
+
+// ============================================================================
+// Getters/Setters - Alarm Thresholds
+// ============================================================================
+
+bool  config_get_alarm_temp_enabled(void) { return s_config.alarm_temp_enabled; }
+float config_get_alarm_temp_low(void)     { return s_config.alarm_temp_low; }
+float config_get_alarm_temp_high(void)    { return s_config.alarm_temp_high; }
+bool  config_get_alarm_hum_enabled(void)  { return s_config.alarm_hum_enabled; }
+float config_get_alarm_hum_low(void)      { return s_config.alarm_hum_low; }
+float config_get_alarm_hum_high(void)     { return s_config.alarm_hum_high; }
+bool  config_get_alarm_tc_enabled(void)   { return s_config.alarm_tc_enabled; }
+float config_get_alarm_tc_low(void)       { return s_config.alarm_tc_low; }
+float config_get_alarm_tc_high(void)      { return s_config.alarm_tc_high; }
+
+void config_set_alarm_temp_enabled(bool e) { s_config.alarm_temp_enabled = e; }
+void config_set_alarm_temp_low(float v)    { s_config.alarm_temp_low = v; }
+void config_set_alarm_temp_high(float v)   { s_config.alarm_temp_high = v; }
+void config_set_alarm_hum_enabled(bool e)  { s_config.alarm_hum_enabled = e; }
+void config_set_alarm_hum_low(float v)     { s_config.alarm_hum_low = v; }
+void config_set_alarm_hum_high(float v)    { s_config.alarm_hum_high = v; }
+void config_set_alarm_tc_enabled(bool e)   { s_config.alarm_tc_enabled = e; }
+void config_set_alarm_tc_low(float v)      { s_config.alarm_tc_low = v; }
+void config_set_alarm_tc_high(float v)     { s_config.alarm_tc_high = v; }

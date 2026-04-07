@@ -34,6 +34,33 @@ typedef struct {
 } lorawan_stats_t;
 
 /**
+ * @brief Callback type for LoRaWAN Application Package downlinks (TSxxx)
+ *
+ * Called from within lorawan_send() when a downlink is received on the
+ * package's FPort. Do NOT call lorawan_send() from this callback.
+ *
+ * @param data  Downlink payload bytes
+ * @param len   Payload length
+ */
+typedef void (*lorawan_package_cb_t)(uint8_t *data, size_t len);
+
+/**
+ * @brief Register a callback for a LoRaWAN Application Package (TSxxx)
+ *
+ * Wraps RadioLib's node->addAppPackage(). Requires lorawan_init() to have
+ * completed (node must exist). The caller is responsible for ensuring the
+ * device has joined before relying on downlink delivery.
+ *
+ * @param package_id  One of RADIOLIB_LORAWAN_PACKAGE_TSxxx (e.g., RADIOLIB_LORAWAN_PACKAGE_TS003 = 1)
+ * @param callback    Function called when a downlink arrives on the package's FPort
+ * @return ESP_OK on success
+ *         ESP_ERR_INVALID_STATE if lorawan_init() has not been called
+ *         ESP_ERR_TIMEOUT if the internal mutex could not be acquired
+ *         ESP_FAIL if RadioLib rejected the package registration
+ */
+esp_err_t lorawan_add_app_package(uint8_t package_id, lorawan_package_cb_t callback);
+
+/**
  * @brief Initialize the LoRaWAN handler
  *
  * Sets up SPI, configures the SX127x radio, and prepares

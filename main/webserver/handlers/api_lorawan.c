@@ -38,10 +38,24 @@ esp_err_t api_lorawan_status_handler(httpd_req_t *req)
 
     char *json_str = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     httpd_resp_send(req, json_str, strlen(json_str));
 
     free(json_str);
     cJSON_Delete(root);
+    return ESP_OK;
+}
+
+// OPTIONS /api/lorawan/status
+esp_err_t api_lorawan_status_options_handler(httpd_req_t *req)
+{
+    // NO check_auth — browsers never send credentials in preflight
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Authorization, Content-Type");
+    httpd_resp_send(req, NULL, 0);
     return ESP_OK;
 }
 
@@ -61,6 +75,8 @@ esp_err_t api_lorawan_config_get_handler(httpd_req_t *req)
 
     char *json_str = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     httpd_resp_send(req, json_str, strlen(json_str));
 
     free(json_str);
@@ -121,10 +137,24 @@ esp_err_t api_lorawan_config_post_handler(httpd_req_t *req)
 
     char *json_str = cJSON_PrintUnformatted(resp);
     httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     httpd_resp_send(req, json_str, strlen(json_str));
 
     free(json_str);
     cJSON_Delete(resp);
+    return ESP_OK;
+}
+
+// OPTIONS /api/lorawan/config
+esp_err_t api_lorawan_config_options_handler(httpd_req_t *req)
+{
+    // NO check_auth — browsers never send credentials in preflight
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Authorization, Content-Type");
+    httpd_resp_send(req, NULL, 0);
     return ESP_OK;
 }
 

@@ -9,6 +9,7 @@
 </head>
 <body>
     <header>
+        <button id="menu-toggle" aria-label="Toggle navigation menu">&#9776;</button>
         <h1>LoRaWAN Sensor</h1>
         <div class="status">
             <span id="wifi-badge" class="badge">WiFi</span>
@@ -17,16 +18,38 @@
     </header>
 
     <div id="connection-banner" class="hidden"></div>
+    <div id="sidebar-overlay" aria-hidden="true"></div>
 
-    <nav>
-        <button class="nav-btn active" data-tab="sensors">Sensors</button>
-        <button class="nav-btn" data-tab="lorawan">LoRaWAN</button>
-        <button class="nav-btn" data-tab="system">System</button>
-        <button class="nav-btn" data-tab="tasks">Tasks</button>
-        <button class="nav-btn" data-tab="config">Config</button>
-        <button class="nav-btn" data-tab="files">Files</button>
-        <button class="nav-btn" data-tab="ota">OTA</button>
-    </nav>
+    <aside id="sidebar">
+        <button class="nav-btn active" data-tab="sensors">
+            <span class="nav-icon">&#128225;</span>
+            <span class="nav-label">Sensors</span>
+        </button>
+        <button class="nav-btn" data-tab="lorawan">
+            <span class="nav-icon">&#128279;</span>
+            <span class="nav-label">LoRaWAN</span>
+        </button>
+        <button class="nav-btn" data-tab="system">
+            <span class="nav-icon">&#128187;</span>
+            <span class="nav-label">System</span>
+        </button>
+        <button class="nav-btn" data-tab="tasks">
+            <span class="nav-icon">&#128203;</span>
+            <span class="nav-label">Tasks</span>
+        </button>
+        <button class="nav-btn" data-tab="config">
+            <span class="nav-icon">&#9881;</span>
+            <span class="nav-label">Config</span>
+        </button>
+        <button class="nav-btn" data-tab="files">
+            <span class="nav-icon">&#128193;</span>
+            <span class="nav-label">Files</span>
+        </button>
+        <button class="nav-btn" data-tab="ota">
+            <span class="nav-icon">&#8635;</span>
+            <span class="nav-label">OTA</span>
+        </button>
+    </aside>
 
     <main>
         <section id="tab-sensors" class="tab active">
