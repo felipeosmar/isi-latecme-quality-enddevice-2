@@ -8,6 +8,7 @@
 #include "esp_partition.h"
 #include "esp_http_client.h"
 #include "esp_app_desc.h"
+#include "auto_updater.h"
 
 static const char *TAG = "OTA";
 
@@ -534,5 +535,92 @@ esp_err_t api_ota_rollback_handler(httpd_req_t *req)
     vTaskDelay(pdMS_TO_TICKS(500));
     esp_ota_mark_app_invalid_rollback_and_reboot();
 
+    return ESP_OK;
+}
+
+// ============================================================================
+// GET /api/ota/auto-update
+// ============================================================================
+
+esp_err_t api_ota_auto_update_get_handler(httpd_req_t *req)
+{
+    if (!check_auth(req)) return send_unauthorized(req);
+
+    const char *result_str = "never";
+    switch (auto_updater_get_last_result()) {
+        case AUTO_UPDATE_RESULT_UP_TO_DATE: result_str = "up_to_date"; break;
+        case AUTO_UPDATE_RESULT_UPDATED:    result_str = "updated";    break;
+        case AUTO_UPDATE_RESULT_ERROR:      result_str = "error";      break;
+        default: break;
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddBoolToObject(root,   "enabled",       config_get_auto_update_enabled());
+    cJSON_AddStringToObject(root, "branch",        config_get_auto_update_branch());
+    cJSON_AddStringToObject(root, "firmware_tag",  config_get_auto_update_firmware_tag());
+    cJSON_AddStringToObject(root, "www_tag",       config_get_auto_update_www_tag());
+    cJSON_AddNumberToObject(root, "last_check_time", (double)auto_updater_get_last_check_time());
+    cJSON_AddStringToObject(root, "last_check_result", result_str);
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json_str, strlen(json_str));
+    free(json_str);
+    cJSON_Delete(root);
+    return ESP_OK;
+}
+
+// ============================================================================
+// POST /api/ota/auto-update
+// Body: { "enabled": true, "branch": "main" }
+// Optionally: { "trigger_now": true } to force an immediate check
+// ============================================================================
+
+esp_err_t api_ota_auto_update_post_handler(httpd_req_t *req)
+{
+    if (!check_auth(req)) return send_unauthorized(req);
+
+    char body[256];
+    int received = httpd_req_recv(req, body, sizeof(body) - 1);
+    if (received <= 0) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Empty body");
+        return ESP_FAIL;
+    }
+    body[received] = '\0';
+
+    cJSON *json = cJSON_Parse(body);
+    if (!json) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
+        return ESP_FAIL;
+    }
+
+    cJSON *item;
+    if ((item = cJSON_GetObjectItem(json, "enabled")) && cJSON_IsBool(item)) {
+        config_set_auto_update_enabled(cJSON_IsTrue(item));
+    }
+    if ((item = cJSON_GetObjectItem(json, "branch")) && cJSON_IsString(item)
+            && strlen(item->valuestring) > 0) {
+        config_set_auto_update_branch(item->valuestring);
+    }
+    bool trigger = false;
+    if ((item = cJSON_GetObjectItem(json, "trigger_now")) && cJSON_IsTrue(item)) {
+        trigger = true;
+    }
+
+    cJSON_Delete(json);
+    config_save();
+
+    if (trigger) {
+        auto_updater_trigger_now();
+    }
+
+    cJSON *resp = cJSON_CreateObject();
+    cJSON_AddBoolToObject(resp, "success", true);
+    cJSON_AddStringToObject(resp, "message", trigger ? "Config saved, check triggered" : "Config saved");
+    char *json_str = cJSON_PrintUnformatted(resp);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json_str, strlen(json_str));
+    free(json_str);
+    cJSON_Delete(resp);
     return ESP_OK;
 }
