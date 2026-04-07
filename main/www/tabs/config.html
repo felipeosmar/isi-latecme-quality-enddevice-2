@@ -20,6 +20,18 @@
 <div class="card"><h3>Buzzer</h3>
 <div class="form-row"><label>Volume (%)</label><input type="range" id="cfg-buzzer-vol" min="0" max="100" value="80"><span id="cfg-buzzer-vol-val">80</span></div>
 <button onclick="saveBuzzerConfig()" class="btn full mt-2">Save Buzzer Config</button></div>
+
+<div class="card"><h3>Alarmes</h3>
+<div class="form-row"><label>Temp Ext. Ativo</label><input type="checkbox" id="cfg-alarm-temp-en"></div>
+<div class="form-row"><label>Temp Ext. Min (°C)</label><input type="number" id="cfg-alarm-temp-low" step="0.1" value="0"></div>
+<div class="form-row"><label>Temp Ext. Max (°C)</label><input type="number" id="cfg-alarm-temp-high" step="0.1" value="0"></div>
+<div class="form-row"><label>Umidade Ativo</label><input type="checkbox" id="cfg-alarm-hum-en"></div>
+<div class="form-row"><label>Umidade Min (%)</label><input type="number" id="cfg-alarm-hum-low" step="0.1" min="0" max="100" value="0"></div>
+<div class="form-row"><label>Umidade Max (%)</label><input type="number" id="cfg-alarm-hum-high" step="0.1" min="0" max="100" value="0"></div>
+<div class="form-row"><label>Termopar Ativo</label><input type="checkbox" id="cfg-alarm-tc-en"></div>
+<div class="form-row"><label>Termopar Min (°C)</label><input type="number" id="cfg-alarm-tc-low" step="0.1" value="0"></div>
+<div class="form-row"><label>Termopar Max (°C)</label><input type="number" id="cfg-alarm-tc-high" step="0.1" value="0"></div>
+<button onclick="saveAlarmConfig()" class="btn full mt-2">Salvar Alarmes</button></div>
 </div>
 
 <div class="config-main">
