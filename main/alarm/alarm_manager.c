@@ -65,6 +65,9 @@ static void evaluate_channel(alarm_channel_t *ch, float value,
                               float low, float high,
                               const char *label_high, const char *label_low)
 {
+    // Inverted or unconfigured thresholds: skip evaluation to prevent un-clearable alarms
+    if (low >= high) return;
+
     bool violates_high = (value > high);
     bool violates_low  = (value < low);
     bool in_range      = (!violates_high && !violates_low);
