@@ -313,8 +313,8 @@ void app_main(void)
     // Display task - Core 0, Priority 3, Stack 4096
     xTaskCreatePinnedToCore(display_task, "display", 4096, NULL, 3, NULL, 0);
 
-    // Clock sync task - Core 0, Priority 3, Stack 3072
-    xTaskCreatePinnedToCore(clock_sync_task, "clock_sync", 3072, NULL, 3, NULL, 0);
+    // Clock sync task - Core 0, Priority 3, Stack 4096
+    xTaskCreatePinnedToCore(clock_sync_task, "clock_sync", 4096, NULL, 3, NULL, 0);
 
     ESP_LOGI(TAG, "System ready!");
 }
