@@ -36,6 +36,7 @@
 #include "clock_sync.h"
 #include "alarm_manager.h"
 #include "button_handler.h"
+#include "auto_updater.h"
 
 static const char *TAG = "MAIN";
 
@@ -223,6 +224,7 @@ void app_main(void)
     esp_log_level_set("MAX6675", ESP_LOG_INFO);
     esp_log_level_set("OLED", ESP_LOG_INFO);
     esp_log_level_set("CLOCK_SYNC", ESP_LOG_INFO);
+    esp_log_level_set("AUTO_UPD", ESP_LOG_INFO);
 
     ESP_LOGI(TAG, "==========================================");
     ESP_LOGI(TAG, "  LoRaWAN End Device - Sensor Node");
@@ -319,6 +321,11 @@ void app_main(void)
 
     // Clock sync task - Core 0, Priority 3, Stack 4096
     xTaskCreatePinnedToCore(clock_sync_task, "clock_sync", 4096, NULL, 3, NULL, 0);
+
+    // Auto-updater task - Core 0, Priority 3, Stack 8KB
+    if (auto_updater_init() != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to start auto-updater");
+    }
 
     ESP_LOGI(TAG, "System ready!");
 }
