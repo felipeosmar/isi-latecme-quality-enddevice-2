@@ -168,7 +168,11 @@ class EspHal : public RadioLibHal {
         return;
       }
 
-      gpio_install_isr_service((int)ESP_INTR_FLAG_IRAM);
+      static bool isr_service_installed = false;
+      if (!isr_service_installed) {
+        gpio_install_isr_service((int)ESP_INTR_FLAG_IRAM);
+        isr_service_installed = true;
+      }
       gpio_set_intr_type((gpio_num_t)interruptNum, (gpio_int_type_t)(mode & 0x7));
       gpio_isr_handler_add((gpio_num_t)interruptNum, (void (*)(void*))interruptCb, NULL);
     }

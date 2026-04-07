@@ -93,6 +93,8 @@ static void nvs_save_session(void)
              RADIOLIB_LORAWAN_NONCES_BUF_SIZE, RADIOLIB_LORAWAN_SESSION_BUF_SIZE);
 }
 
+static void nvs_clear_session(void);
+
 static int16_t nvs_restore_session(void)
 {
     nvs_handle_t h;
@@ -123,13 +125,15 @@ static int16_t nvs_restore_session(void)
 
     int16_t state = node->setBufferNonces(nonces);
     if (state != RADIOLIB_ERR_NONE) {
-        ESP_LOGW(TAG, "setBufferNonces failed: %d (credentials changed?)", state);
+        ESP_LOGW(TAG, "setBufferNonces failed: %d (credentials changed?), clearing NVS", state);
+        nvs_clear_session();
         return state;
     }
 
     state = node->setBufferSession(session);
     if (state != RADIOLIB_ERR_NONE) {
-        ESP_LOGW(TAG, "setBufferSession failed: %d", state);
+        ESP_LOGW(TAG, "setBufferSession failed: %d, clearing stale NVS session", state);
+        nvs_clear_session();
         return state;
     }
 
