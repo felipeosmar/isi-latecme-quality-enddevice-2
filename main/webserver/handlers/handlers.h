@@ -103,6 +103,7 @@ esp_err_t api_sensors_status_handler(httpd_req_t *req);
 esp_err_t api_sensors_status_options_handler(httpd_req_t *req);
 esp_err_t api_sensors_config_get_handler(httpd_req_t *req);
 esp_err_t api_sensors_config_post_handler(httpd_req_t *req);
+esp_err_t api_sensors_config_options_handler(httpd_req_t *req);
 
 // ============================================================================
 // API - LoRaWAN (api_lorawan.c)

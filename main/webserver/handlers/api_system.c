@@ -214,7 +214,7 @@ esp_err_t api_restart_options_handler(httpd_req_t *req)
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
     httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "POST, OPTIONS");
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Authorization, Content-Type");
     httpd_resp_send(req, NULL, 0);
     return ESP_OK;
 }

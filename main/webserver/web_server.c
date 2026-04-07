@@ -192,11 +192,13 @@ esp_err_t web_server_init(const web_server_config_t *config)
     httpd_uri_t sensors_status_options = { .uri = "/api/sensors/status", .method = HTTP_OPTIONS, .handler = api_sensors_status_options_handler };
     httpd_uri_t sensors_config_get = { .uri = "/api/sensors/config", .method = HTTP_GET, .handler = api_sensors_config_get_handler };
     httpd_uri_t sensors_config_post = { .uri = "/api/sensors/config", .method = HTTP_POST, .handler = api_sensors_config_post_handler };
+    httpd_uri_t sensors_config_options = { .uri = "/api/sensors/config", .method = HTTP_OPTIONS, .handler = api_sensors_config_options_handler };
 
     httpd_register_uri_handler(s_server, &sensors_status);
     httpd_register_uri_handler(s_server, &sensors_status_options);
     httpd_register_uri_handler(s_server, &sensors_config_get);
     httpd_register_uri_handler(s_server, &sensors_config_post);
+    httpd_register_uri_handler(s_server, &sensors_config_options);
 
     // ========================================================================
     // Register Routes - API: LoRaWAN
