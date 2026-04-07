@@ -1,0 +1,11 @@
+menu "Firmware Variant"
+
+config THERMOCOUPLE_ENABLED
+    bool "Enable MAX6675 thermocouple sensor"
+    default n
+    help
+        Enables the MAX6675 SPI thermocouple driver, thermocouple config
+        fields, and thermocouple alarm thresholds. Disable for the standard
+        (temperature + humidity only) variant.
+
+endmenu
