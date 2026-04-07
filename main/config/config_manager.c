@@ -732,12 +732,14 @@ void config_set_alarm_tc_high(float v)     { s_config.alarm_tc_high = v; }
 // ============================================================================
 
 bool config_get_auto_update_enabled(void) {
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(100));
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
     bool v = s_config.auto_update_enabled;
     if (s_config_mutex) xSemaphoreGive(s_config_mutex);
     return v;
 }
 
+// String getters return a direct pointer to internal buffer (no mutex).
+// Callers must copy the value immediately (e.g. into strncpy/snprintf).
 const char *config_get_auto_update_branch(void) {
     return s_config.auto_update_branch;
 }
@@ -751,27 +753,30 @@ const char *config_get_auto_update_www_tag(void) {
 }
 
 void config_set_auto_update_enabled(bool enabled) {
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(100));
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
     s_config.auto_update_enabled = enabled;
     if (s_config_mutex) xSemaphoreGive(s_config_mutex);
 }
 
 void config_set_auto_update_branch(const char *branch) {
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(100));
+    if (!branch) return;
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
     strncpy(s_config.auto_update_branch, branch, sizeof(s_config.auto_update_branch) - 1);
     s_config.auto_update_branch[sizeof(s_config.auto_update_branch) - 1] = '\0';
     if (s_config_mutex) xSemaphoreGive(s_config_mutex);
 }
 
 void config_set_auto_update_firmware_tag(const char *tag) {
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(100));
+    if (!tag) return;
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
     strncpy(s_config.auto_update_firmware_tag, tag, sizeof(s_config.auto_update_firmware_tag) - 1);
     s_config.auto_update_firmware_tag[sizeof(s_config.auto_update_firmware_tag) - 1] = '\0';
     if (s_config_mutex) xSemaphoreGive(s_config_mutex);
 }
 
 void config_set_auto_update_www_tag(const char *tag) {
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(100));
+    if (!tag) return;
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
     strncpy(s_config.auto_update_www_tag, tag, sizeof(s_config.auto_update_www_tag) - 1);
     s_config.auto_update_www_tag[sizeof(s_config.auto_update_www_tag) - 1] = '\0';
     if (s_config_mutex) xSemaphoreGive(s_config_mutex);
