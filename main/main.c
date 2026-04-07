@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -31,6 +32,7 @@
 #include "cayenne_lpp.h"
 #include "buzzer.h"
 #include "status_led.h"
+#include "clock_sync.h"
 
 static const char *TAG = "MAIN";
 
@@ -166,7 +168,16 @@ static void uplink_task(void *param)
         uint32_t interval_s = config_get_uplink_interval();
         if (interval_s < 10) interval_s = 10;
 
-        vTaskDelay(pdMS_TO_TICKS(interval_s * 1000));
+        if (clock_sync_is_synced()) {
+            // Align to the next clock boundary (e.g., hourly at :00:00)
+            time_t now = time(NULL);
+            time_t next = ((now / (time_t)interval_s) + 1) * (time_t)interval_s;
+            // next - now is always in (0, interval_s] by the floor-division formula
+            uint32_t delay_ms = (uint32_t)((next - now) * 1000);
+            vTaskDelay(pdMS_TO_TICKS(delay_ms));
+        } else {
+            vTaskDelay(pdMS_TO_TICKS(interval_s * 1000));
+        }
 
         if (!lorawan_is_joined()) {
             continue;
@@ -210,6 +221,7 @@ void app_main(void)
     esp_log_level_set("SENSOR_MGR", ESP_LOG_INFO);
     esp_log_level_set("MAX6675", ESP_LOG_INFO);
     esp_log_level_set("OLED", ESP_LOG_INFO);
+    esp_log_level_set("CLOCK_SYNC", ESP_LOG_INFO);
 
     ESP_LOGI(TAG, "==========================================");
     ESP_LOGI(TAG, "  LoRaWAN End Device - Sensor Node");
@@ -276,6 +288,9 @@ void app_main(void)
         ESP_LOGW(TAG, "Failed to start health monitor");
     }
 
+    // Initialize clock sync module
+    clock_sync_init();
+
     // Spawn FreeRTOS tasks
     ESP_LOGI(TAG, "Starting FreeRTOS tasks...");
 
@@ -290,6 +305,9 @@ void app_main(void)
 
     // Display task - Core 0, Priority 3, Stack 4096
     xTaskCreatePinnedToCore(display_task, "display", 4096, NULL, 3, NULL, 0);
+
+    // Clock sync task - Core 0, Priority 3, Stack 3072
+    xTaskCreatePinnedToCore(clock_sync_task, "clock_sync", 3072, NULL, 3, NULL, 0);
 
     ESP_LOGI(TAG, "System ready!");
 }
