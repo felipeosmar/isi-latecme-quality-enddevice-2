@@ -12,7 +12,9 @@
 #include "sht20_driver.h"
 #include "sht3x_driver.h"
 #include "am2315c_driver.h"
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
 #include "max6675_driver.h"
+#endif
 #include "config_manager.h"
 #include "alarm_manager.h"
 
@@ -129,6 +131,7 @@ esp_err_t sensor_manager_init(void)
     // Auto-detect I2C sensor
     detect_sensor();
 
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
     // Initialize MAX6675 thermocouple if enabled
     if (config_get_thermocouple_enabled()) {
         int sck = config_get_thermocouple_sck_pin();
@@ -141,9 +144,8 @@ esp_err_t sensor_manager_init(void)
         } else {
             ESP_LOGW(TAG, "MAX6675 init failed: %s (continuing without thermocouple)", esp_err_to_name(tc_ret));
         }
-    } else {
-        ESP_LOGI(TAG, "Thermocouple disabled in config, skipping MAX6675 init");
     }
+#endif
 
     memset(&sensor_data, 0, sizeof(sensor_data));
     if (detected_sensor != SENSOR_NONE) {
@@ -185,6 +187,7 @@ esp_err_t sensor_manager_read(void)
         }
     }
 
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
     // Read MAX6675 thermocouple
     if (config_get_thermocouple_enabled()) {
         esp_err_t ret = max6675_read(&tc_temp);
@@ -199,6 +202,7 @@ esp_err_t sensor_manager_read(void)
             ESP_LOGW(TAG, "MAX6675 read failed: %s", esp_err_to_name(ret));
         }
     }
+#endif
 
     // Update shared data
     xSemaphoreTake(data_mutex, portMAX_DELAY);
