@@ -72,6 +72,12 @@ typedef struct {
     bool  alarm_tc_enabled;
     float alarm_tc_low;
     float alarm_tc_high;
+
+    // Auto-update
+    bool  auto_update_enabled;
+    char  auto_update_branch[32];
+    char  auto_update_firmware_tag[32];
+    char  auto_update_www_tag[32];
 } config_t;
 
 static config_t s_config;
@@ -176,6 +182,12 @@ void config_reset_defaults(void)
     s_config.alarm_tc_low       = 0.0f;
     s_config.alarm_tc_high      = 0.0f;
 
+    // Auto-update defaults
+    s_config.auto_update_enabled = false;
+    strcpy(s_config.auto_update_branch, "main");
+    s_config.auto_update_firmware_tag[0] = '\0';
+    s_config.auto_update_www_tag[0] = '\0';
+
     ESP_LOGI(TAG, "Configuration reset to defaults");
 }
 
@@ -253,6 +265,14 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddStringToObject(web, "password", s_config.web_password);
     cJSON_AddBoolToObject(web, "auth_enabled", s_config.web_auth_enabled);
     cJSON_AddItemToObject(root, "web", web);
+
+    // Auto-update section
+    cJSON *update = cJSON_CreateObject();
+    cJSON_AddBoolToObject(update, "enabled", s_config.auto_update_enabled);
+    cJSON_AddStringToObject(update, "branch", s_config.auto_update_branch);
+    cJSON_AddStringToObject(update, "firmware_tag", s_config.auto_update_firmware_tag);
+    cJSON_AddStringToObject(update, "www_tag", s_config.auto_update_www_tag);
+    cJSON_AddItemToObject(root, "auto_update", update);
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);
@@ -478,6 +498,27 @@ esp_err_t config_load(void)
         }
     }
 
+    // Auto-update section
+    cJSON *au = cJSON_GetObjectItem(root, "auto_update");
+    if (au) {
+        cJSON *item;
+        if ((item = cJSON_GetObjectItem(au, "enabled")) && cJSON_IsBool(item)) {
+            s_config.auto_update_enabled = cJSON_IsTrue(item);
+        }
+        if ((item = cJSON_GetObjectItem(au, "branch")) && cJSON_IsString(item)) {
+            strncpy(s_config.auto_update_branch, item->valuestring,
+                    sizeof(s_config.auto_update_branch) - 1);
+        }
+        if ((item = cJSON_GetObjectItem(au, "firmware_tag")) && cJSON_IsString(item)) {
+            strncpy(s_config.auto_update_firmware_tag, item->valuestring,
+                    sizeof(s_config.auto_update_firmware_tag) - 1);
+        }
+        if ((item = cJSON_GetObjectItem(au, "www_tag")) && cJSON_IsString(item)) {
+            strncpy(s_config.auto_update_www_tag, item->valuestring,
+                    sizeof(s_config.auto_update_www_tag) - 1);
+        }
+    }
+
     cJSON_Delete(root);
 
     ESP_LOGI(TAG, "Configuration loaded");
@@ -685,3 +726,53 @@ void config_set_alarm_hum_high(float v)    { s_config.alarm_hum_high = v; }
 void config_set_alarm_tc_enabled(bool e)   { s_config.alarm_tc_enabled = e; }
 void config_set_alarm_tc_low(float v)      { s_config.alarm_tc_low = v; }
 void config_set_alarm_tc_high(float v)     { s_config.alarm_tc_high = v; }
+
+// ============================================================================
+// Auto-Update Configuration
+// ============================================================================
+
+bool config_get_auto_update_enabled(void) {
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(100));
+    bool v = s_config.auto_update_enabled;
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    return v;
+}
+
+const char *config_get_auto_update_branch(void) {
+    return s_config.auto_update_branch;
+}
+
+const char *config_get_auto_update_firmware_tag(void) {
+    return s_config.auto_update_firmware_tag;
+}
+
+const char *config_get_auto_update_www_tag(void) {
+    return s_config.auto_update_www_tag;
+}
+
+void config_set_auto_update_enabled(bool enabled) {
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(100));
+    s_config.auto_update_enabled = enabled;
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+}
+
+void config_set_auto_update_branch(const char *branch) {
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(100));
+    strncpy(s_config.auto_update_branch, branch, sizeof(s_config.auto_update_branch) - 1);
+    s_config.auto_update_branch[sizeof(s_config.auto_update_branch) - 1] = '\0';
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+}
+
+void config_set_auto_update_firmware_tag(const char *tag) {
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(100));
+    strncpy(s_config.auto_update_firmware_tag, tag, sizeof(s_config.auto_update_firmware_tag) - 1);
+    s_config.auto_update_firmware_tag[sizeof(s_config.auto_update_firmware_tag) - 1] = '\0';
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+}
+
+void config_set_auto_update_www_tag(const char *tag) {
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(100));
+    strncpy(s_config.auto_update_www_tag, tag, sizeof(s_config.auto_update_www_tag) - 1);
+    s_config.auto_update_www_tag[sizeof(s_config.auto_update_www_tag) - 1] = '\0';
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+}
