@@ -27,6 +27,7 @@ static const char *TAG = "BUTTON";
 
 static TaskHandle_t    s_task_handle = NULL;
 static volatile int64_t s_last_isr_us = 0;
+static bool            s_initialized = false;
 
 static void IRAM_ATTR gpio_isr_handler(void *arg)
 {
@@ -55,6 +56,7 @@ static void button_task(void *param)
             if (!long_press_fired && held_ms >= LONG_PRESS_MS) {
                 long_press_fired = true;
                 ESP_LOGW(TAG, "Long press: factory reset");
+                alarm_manager_acknowledge();   // silence siren before beeping
                 buzzer_beep_pattern(3, 200, 100);
                 config_reset_defaults();
                 config_save();
@@ -75,6 +77,8 @@ static void button_task(void *param)
                     ESP_LOGI(TAG, "Short press: next page");
                     oled_display_next_page();
                 }
+            } else {
+                ESP_LOGI(TAG, "Press ignored (held %lldms, not long enough for reset)", held_ms);
             }
         }
     }
@@ -82,6 +86,8 @@ static void button_task(void *param)
 
 esp_err_t button_handler_init(void)
 {
+    if (s_initialized) return ESP_OK;
+
     gpio_config_t io_conf = {
         .pin_bit_mask  = (1ULL << BUTTON_GPIO),
         .mode          = GPIO_MODE_INPUT,
@@ -95,7 +101,12 @@ esp_err_t button_handler_init(void)
         return ret;
     }
 
-    xTaskCreatePinnedToCore(button_task, "button", 2048, NULL, 4, &s_task_handle, 0);
+    BaseType_t task_ret = xTaskCreatePinnedToCore(
+        button_task, "button", 3072, NULL, 4, &s_task_handle, 0);
+    if (task_ret != pdPASS || s_task_handle == NULL) {
+        ESP_LOGE(TAG, "Failed to create button task");
+        return ESP_ERR_NO_MEM;
+    }
 
     // Install ISR service (ignore ESP_ERR_INVALID_STATE = already installed)
     ret = gpio_install_isr_service(0);
@@ -110,6 +121,7 @@ esp_err_t button_handler_init(void)
         return ret;
     }
 
+    s_initialized = true;
     ESP_LOGI(TAG, "Button handler initialized (GPIO%d)", BUTTON_GPIO);
     return ESP_OK;
 }
