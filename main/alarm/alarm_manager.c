@@ -135,16 +135,17 @@ void alarm_manager_evaluate(const sensor_data_t *data)
         evaluate_channel(&s_channels[0], data->temperature,
                          config_get_alarm_temp_low(), config_get_alarm_temp_high(),
                          "TEMP ALTA", "TEMP BAIXA");
-    } else {
+    } else if (!config_get_alarm_temp_enabled()) {
         s_channels[0].state = ALARM_STATE_IDLE;
     }
+    // if enabled but data invalid: leave state unchanged
 
     // Channel 1: I2C humidity
     if (data->temp_hum_valid && config_get_alarm_hum_enabled()) {
         evaluate_channel(&s_channels[1], data->humidity,
                          config_get_alarm_hum_low(), config_get_alarm_hum_high(),
                          "UMID ALTA", "UMID BAIXA");
-    } else {
+    } else if (!config_get_alarm_hum_enabled()) {
         s_channels[1].state = ALARM_STATE_IDLE;
     }
 
@@ -153,7 +154,7 @@ void alarm_manager_evaluate(const sensor_data_t *data)
         evaluate_channel(&s_channels[2], data->thermocouple_temp,
                          config_get_alarm_tc_low(), config_get_alarm_tc_high(),
                          "TERM ALTA", "TERM BAIXA");
-    } else {
+    } else if (!config_get_alarm_tc_enabled()) {
         s_channels[2].state = ALARM_STATE_IDLE;
     }
 
@@ -163,8 +164,13 @@ void alarm_manager_evaluate(const sensor_data_t *data)
                        s_channels[2].state == ALARM_STATE_ACTIVE);
 
     if (any_active && s_siren_task == NULL) {
-        xTaskCreatePinnedToCore(alarm_siren_task, "siren", 2048, NULL, 3, &s_siren_task, 0);
-        ESP_LOGI(TAG, "Siren started");
+        BaseType_t ret = xTaskCreatePinnedToCore(alarm_siren_task, "siren", 2048, NULL, 3, &s_siren_task, 0);
+        if (ret == pdPASS) {
+            ESP_LOGI(TAG, "Siren started");
+        } else {
+            s_siren_task = NULL;
+            ESP_LOGE(TAG, "Failed to create siren task (heap exhausted?)");
+        }
     } else if (!any_active && s_siren_task != NULL) {
         vTaskDelete(s_siren_task);
         s_siren_task = NULL;
