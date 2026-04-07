@@ -55,5 +55,4 @@ idf_component_register(
         freertos
         app_update
         esp_http_client
-        esp_crt_bundle
 )
