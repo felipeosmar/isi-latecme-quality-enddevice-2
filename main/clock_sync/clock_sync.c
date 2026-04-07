@@ -124,7 +124,18 @@ void clock_sync_task(void *param)
         return;
     }
 
-    clock_sync_request();
+    // Initial sync with up to 3 retries (60s apart) before falling back to daily cycle
+    for (int attempt = 0; attempt < 3 && !s_synced; attempt++) {
+        if (attempt > 0) {
+            ESP_LOGI(TAG, "Retry %d/3 in 60s...", attempt + 1);
+            vTaskDelay(pdMS_TO_TICKS(60000));
+        }
+        clock_sync_request();
+    }
+
+    if (!s_synced) {
+        ESP_LOGW(TAG, "Initial sync failed after 3 attempts, will retry in 24h");
+    }
 
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(24UL * 3600UL * 1000UL));
