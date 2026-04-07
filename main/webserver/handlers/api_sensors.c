@@ -95,7 +95,7 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req)
 {
     if (!check_auth(req)) return send_unauthorized(req);
 
-    char buf[512];
+    char buf[1024];
     int received = httpd_req_recv(req, buf, sizeof(buf) - 1);
     if (received <= 0) {
         httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "No data");
