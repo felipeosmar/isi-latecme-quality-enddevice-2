@@ -111,8 +111,9 @@ static void display_task(void *param)
     while (1) {
         if (alarm_manager_is_active()) {
             alarm_info_t info;
-            alarm_manager_get_active_info(&info);
-            oled_display_show_alarm(&info);
+            if (alarm_manager_get_active_info(&info)) {
+                oled_display_show_alarm(&info);
+            }
         } else {
             oled_page_t page = oled_display_get_page();
             switch (page) {
