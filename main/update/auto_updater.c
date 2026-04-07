@@ -29,11 +29,11 @@ static const char *TAG = "AUTO_UPD";
 // GitHub repository (public, no auth needed)
 #define GITHUB_OWNER        "felipeosmar"
 #define GITHUB_REPO         "isi-latecme-quality-enddevice-2"
-#define GITHUB_API_URL      "https://api.github.com/repos/" GITHUB_OWNER "/" GITHUB_REPO "/releases?per_page=30"
+#define GITHUB_API_URL      "https://api.github.com/repos/" GITHUB_OWNER "/" GITHUB_REPO "/releases?per_page=5"
 #define GITHUB_ASSET_BASE   "https://github.com/" GITHUB_OWNER "/" GITHUB_REPO "/releases/download"
 
-// JSON response buffer size: 30 releases × ~600 bytes each ≈ 18KB
-#define API_RESPONSE_BUF_SIZE  20480
+// JSON response buffer size: 5 releases × ~600 bytes each ≈ 3KB (with margin)
+#define API_RESPONSE_BUF_SIZE  8192
 #define OTA_CHUNK_SIZE         4096
 
 // Task wakeup interval: 24 hours
@@ -264,7 +264,11 @@ static bool flash_firmware_from_url(const char *url)
     if (error) { esp_ota_abort(ota_handle); return false; }
 
     err = esp_ota_end(ota_handle);
-    if (err != ESP_OK) { ESP_LOGE(TAG, "esp_ota_end failed: %s", esp_err_to_name(err)); return false; }
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_end failed: %s", esp_err_to_name(err));
+        esp_ota_abort(ota_handle);
+        return false;
+    }
 
     err = esp_ota_set_boot_partition(update_part);
     if (err != ESP_OK) { ESP_LOGE(TAG, "esp_ota_set_boot_partition failed: %s", esp_err_to_name(err)); return false; }
@@ -320,7 +324,10 @@ static bool flash_www_from_url(const char *url)
     }
 
     // Unmount www before writing
-    esp_vfs_littlefs_unregister("www");
+    esp_err_t unregister_err = esp_vfs_littlefs_unregister("www");
+    if (unregister_err != ESP_OK && unregister_err != ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(TAG, "www littlefs unregister: %s", esp_err_to_name(unregister_err));
+    }
 
     err = esp_partition_erase_range(www_part, 0, www_part->size);
     if (err != ESP_OK) {
@@ -330,7 +337,7 @@ static bool flash_www_from_url(const char *url)
         return false;
     }
 
-    char *buf = malloc(OTA_CHUNK_SIZE);
+    char *buf = malloc(OTA_CHUNK_SIZE + 3);  // +3 for 4-byte alignment padding
     if (!buf) {
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
@@ -341,7 +348,7 @@ static bool flash_www_from_url(const char *url)
     uint32_t offset = 0;
     while (1) {
         int n = esp_http_client_read(client, buf, OTA_CHUNK_SIZE);
-        if (n < 0) { error = true; break; }
+        if (n < 0) { ESP_LOGE(TAG, "www HTTP read error at offset %lu", offset); error = true; break; }
         if (n == 0) break;
 
         // esp_partition_write requires 4-byte aligned size
@@ -470,7 +477,11 @@ static void run_check(void)
                  GITHUB_ASSET_BASE "/%s/www-%s.bin",
                  latest_tag, latest_tag);
 
-        // Save tag BEFORE unmounting LittleFS (www unmount doesn't affect userdata)
+        // Save tag before flashing: www unmount doesn't affect userdata partition.
+        // Known risk: if power is lost after save but before flash completes,
+        // the device reboots with tag marked updated but www partition erased.
+        // The updater will then believe www is current — accepted trade-off
+        // to avoid writing to a mounted filesystem.
         config_set_auto_update_www_tag(latest_tag);
         config_save();
 

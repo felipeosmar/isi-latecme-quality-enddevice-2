@@ -43,8 +43,8 @@ auto_update_result_t auto_updater_get_last_result(void);
 int64_t auto_updater_get_last_check_time(void);
 
 /**
- * @brief Force an immediate check (non-blocking, signals the task).
- *        No-op if a check is already in progress.
+ * @brief Signal the task to run a check as soon as possible (non-blocking).
+ *        If a check is currently running, the next check starts immediately after.
  */
 void auto_updater_trigger_now(void);
 
