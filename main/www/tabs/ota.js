@@ -7,7 +7,9 @@ async function refreshOtaStatus() {
         document.getElementById('ota-partition').textContent = d.current_partition || '-';
         document.getElementById('ota-app-version').textContent = d.app_version || '-';
         document.getElementById('ota-idf-version').textContent = d.idf_version || '-';
-        document.getElementById('ota-state').textContent = d.state || '-';
+
+        const stateMap = { idle: 'Idle', in_progress: 'In Progress', rebooting: 'Rebooting', failed: 'Failed' };
+        document.getElementById('ota-state').textContent = stateMap[d.state] || d.state || '-';
 
         const rollbackSection = document.getElementById('ota-rollback-section');
         if (d.rollback_possible) {
@@ -32,12 +34,91 @@ async function refreshOtaStatus() {
     } catch (e) {
         // Ignore — device may be rebooting
     }
+
+    try {
+        const au = await api('ota/auto-update');
+
+        // Release field in Current Firmware card
+        const releaseEl = document.getElementById('ota-release');
+        if (releaseEl) releaseEl.textContent = au.firmware_tag || '-';
+
+        // Auto Update card
+        const btnOn = document.getElementById('au-btn-on');
+        const btnOff = document.getElementById('au-btn-off');
+        if (btnOn && btnOff) {
+            btnOn.classList.toggle('active', au.enabled === true);
+            btnOff.classList.toggle('active', au.enabled === false);
+        }
+
+        const branchEl = document.getElementById('au-branch');
+        if (branchEl && document.activeElement !== branchEl) {
+            branchEl.value = au.branch || '';
+        }
+
+        document.getElementById('au-firmware-tag').textContent = au.firmware_tag || '-';
+        document.getElementById('au-www-tag').textContent = au.www_tag || '-';
+
+        const lastCheckEl = document.getElementById('au-last-check');
+        if (au.last_check_time && au.last_check_time > 0) {
+            lastCheckEl.textContent = new Date(au.last_check_time * 1000).toLocaleString();
+        } else {
+            lastCheckEl.textContent = 'Never';
+        }
+
+        const resultMap = {
+            never: 'Never checked',
+            up_to_date: 'Up to date',
+            updated: 'Updated',
+            error: 'Error'
+        };
+        document.getElementById('au-last-result').textContent = resultMap[au.last_check_result] || au.last_check_result || '-';
+    } catch (e) {
+        // Auto-update API may not be available
+    }
 }
 
 function initOta() {
     refreshOtaStatus();
     if (otaStatusTimer) clearInterval(otaStatusTimer);
     otaStatusTimer = setInterval(refreshOtaStatus, 3000);
+}
+
+async function auSetEnabled(enabled) {
+    try {
+        await api('ota/auto-update', 'POST', { enabled });
+        document.getElementById('au-btn-on').classList.toggle('active', enabled === true);
+        document.getElementById('au-btn-off').classList.toggle('active', enabled === false);
+        toast(enabled ? 'Auto update enabled' : 'Auto update disabled', 'success');
+    } catch (e) {
+        toast('Failed to update setting', 'error');
+    }
+}
+
+async function auSaveConfig() {
+    const branch = document.getElementById('au-branch').value.trim();
+    if (!branch) {
+        toast('Branch cannot be empty', 'error');
+        return;
+    }
+    try {
+        await api('ota/auto-update', 'POST', { branch });
+        toast('Config saved', 'success');
+    } catch (e) {
+        toast('Failed to save config', 'error');
+    }
+}
+
+async function auCheckNow() {
+    const btn = document.getElementById('au-check-btn');
+    if (btn) btn.disabled = true;
+    try {
+        await api('ota/auto-update', 'POST', { trigger_now: true });
+        toast('Check triggered', 'success');
+    } catch (e) {
+        toast('Failed to trigger check', 'error');
+    } finally {
+        if (btn) setTimeout(() => { btn.disabled = false; }, 3000);
+    }
 }
 
 async function otaUploadFirmware() {
