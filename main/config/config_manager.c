@@ -37,6 +37,7 @@ typedef struct {
     float temp_correction;    // temperature correction offset
     float hum_correction;     // humidity correction offset
     char device_name[32];     // device name / hostname
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
     bool thermocouple_enabled; // MAX6675 thermocouple
     float thermocouple_max_temp; // max temperature for thermocouple
     uint8_t thermocouple_sck_pin; // SPI clock pin
@@ -44,6 +45,7 @@ typedef struct {
     uint8_t thermocouple_cs_pin;  // SPI chip select pin
     float thermocouple_min_temp;  // min temperature for thermocouple
     float thermocouple_correction; // temperature correction offset
+#endif
 
     // Interface
     uint8_t buzzer_volume;    // 0-100%
@@ -69,9 +71,11 @@ typedef struct {
     bool  alarm_hum_enabled;
     float alarm_hum_low;
     float alarm_hum_high;
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
     bool  alarm_tc_enabled;
     float alarm_tc_low;
     float alarm_tc_high;
+#endif
 
     // Auto-update
     bool  auto_update_enabled;
@@ -148,6 +152,7 @@ void config_reset_defaults(void)
     s_config.temp_correction = 0.0f;
     s_config.hum_correction = 0.0f;
     strcpy(s_config.device_name, "sensor-01");
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
     s_config.thermocouple_enabled = true;
     s_config.thermocouple_max_temp = 200.0f;
     s_config.thermocouple_sck_pin = 32;
@@ -155,6 +160,7 @@ void config_reset_defaults(void)
     s_config.thermocouple_cs_pin = 33;
     s_config.thermocouple_min_temp = 0.0f;
     s_config.thermocouple_correction = 0.0f;
+#endif
 
     // Interface defaults
     s_config.buzzer_volume = 30;
@@ -178,9 +184,11 @@ void config_reset_defaults(void)
     s_config.alarm_hum_enabled  = false;
     s_config.alarm_hum_low      = 0.0f;
     s_config.alarm_hum_high     = 0.0f;
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
     s_config.alarm_tc_enabled   = false;
     s_config.alarm_tc_low       = 0.0f;
     s_config.alarm_tc_high      = 0.0f;
+#endif
 
     // Auto-update defaults
     s_config.auto_update_enabled = false;
@@ -225,6 +233,7 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddNumberToObject(sensors, "temp_correction", s_config.temp_correction);
     cJSON_AddNumberToObject(sensors, "hum_correction", s_config.hum_correction);
     cJSON_AddStringToObject(sensors, "device_name", s_config.device_name);
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
     cJSON_AddBoolToObject(sensors, "thermocouple_enabled", s_config.thermocouple_enabled);
     cJSON_AddNumberToObject(sensors, "thermocouple_max_temp", s_config.thermocouple_max_temp);
     cJSON_AddNumberToObject(sensors, "thermocouple_sck_pin", s_config.thermocouple_sck_pin);
@@ -232,6 +241,7 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddNumberToObject(sensors, "thermocouple_cs_pin", s_config.thermocouple_cs_pin);
     cJSON_AddNumberToObject(sensors, "thermocouple_min_temp", s_config.thermocouple_min_temp);
     cJSON_AddNumberToObject(sensors, "thermocouple_correction", s_config.thermocouple_correction);
+#endif
     cJSON *alarms = cJSON_CreateObject();
     cJSON_AddBoolToObject(alarms, "temp_enabled", s_config.alarm_temp_enabled);
     cJSON_AddNumberToObject(alarms, "temp_low",   s_config.alarm_temp_low);
@@ -239,9 +249,11 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddBoolToObject(alarms, "hum_enabled",  s_config.alarm_hum_enabled);
     cJSON_AddNumberToObject(alarms, "hum_low",    s_config.alarm_hum_low);
     cJSON_AddNumberToObject(alarms, "hum_high",   s_config.alarm_hum_high);
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
     cJSON_AddBoolToObject(alarms, "tc_enabled",   s_config.alarm_tc_enabled);
     cJSON_AddNumberToObject(alarms, "tc_low",     s_config.alarm_tc_low);
     cJSON_AddNumberToObject(alarms, "tc_high",    s_config.alarm_tc_high);
+#endif
     cJSON_AddItemToObject(sensors, "alarms", alarms);
     cJSON_AddItemToObject(root, "sensors", sensors);
 
@@ -404,6 +416,7 @@ esp_err_t config_load(void)
         if ((item = cJSON_GetObjectItem(sensors, "device_name")) && cJSON_IsString(item)) {
             strncpy(s_config.device_name, item->valuestring, sizeof(s_config.device_name) - 1);
         }
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
         if ((item = cJSON_GetObjectItem(sensors, "thermocouple_enabled")) && cJSON_IsBool(item)) {
             s_config.thermocouple_enabled = cJSON_IsTrue(item);
         }
@@ -425,6 +438,7 @@ esp_err_t config_load(void)
         if ((item = cJSON_GetObjectItem(sensors, "thermocouple_correction")) && cJSON_IsNumber(item)) {
             s_config.thermocouple_correction = (float)item->valuedouble;
         }
+#endif
         cJSON *alarms = cJSON_GetObjectItem(sensors, "alarms");
         if (alarms) {
             if ((item = cJSON_GetObjectItem(alarms, "temp_enabled")) && cJSON_IsBool(item))
@@ -439,12 +453,14 @@ esp_err_t config_load(void)
                 s_config.alarm_hum_low = (float)item->valuedouble;
             if ((item = cJSON_GetObjectItem(alarms, "hum_high")) && cJSON_IsNumber(item))
                 s_config.alarm_hum_high = (float)item->valuedouble;
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
             if ((item = cJSON_GetObjectItem(alarms, "tc_enabled")) && cJSON_IsBool(item))
                 s_config.alarm_tc_enabled = cJSON_IsTrue(item);
             if ((item = cJSON_GetObjectItem(alarms, "tc_low")) && cJSON_IsNumber(item))
                 s_config.alarm_tc_low = (float)item->valuedouble;
             if ((item = cJSON_GetObjectItem(alarms, "tc_high")) && cJSON_IsNumber(item))
                 s_config.alarm_tc_high = (float)item->valuedouble;
+#endif
         }
     }
 
@@ -640,12 +656,12 @@ void config_set_device_name(const char *name) {
     if (name) strncpy(s_config.device_name, name, sizeof(s_config.device_name) - 1);
 }
 
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
 bool config_get_thermocouple_enabled(void) { return s_config.thermocouple_enabled; }
 float config_get_thermocouple_max_temp(void) { return s_config.thermocouple_max_temp; }
 uint8_t config_get_thermocouple_sck_pin(void) { return s_config.thermocouple_sck_pin; }
 uint8_t config_get_thermocouple_so_pin(void) { return s_config.thermocouple_so_pin; }
 uint8_t config_get_thermocouple_cs_pin(void) { return s_config.thermocouple_cs_pin; }
-
 void config_set_thermocouple_enabled(bool enabled) { s_config.thermocouple_enabled = enabled; }
 void config_set_thermocouple_max_temp(float max_temp) { s_config.thermocouple_max_temp = max_temp; }
 void config_set_thermocouple_sck_pin(uint8_t pin) { s_config.thermocouple_sck_pin = pin; }
@@ -655,6 +671,22 @@ float config_get_thermocouple_min_temp(void) { return s_config.thermocouple_min_
 float config_get_thermocouple_correction(void) { return s_config.thermocouple_correction; }
 void config_set_thermocouple_min_temp(float min_temp) { s_config.thermocouple_min_temp = min_temp; }
 void config_set_thermocouple_correction(float correction) { s_config.thermocouple_correction = correction; }
+#else
+bool config_get_thermocouple_enabled(void) { return false; }
+float config_get_thermocouple_max_temp(void) { return 0.0f; }
+uint8_t config_get_thermocouple_sck_pin(void) { return 0; }
+uint8_t config_get_thermocouple_so_pin(void) { return 0; }
+uint8_t config_get_thermocouple_cs_pin(void) { return 0; }
+void config_set_thermocouple_enabled(bool enabled) { (void)enabled; }
+void config_set_thermocouple_max_temp(float max_temp) { (void)max_temp; }
+void config_set_thermocouple_sck_pin(uint8_t pin) { (void)pin; }
+void config_set_thermocouple_so_pin(uint8_t pin) { (void)pin; }
+void config_set_thermocouple_cs_pin(uint8_t pin) { (void)pin; }
+float config_get_thermocouple_min_temp(void) { return 0.0f; }
+float config_get_thermocouple_correction(void) { return 0.0f; }
+void config_set_thermocouple_min_temp(float min_temp) { (void)min_temp; }
+void config_set_thermocouple_correction(float correction) { (void)correction; }
+#endif
 
 // ============================================================================
 // Getters/Setters - Interface
@@ -713,9 +745,15 @@ float config_get_alarm_temp_high(void)    { return s_config.alarm_temp_high; }
 bool  config_get_alarm_hum_enabled(void)  { return s_config.alarm_hum_enabled; }
 float config_get_alarm_hum_low(void)      { return s_config.alarm_hum_low; }
 float config_get_alarm_hum_high(void)     { return s_config.alarm_hum_high; }
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
 bool  config_get_alarm_tc_enabled(void)   { return s_config.alarm_tc_enabled; }
 float config_get_alarm_tc_low(void)       { return s_config.alarm_tc_low; }
 float config_get_alarm_tc_high(void)      { return s_config.alarm_tc_high; }
+#else
+bool  config_get_alarm_tc_enabled(void)   { return false; }
+float config_get_alarm_tc_low(void)       { return 0.0f; }
+float config_get_alarm_tc_high(void)      { return 0.0f; }
+#endif
 
 void config_set_alarm_temp_enabled(bool e) { s_config.alarm_temp_enabled = e; }
 void config_set_alarm_temp_low(float v)    { s_config.alarm_temp_low = v; }
@@ -723,9 +761,15 @@ void config_set_alarm_temp_high(float v)   { s_config.alarm_temp_high = v; }
 void config_set_alarm_hum_enabled(bool e)  { s_config.alarm_hum_enabled = e; }
 void config_set_alarm_hum_low(float v)     { s_config.alarm_hum_low = v; }
 void config_set_alarm_hum_high(float v)    { s_config.alarm_hum_high = v; }
-void config_set_alarm_tc_enabled(bool e)   { s_config.alarm_tc_enabled = e; }
-void config_set_alarm_tc_low(float v)      { s_config.alarm_tc_low = v; }
-void config_set_alarm_tc_high(float v)     { s_config.alarm_tc_high = v; }
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
+void config_set_alarm_tc_enabled(bool e)  { s_config.alarm_tc_enabled = e; }
+void config_set_alarm_tc_low(float v)     { s_config.alarm_tc_low = v; }
+void config_set_alarm_tc_high(float v)    { s_config.alarm_tc_high = v; }
+#else
+void config_set_alarm_tc_enabled(bool e)  { (void)e; }
+void config_set_alarm_tc_low(float v)     { (void)v; }
+void config_set_alarm_tc_high(float v)    { (void)v; }
+#endif
 
 // ============================================================================
 // Auto-Update Configuration
