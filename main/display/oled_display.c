@@ -484,7 +484,7 @@ void oled_display_show_alarm(const alarm_info_t *info)
 
     // Page 2: label (+ extra count if multiple alarms)
     if (info->extra_count > 0) {
-        char label_line[24];
+        char label_line[32];
         snprintf(label_line, sizeof(label_line), "%s +%d", info->label, info->extra_count);
         oled_display_text(0, 2, label_line);
     } else {
