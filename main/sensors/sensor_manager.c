@@ -14,6 +14,7 @@
 #include "am2315c_driver.h"
 #include "max6675_driver.h"
 #include "config_manager.h"
+#include "alarm_manager.h"
 
 #include <string.h>
 #include "esp_log.h"
@@ -257,5 +258,9 @@ void sensor_task(void *param)
 
         vTaskDelay(pdMS_TO_TICKS(interval_s * 1000));
         sensor_manager_read();
+
+        sensor_data_t alarm_data;
+        sensor_manager_get_data(&alarm_data);
+        alarm_manager_evaluate(&alarm_data);
     }
 }
