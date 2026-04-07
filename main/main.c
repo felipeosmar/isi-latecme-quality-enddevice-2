@@ -20,6 +20,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "driver/gpio.h"
 
 #include "wifi_manager.h"
 #include "web_server.h"
@@ -35,6 +36,7 @@
 #include "clock_sync.h"
 #include "alarm_manager.h"
 #include "button_handler.h"
+#include "auto_updater.h"
 
 static const char *TAG = "MAIN";
 
@@ -209,6 +211,9 @@ void app_main(void)
     // Initialize log buffer FIRST to capture all logs
     log_buffer_init();
 
+    // Install GPIO ISR service once here; all drivers (LoRa, button) reuse it
+    gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
+
     // Set log level to WARN (suppress INFO and DEBUG messages)
     esp_log_level_set("*", ESP_LOG_WARN);
 
@@ -219,6 +224,7 @@ void app_main(void)
     esp_log_level_set("MAX6675", ESP_LOG_INFO);
     esp_log_level_set("OLED", ESP_LOG_INFO);
     esp_log_level_set("CLOCK_SYNC", ESP_LOG_INFO);
+    esp_log_level_set("AUTO_UPD", ESP_LOG_INFO);
 
     ESP_LOGI(TAG, "==========================================");
     ESP_LOGI(TAG, "  LoRaWAN End Device - Sensor Node");
@@ -313,8 +319,13 @@ void app_main(void)
     // Display task - Core 0, Priority 3, Stack 4096
     xTaskCreatePinnedToCore(display_task, "display", 4096, NULL, 3, NULL, 0);
 
-    // Clock sync task - Core 0, Priority 3, Stack 3072
-    xTaskCreatePinnedToCore(clock_sync_task, "clock_sync", 3072, NULL, 3, NULL, 0);
+    // Clock sync task - Core 0, Priority 3, Stack 4096
+    xTaskCreatePinnedToCore(clock_sync_task, "clock_sync", 4096, NULL, 3, NULL, 0);
+
+    // Auto-updater task - Core 0, Priority 3, Stack 8KB
+    if (auto_updater_init() != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to start auto-updater");
+    }
 
     ESP_LOGI(TAG, "System ready!");
 }

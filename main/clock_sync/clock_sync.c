@@ -27,13 +27,15 @@ static volatile uint32_t s_device_time_sent = 0;
 
 static void on_apptime_ans(uint8_t *data, size_t len)
 {
-    if (len < 5) {
-        ESP_LOGW(TAG, "AppTimeAns too short: %zu bytes (expected 5)", len);
+    // AppTimeAns format (RadioLib passes full payload, CID included):
+    // data[0] = CID (0x01), data[1..4] = TimeCorrection (signed LE, GPS s), data[5] = TokenAns
+    if (len < 6) {
+        ESP_LOGW(TAG, "AppTimeAns too short: %zu bytes (expected 6)", len);
         return;
     }
 
     int32_t correction = 0;
-    memcpy(&correction, data, sizeof(int32_t));
+    memcpy(&correction, data + 1, sizeof(int32_t));  // skip CID byte
 
     // Only validate range on re-syncs (s_synced=true). On the first sync,
     // DeviceTime=0 so correction ≈ current GPS time (~1.45B s) — well above 1 year.
@@ -66,7 +68,9 @@ esp_err_t clock_sync_init(void)
 
 esp_err_t clock_sync_request(void)
 {
-    uint8_t req[5];
+    // TS003 AppTimeReq: CID(1) | DeviceTime(4 LE) | Param(1)
+    // Param: bit0 = AnsRequired, bits[4:1] = TokenReq (unused, set to 0)
+    uint8_t req[6];
 
     uint32_t device_time;
     if (s_synced) {
@@ -80,15 +84,16 @@ esp_err_t clock_sync_request(void)
 
     s_device_time_sent = device_time;
 
-    req[0] = (uint8_t)(device_time & 0xFF);
-    req[1] = (uint8_t)((device_time >> 8) & 0xFF);
-    req[2] = (uint8_t)((device_time >> 16) & 0xFF);
-    req[3] = (uint8_t)((device_time >> 24) & 0xFF);
-    req[4] = 0x01;  // AnsRequired = 1
+    req[0] = CLOCK_SYNC_PACKAGE_ID;              // CID = 0x01 (AppTimeReq)
+    req[1] = (uint8_t)(device_time & 0xFF);
+    req[2] = (uint8_t)((device_time >> 8) & 0xFF);
+    req[3] = (uint8_t)((device_time >> 16) & 0xFF);
+    req[4] = (uint8_t)((device_time >> 24) & 0xFF);
+    req[5] = 0x01;                                // AnsRequired = 1, TokenReq = 0
 
     ESP_LOGI(TAG, "Sending AppTimeReq (DeviceTime=%lu)", (unsigned long)device_time);
 
-    esp_err_t ret = lorawan_send(req, sizeof(req), CLOCK_SYNC_FPORT, false);
+    esp_err_t ret = lorawan_send(req, sizeof(req), CLOCK_SYNC_FPORT, false);  // 6 bytes
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "AppTimeReq send failed: %s", esp_err_to_name(ret));
     }

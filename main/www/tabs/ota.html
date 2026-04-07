@@ -9,11 +9,15 @@
                 <span class="status-value" id="ota-partition">-</span>
             </div>
             <div class="status-item">
-                <span class="status-label">App Version</span>
-                <span class="status-value" id="ota-app-version">-</span>
+                <span class="status-label">Release</span>
+                <span class="status-value" id="ota-release">-</span>
             </div>
             <div class="status-item">
-                <span class="status-label">IDF Version</span>
+                <span class="status-label">Build</span>
+                <span class="status-value" id="ota-app-version" style="font-size:0.8em;color:var(--text-muted,#888);">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">IDF</span>
                 <span class="status-value" id="ota-idf-version">-</span>
             </div>
             <div class="status-item">
@@ -23,6 +27,49 @@
         </div>
         <div id="ota-rollback-section" class="hidden" style="margin-top:12px;">
             <button class="btn btn-danger" onclick="otaRollback()">Rollback to Previous Firmware</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Auto Update</h3>
+        <p style="font-size:0.85em;color:#888;margin-bottom:16px;">
+            Checks GitHub for new releases once per day. Only runs when connected in WiFi STA mode.
+        </p>
+        <div class="form-group">
+            <label>Status</label>
+            <div class="toggle">
+                <button class="on" id="au-btn-on" onclick="auSetEnabled(true)">Enabled</button>
+                <button class="off" id="au-btn-off" onclick="auSetEnabled(false)">Disabled</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Branch</label>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="au-branch" class="form-control"
+                       placeholder="main" style="flex:1;max-width:200px;">
+                <button class="btn btn-primary" onclick="auSaveConfig()">Save</button>
+            </div>
+        </div>
+        <div class="status-grid" style="margin-top:16px;">
+            <div class="status-item">
+                <span class="status-label">Firmware tag</span>
+                <span class="status-value" id="au-firmware-tag">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">www tag</span>
+                <span class="status-value" id="au-www-tag">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Last check</span>
+                <span class="status-value" id="au-last-check">Never</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Result</span>
+                <span class="status-value" id="au-last-result">-</span>
+            </div>
+        </div>
+        <div style="margin-top:16px;">
+            <button class="btn btn-secondary" onclick="auCheckNow()" id="au-check-btn">Check Now</button>
         </div>
     </div>
 

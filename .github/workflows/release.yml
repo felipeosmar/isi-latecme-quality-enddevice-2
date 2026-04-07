@@ -31,51 +31,65 @@ jobs:
           path: |
             build/lorawan-enddevice.bin
             build/www.bin
+            build/bootloader/bootloader.bin
+            build/partition_table/partition-table.bin
           retention-days: 1
 
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
     permissions:
       contents: write
     steps:
+      - name: Calculate release info
+        id: release_info
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BRANCH="${{ github.base_ref }}"
+            PR_NUM="${{ github.event.pull_request.number }}"
+            TAG="${BRANCH}-pr${PR_NUM}"
+            NAME="[${BRANCH}] PR #${PR_NUM}"
+            PRERELEASE="true"
+          else
+            BRANCH="${{ github.ref_name }}"
+            COUNT=$(gh api repos/${{ github.repository }}/releases \
+              --paginate \
+              --jq ".[] | select(.tag_name | startswith(\"${BRANCH}-r\")) | .tag_name" \
+              2>/dev/null | wc -l || echo 0)
+            NEXT=$((COUNT + 1))
+            TAG="${BRANCH}-r${NEXT}"
+            NAME="[${BRANCH}] Release #${NEXT}"
+            PRERELEASE=$([[ "$BRANCH" != "main" ]] && echo "true" || echo "false")
+          fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "name=${NAME}" >> $GITHUB_OUTPUT
+          echo "prerelease=${PRERELEASE}" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Download firmware binaries
         uses: actions/download-artifact@v4
         with:
           name: firmware-binaries
           path: artifacts/
 
-      - name: Calculate next release number
-        id: release_info
+      - name: Rename binaries with tag
         run: |
-          BRANCH="${{ github.ref_name }}"
-          COUNT=$(gh api repos/${{ github.repository }}/releases \
-            --paginate \
-            --jq ".[] | select(.tag_name | startswith(\"${BRANCH}-r\")) | .tag_name" \
-            | wc -l)
-          NEXT=$((COUNT + 1))
-          echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
-          echo "number=${NEXT}" >> $GITHUB_OUTPUT
-          echo "tag=${BRANCH}-r${NEXT}" >> $GITHUB_OUTPUT
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Rename binaries with branch and release number
-        run: |
-          BRANCH="${{ steps.release_info.outputs.branch }}"
-          N="${{ steps.release_info.outputs.number }}"
-          mv artifacts/lorawan-enddevice.bin \
-             artifacts/lorawan-enddevice-${BRANCH}-r${N}.bin
-          mv artifacts/www.bin \
-             artifacts/www-${BRANCH}-r${N}.bin
+          TAG="${{ steps.release_info.outputs.tag }}"
+          mv artifacts/lorawan-enddevice.bin artifacts/lorawan-enddevice-${TAG}.bin
+          mv artifacts/www.bin artifacts/www-${TAG}.bin
+          mv artifacts/bootloader/bootloader.bin artifacts/bootloader-${TAG}.bin
+          mv artifacts/partition_table/partition-table.bin artifacts/partition-table-${TAG}.bin
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release_info.outputs.tag }}
-          name: "[${{ steps.release_info.outputs.branch }}] Release #${{ steps.release_info.outputs.number }}"
+          name: ${{ steps.release_info.outputs.name }}
+          prerelease: ${{ steps.release_info.outputs.prerelease }}
           generate_release_notes: true
           files: |
-            artifacts/lorawan-enddevice-${{ steps.release_info.outputs.branch }}-r${{ steps.release_info.outputs.number }}.bin
-            artifacts/www-${{ steps.release_info.outputs.branch }}-r${{ steps.release_info.outputs.number }}.bin
+            artifacts/lorawan-enddevice-${{ steps.release_info.outputs.tag }}.bin
+            artifacts/www-${{ steps.release_info.outputs.tag }}.bin
+            artifacts/bootloader-${{ steps.release_info.outputs.tag }}.bin
+            artifacts/partition-table-${{ steps.release_info.outputs.tag }}.bin

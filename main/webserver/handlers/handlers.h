@@ -124,5 +124,7 @@ esp_err_t api_ota_firmware_upload_handler(httpd_req_t *req);
 esp_err_t api_ota_firmware_url_handler(httpd_req_t *req);
 esp_err_t api_ota_www_upload_handler(httpd_req_t *req);
 esp_err_t api_ota_rollback_handler(httpd_req_t *req);
+esp_err_t api_ota_auto_update_get_handler(httpd_req_t *req);
+esp_err_t api_ota_auto_update_post_handler(httpd_req_t *req);
 
 #endif // HANDLERS_H

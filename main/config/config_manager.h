@@ -162,6 +162,20 @@ void config_set_web_username(const char *username);
 void config_set_web_password(const char *password);
 void config_set_web_auth_enabled(bool enabled);
 
+// ============================================================================
+// Auto-Update Configuration
+// ============================================================================
+
+bool        config_get_auto_update_enabled(void);
+const char* config_get_auto_update_branch(void);
+const char* config_get_auto_update_firmware_tag(void);
+const char* config_get_auto_update_www_tag(void);
+
+void config_set_auto_update_enabled(bool enabled);
+void config_set_auto_update_branch(const char *branch);
+void config_set_auto_update_firmware_tag(const char *tag);
+void config_set_auto_update_www_tag(const char *tag);
+
 #ifdef __cplusplus
 }
 #endif

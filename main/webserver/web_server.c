@@ -70,7 +70,7 @@ esp_err_t web_server_init(const web_server_config_t *config)
     // Configure HTTP server
     httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
     http_config.server_port = g_web_config.port;
-    http_config.max_uri_handlers = 50;
+    http_config.max_uri_handlers = 60;
     http_config.stack_size = 8192;
 
     ESP_LOGI(TAG, "Starting server on port %d", http_config.server_port);
@@ -231,6 +231,11 @@ esp_err_t web_server_init(const web_server_config_t *config)
     httpd_register_uri_handler(s_server, &ota_fw_url);
     httpd_register_uri_handler(s_server, &ota_www_upload);
     httpd_register_uri_handler(s_server, &ota_rollback);
+
+    httpd_uri_t ota_auto_update_get  = { .uri = "/api/ota/auto-update", .method = HTTP_GET,  .handler = api_ota_auto_update_get_handler };
+    httpd_uri_t ota_auto_update_post = { .uri = "/api/ota/auto-update", .method = HTTP_POST, .handler = api_ota_auto_update_post_handler };
+    httpd_register_uri_handler(s_server, &ota_auto_update_get);
+    httpd_register_uri_handler(s_server, &ota_auto_update_post);
 
     // ========================================================================
     // Initialization Complete
