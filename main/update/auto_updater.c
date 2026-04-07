@@ -35,8 +35,9 @@ static const char *TAG = "AUTO_UPD";
 #define GITHUB_API_URL      "https://api.github.com/repos/" GITHUB_OWNER "/" GITHUB_REPO "/releases?per_page=5"
 #define GITHUB_ASSET_BASE   "https://github.com/" GITHUB_OWNER "/" GITHUB_REPO "/releases/download"
 
-// JSON response buffer size: 5 releases × ~600 bytes each ≈ 3KB (with margin)
-#define API_RESPONSE_BUF_SIZE  8192
+// JSON response buffer size: GitHub releases include auto-generated notes which can be large.
+// 32KB provides comfortable margin for 5 releases with long release notes.
+#define API_RESPONSE_BUF_SIZE  32768
 #define OTA_CHUNK_SIZE         4096
 
 // Task wakeup interval: 24 hours
@@ -134,7 +135,11 @@ static char *github_fetch_releases_json(void)
     }
     buf[buf_pos] = '\0';
     http_ok = true;
-    ESP_LOGI(TAG, "Fetched %d bytes from GitHub API", buf_pos);
+    bool truncated = (buf_pos == API_RESPONSE_BUF_SIZE - 1);
+    ESP_LOGI(TAG, "Fetched %d bytes from GitHub API%s", buf_pos, truncated ? " (TRUNCATED)" : "");
+    if (truncated) {
+        ESP_LOGW(TAG, "Response truncated at %d bytes — increase API_RESPONSE_BUF_SIZE", API_RESPONSE_BUF_SIZE);
+    }
 
 cleanup:
     esp_http_client_close(client);
@@ -151,8 +156,12 @@ static bool find_latest_tag(const char *json, const char *branch,
                              char *out_tag, size_t out_tag_size)
 {
     cJSON *root = cJSON_Parse(json);
-    if (!root || !cJSON_IsArray(root)) {
-        ESP_LOGE(TAG, "Failed to parse releases JSON");
+    if (!root) {
+        ESP_LOGE(TAG, "cJSON_Parse failed — first 120 chars: %.120s", json);
+        return false;
+    }
+    if (!cJSON_IsArray(root)) {
+        ESP_LOGE(TAG, "Expected JSON array, got type %d — first 120 chars: %.120s", root->type, json);
         cJSON_Delete(root);
         return false;
     }
