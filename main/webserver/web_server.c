@@ -70,7 +70,7 @@ esp_err_t web_server_init(const web_server_config_t *config)
     // Configure HTTP server
     httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
     http_config.server_port = g_web_config.port;
-    http_config.max_uri_handlers = 50;
+    http_config.max_uri_handlers = 60;
     http_config.stack_size = 8192;
 
     ESP_LOGI(TAG, "Starting server on port %d", http_config.server_port);
