@@ -25,6 +25,8 @@ idf_component_register(
         "health/health_monitor.c"
         "logs/log_buffer.c"
         "clock_sync/clock_sync.c"
+        "alarm/alarm_manager.c"
+        "interface/button_handler.c"
     INCLUDE_DIRS
         "."
         "lorawan"
@@ -39,6 +41,7 @@ idf_component_register(
         "logs"
         "interface"
         "clock_sync"
+        "alarm"
     REQUIRES
         driver
         nvs_flash
