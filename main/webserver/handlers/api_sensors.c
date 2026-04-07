@@ -9,6 +9,7 @@
 
 #include "handlers.h"
 #include "sensor_manager.h"
+#include "buzzer.h"
 
 static const char *TAG = "API_SENSORS";
 
@@ -25,8 +26,6 @@ esp_err_t api_sensors_status_handler(httpd_req_t *req)
     cJSON_AddBoolToObject(root, "temp_hum_valid", data.temp_hum_valid);
     cJSON_AddNumberToObject(root, "temperature", data.temperature);
     cJSON_AddNumberToObject(root, "humidity", data.humidity);
-    cJSON_AddBoolToObject(root, "ds18b20_valid", data.ds18b20_valid);
-    cJSON_AddNumberToObject(root, "ds18b20_temp", data.ds18b20_temp);
     cJSON_AddBoolToObject(root, "thermocouple_valid", data.thermocouple_valid);
     cJSON_AddNumberToObject(root, "thermocouple_temp", data.thermocouple_temp);
     cJSON_AddNumberToObject(root, "timestamp_ms", data.timestamp_ms);
@@ -49,13 +48,15 @@ esp_err_t api_sensors_config_get_handler(httpd_req_t *req)
     cJSON_AddNumberToObject(root, "interval", config_get_sensor_interval());
     cJSON_AddNumberToObject(root, "temp_correction", config_get_temp_correction());
     cJSON_AddNumberToObject(root, "hum_correction", config_get_hum_correction());
-    cJSON_AddBoolToObject(root, "ds18b20_enabled", config_get_ds18b20_enabled());
     cJSON_AddStringToObject(root, "device_name", config_get_device_name());
     cJSON_AddBoolToObject(root, "thermocouple_enabled", config_get_thermocouple_enabled());
     cJSON_AddNumberToObject(root, "thermocouple_max_temp", config_get_thermocouple_max_temp());
     cJSON_AddNumberToObject(root, "thermocouple_sck_pin", config_get_thermocouple_sck_pin());
     cJSON_AddNumberToObject(root, "thermocouple_so_pin", config_get_thermocouple_so_pin());
     cJSON_AddNumberToObject(root, "thermocouple_cs_pin", config_get_thermocouple_cs_pin());
+    cJSON_AddNumberToObject(root, "thermocouple_min_temp", config_get_thermocouple_min_temp());
+    cJSON_AddNumberToObject(root, "thermocouple_correction", config_get_thermocouple_correction());
+    cJSON_AddNumberToObject(root, "buzzer_volume", config_get_buzzer_volume());
 
     char *json_str = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
@@ -95,9 +96,6 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req)
     if ((item = cJSON_GetObjectItem(json, "hum_correction")) && cJSON_IsNumber(item)) {
         config_set_hum_correction((float)item->valuedouble);
     }
-    if ((item = cJSON_GetObjectItem(json, "ds18b20_enabled")) && cJSON_IsBool(item)) {
-        config_set_ds18b20_enabled(cJSON_IsTrue(item));
-    }
     if ((item = cJSON_GetObjectItem(json, "device_name")) && cJSON_IsString(item)) {
         config_set_device_name(item->valuestring);
     }
@@ -115,6 +113,18 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req)
     }
     if ((item = cJSON_GetObjectItem(json, "thermocouple_cs_pin")) && cJSON_IsNumber(item)) {
         config_set_thermocouple_cs_pin((uint8_t)item->valueint);
+    }
+    if ((item = cJSON_GetObjectItem(json, "thermocouple_min_temp")) && cJSON_IsNumber(item)) {
+        config_set_thermocouple_min_temp((float)item->valuedouble);
+    }
+    if ((item = cJSON_GetObjectItem(json, "thermocouple_correction")) && cJSON_IsNumber(item)) {
+        config_set_thermocouple_correction((float)item->valuedouble);
+    }
+    if ((item = cJSON_GetObjectItem(json, "buzzer_volume")) && cJSON_IsNumber(item)) {
+        uint8_t vol = (uint8_t)item->valueint;
+        config_set_buzzer_volume(vol);
+        buzzer_set_volume(vol);
+        buzzer_beep(100);  // Test beep at new volume
     }
 
     cJSON_Delete(json);

@@ -1,17 +1,6 @@
 dependencies:
-  espressif/ds18b20:
-    component_hash: 87a753636db56dbb42633b8fdd615c63c5e752ec9c9629e6386d8115f36efc30
-    dependencies:
-    - name: espressif/onewire_bus
-      registry_url: https://components.espressif.com
-      require: private
-      version: ^1.0.0
-    source:
-      registry_url: https://components.espressif.com/
-      type: service
-    version: 0.1.2
-  espressif/onewire_bus:
-    component_hash: 11729fd9a5de80225177a61e9cd77de91683b8ec300e83710d5327b666dbe884
+  espressif/led_strip:
+    component_hash: 28621486f77229aaf81c71f5e15d6fbf36c2949cf11094e07090593e659e7639
     dependencies:
     - name: idf
       require: private
@@ -19,11 +8,11 @@ dependencies:
     source:
       registry_url: https://components.espressif.com/
       type: service
-    version: 1.0.4
+    version: 3.0.3
   idf:
     source:
       type: idf
-    version: 5.5.0
+    version: 5.5.3
   jgromes/radiolib:
     component_hash: 22aedd462cd81a653a74371e86230d7b3f40c32ba33fd1e50e0ad10fc415607b
     dependencies:
@@ -45,10 +34,9 @@ dependencies:
       type: service
     version: 1.20.3
 direct_dependencies:
-- espressif/ds18b20
-- espressif/onewire_bus
+- espressif/led_strip
 - jgromes/radiolib
 - joltwallet/littlefs
-manifest_hash: db18ae350005a1476d7626009e6eff9898e0f6a58825407e2c20e9b5d23698e4
+manifest_hash: ab3e4656af82421ff12436a5a4a4a1c4f950c99513a1a958082f907e7281ed6b
 target: esp32
 version: 2.0.0

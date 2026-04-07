@@ -36,13 +36,26 @@ typedef struct {
     uint32_t sensor_interval; // seconds between sensor reads
     float temp_correction;    // temperature correction offset
     float hum_correction;     // humidity correction offset
-    bool ds18b20_enabled;     // DS18B20 external temp sensor
     char device_name[32];     // device name / hostname
     bool thermocouple_enabled; // MAX6675 thermocouple
     float thermocouple_max_temp; // max temperature for thermocouple
     uint8_t thermocouple_sck_pin; // SPI clock pin
     uint8_t thermocouple_so_pin;  // SPI data out pin
     uint8_t thermocouple_cs_pin;  // SPI chip select pin
+    float thermocouple_min_temp;  // min temperature for thermocouple
+    float thermocouple_correction; // temperature correction offset
+
+    // Interface
+    uint8_t buzzer_volume;    // 0-100%
+
+    // LED
+    bool led_enabled;
+    uint8_t led_brightness;        // 0-100%
+    uint32_t led_blink_interval_ms;
+    char led_color_normal[8];      // "#RRGGBB" + null
+    char led_color_lorawan[8];
+    char led_color_wifi[8];
+    char led_color_error[8];
 
     // Web
     char web_username[32];
@@ -117,13 +130,24 @@ void config_reset_defaults(void)
     s_config.sensor_interval = 30;
     s_config.temp_correction = 0.0f;
     s_config.hum_correction = 0.0f;
-    s_config.ds18b20_enabled = false;
     strcpy(s_config.device_name, "sensor-01");
     s_config.thermocouple_enabled = true;
     s_config.thermocouple_max_temp = 200.0f;
-    s_config.thermocouple_sck_pin = 33;
-    s_config.thermocouple_so_pin = 27;
-    s_config.thermocouple_cs_pin = 32;
+    s_config.thermocouple_sck_pin = 32;
+    s_config.thermocouple_so_pin = 35;
+    s_config.thermocouple_cs_pin = 33;
+    s_config.thermocouple_min_temp = 0.0f;
+    s_config.thermocouple_correction = 0.0f;
+
+    // Interface defaults
+    s_config.buzzer_volume = 30;
+    s_config.led_enabled = true;
+    s_config.led_brightness = 50;
+    s_config.led_blink_interval_ms = 30000;
+    strcpy(s_config.led_color_normal, "#FFFFFF");
+    strcpy(s_config.led_color_lorawan, "#FFB000");
+    strcpy(s_config.led_color_wifi, "#0000FF");
+    strcpy(s_config.led_color_error, "#FF0000");
 
     // Web defaults
     strcpy(s_config.web_username, "admin");
@@ -166,14 +190,29 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddNumberToObject(sensors, "interval", s_config.sensor_interval);
     cJSON_AddNumberToObject(sensors, "temp_correction", s_config.temp_correction);
     cJSON_AddNumberToObject(sensors, "hum_correction", s_config.hum_correction);
-    cJSON_AddBoolToObject(sensors, "ds18b20_enabled", s_config.ds18b20_enabled);
     cJSON_AddStringToObject(sensors, "device_name", s_config.device_name);
     cJSON_AddBoolToObject(sensors, "thermocouple_enabled", s_config.thermocouple_enabled);
     cJSON_AddNumberToObject(sensors, "thermocouple_max_temp", s_config.thermocouple_max_temp);
     cJSON_AddNumberToObject(sensors, "thermocouple_sck_pin", s_config.thermocouple_sck_pin);
     cJSON_AddNumberToObject(sensors, "thermocouple_so_pin", s_config.thermocouple_so_pin);
     cJSON_AddNumberToObject(sensors, "thermocouple_cs_pin", s_config.thermocouple_cs_pin);
+    cJSON_AddNumberToObject(sensors, "thermocouple_min_temp", s_config.thermocouple_min_temp);
+    cJSON_AddNumberToObject(sensors, "thermocouple_correction", s_config.thermocouple_correction);
     cJSON_AddItemToObject(root, "sensors", sensors);
+
+    // Interface section
+    cJSON *interface = cJSON_CreateObject();
+    cJSON_AddNumberToObject(interface, "buzzer_volume", s_config.buzzer_volume);
+    cJSON *led = cJSON_CreateObject();
+    cJSON_AddBoolToObject(led, "enabled", s_config.led_enabled);
+    cJSON_AddNumberToObject(led, "brightness", s_config.led_brightness);
+    cJSON_AddNumberToObject(led, "blink_interval_ms", s_config.led_blink_interval_ms);
+    cJSON_AddStringToObject(led, "color_normal", s_config.led_color_normal);
+    cJSON_AddStringToObject(led, "color_lorawan", s_config.led_color_lorawan);
+    cJSON_AddStringToObject(led, "color_wifi", s_config.led_color_wifi);
+    cJSON_AddStringToObject(led, "color_error", s_config.led_color_error);
+    cJSON_AddItemToObject(interface, "led", led);
+    cJSON_AddItemToObject(root, "interface", interface);
 
     // Web section
     cJSON *web = cJSON_CreateObject();
@@ -228,6 +267,7 @@ esp_err_t config_load(void)
     char *json_str = malloc(fsize + 1);
     if (json_str == NULL) {
         fclose(f);
+        if (s_config_mutex) xSemaphoreGive(s_config_mutex);
         return ESP_ERR_NO_MEM;
     }
 
@@ -240,10 +280,11 @@ esp_err_t config_load(void)
     free(json_str);
 
     if (root == NULL) {
-        ESP_LOGE(TAG, "Failed to parse config file");
+        ESP_LOGW(TAG, "Config file corrupt, resetting to defaults");
         config_reset_defaults();
+        _config_save_internal();
         if (s_config_mutex) xSemaphoreGive(s_config_mutex);
-        return ESP_FAIL;
+        return ESP_OK;
     }
 
     // WiFi section
@@ -307,9 +348,6 @@ esp_err_t config_load(void)
         if ((item = cJSON_GetObjectItem(sensors, "hum_correction")) && cJSON_IsNumber(item)) {
             s_config.hum_correction = (float)item->valuedouble;
         }
-        if ((item = cJSON_GetObjectItem(sensors, "ds18b20_enabled")) && cJSON_IsBool(item)) {
-            s_config.ds18b20_enabled = cJSON_IsTrue(item);
-        }
         if ((item = cJSON_GetObjectItem(sensors, "device_name")) && cJSON_IsString(item)) {
             strncpy(s_config.device_name, item->valuestring, sizeof(s_config.device_name) - 1);
         }
@@ -327,6 +365,47 @@ esp_err_t config_load(void)
         }
         if ((item = cJSON_GetObjectItem(sensors, "thermocouple_cs_pin")) && cJSON_IsNumber(item)) {
             s_config.thermocouple_cs_pin = (uint8_t)item->valueint;
+        }
+        if ((item = cJSON_GetObjectItem(sensors, "thermocouple_min_temp")) && cJSON_IsNumber(item)) {
+            s_config.thermocouple_min_temp = (float)item->valuedouble;
+        }
+        if ((item = cJSON_GetObjectItem(sensors, "thermocouple_correction")) && cJSON_IsNumber(item)) {
+            s_config.thermocouple_correction = (float)item->valuedouble;
+        }
+    }
+
+    // Interface section
+    cJSON *interface = cJSON_GetObjectItem(root, "interface");
+    if (interface) {
+        cJSON *item;
+        if ((item = cJSON_GetObjectItem(interface, "buzzer_volume")) && cJSON_IsNumber(item)) {
+            uint8_t vol = (uint8_t)item->valueint;
+            s_config.buzzer_volume = (vol > 100) ? 100 : vol;
+        }
+        cJSON *led = cJSON_GetObjectItem(interface, "led");
+        if (led) {
+            if ((item = cJSON_GetObjectItem(led, "enabled")) && cJSON_IsBool(item)) {
+                s_config.led_enabled = cJSON_IsTrue(item);
+            }
+            if ((item = cJSON_GetObjectItem(led, "brightness")) && cJSON_IsNumber(item)) {
+                uint8_t b = (uint8_t)item->valueint;
+                s_config.led_brightness = (b > 100) ? 100 : b;
+            }
+            if ((item = cJSON_GetObjectItem(led, "blink_interval_ms")) && cJSON_IsNumber(item)) {
+                s_config.led_blink_interval_ms = (uint32_t)item->valueint;
+            }
+            if ((item = cJSON_GetObjectItem(led, "color_normal")) && cJSON_IsString(item)) {
+                strncpy(s_config.led_color_normal, item->valuestring, sizeof(s_config.led_color_normal) - 1);
+            }
+            if ((item = cJSON_GetObjectItem(led, "color_lorawan")) && cJSON_IsString(item)) {
+                strncpy(s_config.led_color_lorawan, item->valuestring, sizeof(s_config.led_color_lorawan) - 1);
+            }
+            if ((item = cJSON_GetObjectItem(led, "color_wifi")) && cJSON_IsString(item)) {
+                strncpy(s_config.led_color_wifi, item->valuestring, sizeof(s_config.led_color_wifi) - 1);
+            }
+            if ((item = cJSON_GetObjectItem(led, "color_error")) && cJSON_IsString(item)) {
+                strncpy(s_config.led_color_error, item->valuestring, sizeof(s_config.led_color_error) - 1);
+            }
         }
     }
 
@@ -346,6 +425,7 @@ esp_err_t config_load(void)
     }
 
     cJSON_Delete(root);
+
     ESP_LOGI(TAG, "Configuration loaded");
     if (s_config_mutex) xSemaphoreGive(s_config_mutex);
     return ESP_OK;
@@ -456,13 +536,11 @@ void config_set_adr_enabled(bool enabled) { s_config.adr_enabled = enabled; }
 uint32_t config_get_sensor_interval(void) { return s_config.sensor_interval; }
 float config_get_temp_correction(void) { return s_config.temp_correction; }
 float config_get_hum_correction(void) { return s_config.hum_correction; }
-bool config_get_ds18b20_enabled(void) { return s_config.ds18b20_enabled; }
 const char* config_get_device_name(void) { return s_config.device_name; }
 
 void config_set_sensor_interval(uint32_t seconds) { s_config.sensor_interval = seconds; }
 void config_set_temp_correction(float correction) { s_config.temp_correction = correction; }
 void config_set_hum_correction(float correction) { s_config.hum_correction = correction; }
-void config_set_ds18b20_enabled(bool enabled) { s_config.ds18b20_enabled = enabled; }
 void config_set_device_name(const char *name) {
     if (name) strncpy(s_config.device_name, name, sizeof(s_config.device_name) - 1);
 }
@@ -478,6 +556,41 @@ void config_set_thermocouple_max_temp(float max_temp) { s_config.thermocouple_ma
 void config_set_thermocouple_sck_pin(uint8_t pin) { s_config.thermocouple_sck_pin = pin; }
 void config_set_thermocouple_so_pin(uint8_t pin) { s_config.thermocouple_so_pin = pin; }
 void config_set_thermocouple_cs_pin(uint8_t pin) { s_config.thermocouple_cs_pin = pin; }
+float config_get_thermocouple_min_temp(void) { return s_config.thermocouple_min_temp; }
+float config_get_thermocouple_correction(void) { return s_config.thermocouple_correction; }
+void config_set_thermocouple_min_temp(float min_temp) { s_config.thermocouple_min_temp = min_temp; }
+void config_set_thermocouple_correction(float correction) { s_config.thermocouple_correction = correction; }
+
+// ============================================================================
+// Getters/Setters - Interface
+// ============================================================================
+
+uint8_t config_get_buzzer_volume(void) { return s_config.buzzer_volume; }
+void config_set_buzzer_volume(uint8_t volume) { s_config.buzzer_volume = (volume > 100) ? 100 : volume; }
+
+bool config_get_led_enabled(void) { return s_config.led_enabled; }
+uint8_t config_get_led_brightness(void) { return s_config.led_brightness; }
+uint32_t config_get_led_blink_interval_ms(void) { return s_config.led_blink_interval_ms; }
+const char* config_get_led_color_normal(void) { return s_config.led_color_normal; }
+const char* config_get_led_color_lorawan(void) { return s_config.led_color_lorawan; }
+const char* config_get_led_color_wifi(void) { return s_config.led_color_wifi; }
+const char* config_get_led_color_error(void) { return s_config.led_color_error; }
+
+void config_set_led_enabled(bool enabled) { s_config.led_enabled = enabled; }
+void config_set_led_brightness(uint8_t brightness) { s_config.led_brightness = (brightness > 100) ? 100 : brightness; }
+void config_set_led_blink_interval_ms(uint32_t ms) { s_config.led_blink_interval_ms = ms; }
+void config_set_led_color_normal(const char *color) {
+    if (color) strncpy(s_config.led_color_normal, color, sizeof(s_config.led_color_normal) - 1);
+}
+void config_set_led_color_lorawan(const char *color) {
+    if (color) strncpy(s_config.led_color_lorawan, color, sizeof(s_config.led_color_lorawan) - 1);
+}
+void config_set_led_color_wifi(const char *color) {
+    if (color) strncpy(s_config.led_color_wifi, color, sizeof(s_config.led_color_wifi) - 1);
+}
+void config_set_led_color_error(const char *color) {
+    if (color) strncpy(s_config.led_color_error, color, sizeof(s_config.led_color_error) - 1);
+}
 
 // ============================================================================
 // Getters/Setters - Web

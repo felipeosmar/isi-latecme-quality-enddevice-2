@@ -17,5 +17,5 @@
     "--query-driver=/home/felipe/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc",
     "--compile-commands-dir=/home/felipe/work/isi-latecme-quality-enddevice-2/build"
   ],
-  "idf.currentSetup": "/home/felipe/esp/v5.5/esp-idf"
+  "idf.currentSetup": "/home/felipe/.espressif/v5.5.3/esp-idf"
 }

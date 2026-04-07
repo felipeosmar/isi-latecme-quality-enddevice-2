@@ -21,6 +21,10 @@ CONFIG_ESP_TASK_WDT_TIMEOUT_S=10
 CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=y
 CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=y
 
+# Interrupt Watchdog - Longer timeout to allow panic handler to print info
+CONFIG_ESP_INT_WDT=y
+CONFIG_ESP_INT_WDT_TIMEOUT_MS=800
+
 # =============================================================================
 # Stack Protection
 # =============================================================================
@@ -57,10 +61,11 @@ CONFIG_LOG_DEFAULT_LEVEL_INFO=y
 CONFIG_LOG_DEFAULT_LEVEL=3
 
 # =============================================================================
-# Partition Table
+# Partition Table & Serial Flasher Config
 # =============================================================================
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
 # =============================================================================
 # LittleFS
@@ -79,3 +84,8 @@ CONFIG_HTTPD_MAX_URI_LEN=512
 CONFIG_ESP_WIFI_SOFTAP_SUPPORT=y
 CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=10
 CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=32
+
+# =============================================================================
+# OTA - Rollback support
+# =============================================================================
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y

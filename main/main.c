@@ -4,7 +4,7 @@
  *
  * This application provides:
  * - LoRaWAN communication via OTAA to ChirpStack
- * - Sensor data collection (temperature, humidity, DS18B20)
+ * - Sensor data collection (temperature, humidity, thermocouple)
  * - CayenneLPP payload encoding
  * - OLED display for status
  * - Web interface for configuration and monitoring
@@ -30,6 +30,7 @@
 #include "oled_display.h"
 #include "cayenne_lpp.h"
 #include "buzzer.h"
+#include "status_led.h"
 
 static const char *TAG = "MAIN";
 
@@ -114,18 +115,10 @@ static void display_task(void *param)
             case OLED_PAGE_SENSORS: {
                 sensor_data_t data;
                 sensor_manager_get_data(&data);
-                float ds = data.ds18b20_valid ? data.ds18b20_temp : NAN;
                 float tc = data.thermocouple_valid ? data.thermocouple_temp : NAN;
                 float t = data.temp_hum_valid ? data.temperature : NAN;
                 float h = data.temp_hum_valid ? data.humidity : NAN;
-                oled_display_show_sensors(t, h, ds, tc, data.sensor_name);
-                break;
-            }
-            case OLED_PAGE_LORAWAN: {
-                lorawan_stats_t stats;
-                lorawan_get_stats(&stats);
-                oled_display_show_lorawan(stats.joined, stats.dev_addr,
-                                         stats.uplink_count, stats.last_rssi, stats.last_snr);
+                oled_display_show_sensors(t, h, tc);
                 break;
             }
             case OLED_PAGE_SYSTEM: {
@@ -133,7 +126,12 @@ static void display_task(void *param)
                 wifi_manager_get_ip(ip);
                 uint32_t uptime_s = xTaskGetTickCount() / configTICK_RATE_HZ;
                 uint32_t free_heap = esp_get_free_heap_size();
-                oled_display_show_system(ip, uptime_s, free_heap);
+                lorawan_stats_t lora_stats;
+                lorawan_get_stats(&lora_stats);
+                oled_display_show_system(ip, uptime_s, free_heap,
+                                         lora_stats.joined, lora_stats.dev_addr,
+                                         lora_stats.uplink_count, lora_stats.last_rssi,
+                                         lora_stats.last_snr);
                 break;
             }
             default:
@@ -186,10 +184,6 @@ static void uplink_task(void *param)
             cayenne_lpp_add_humidity(&lpp, 2, data.humidity);
         }
 
-        if (data.ds18b20_valid) {
-            cayenne_lpp_add_temperature(&lpp, 3, data.ds18b20_temp);
-        }
-
         if (data.thermocouple_valid) {
             cayenne_lpp_add_temperature(&lpp, 4, data.thermocouple_temp);
         }
@@ -214,25 +208,34 @@ void app_main(void)
     esp_log_level_set("MAIN", ESP_LOG_INFO);
     esp_log_level_set("LORAWAN", ESP_LOG_INFO);
     esp_log_level_set("SENSOR_MGR", ESP_LOG_INFO);
+    esp_log_level_set("MAX6675", ESP_LOG_INFO);
     esp_log_level_set("OLED", ESP_LOG_INFO);
 
     ESP_LOGI(TAG, "==========================================");
     ESP_LOGI(TAG, "  LoRaWAN End Device - Sensor Node");
     ESP_LOGI(TAG, "==========================================");
 
-    // Initialize buzzer and play startup melody (3 rising tones)
+    // Initialize buzzer hardware (no sound yet)
     buzzer_init();
-    buzzer_tone(1800, 80);
-    vTaskDelay(pdMS_TO_TICKS(60));
-    buzzer_tone(2400, 80);
-    vTaskDelay(pdMS_TO_TICKS(60));
-    buzzer_tone(3200, 100);
 
     // Initialize configuration manager (includes LittleFS)
     ESP_LOGI(TAG, "Initializing configuration...");
     if (config_init() != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize configuration!");
         return;
+    }
+
+    // Apply buzzer volume from config, then play startup melody
+    buzzer_set_volume(config_get_buzzer_volume());
+    buzzer_tone(1800, 80);
+    vTaskDelay(pdMS_TO_TICKS(60));
+    buzzer_tone(2400, 80);
+    vTaskDelay(pdMS_TO_TICKS(60));
+    buzzer_tone(3200, 100);
+
+    // Initialize status LED
+    if (status_led_init() != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to initialize status LED");
     }
 
     // Initialize WiFi
@@ -277,7 +280,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting FreeRTOS tasks...");
 
     // Sensor task - Core 0, Priority 5, Stack 4096
-    xTaskCreatePinnedToCore(sensor_task, "sensor", 4096, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(sensor_task, "sensor", 6144, NULL, 5, NULL, 0);
 
     // LoRaWAN task - Core 1, Priority 6, Stack 8192
     xTaskCreatePinnedToCore(lorawan_task, "lorawan", 8192, NULL, 6, NULL, 1);

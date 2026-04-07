@@ -17,10 +17,10 @@
 extern "C" {
 #endif
 
-// Default GPIO pins (HW-550 module)
-#define MAX6675_SCK_GPIO    33
-#define MAX6675_SO_GPIO     27
-#define MAX6675_CS_GPIO     32
+// Default GPIO pins (JVTECH v1.2 board)
+#define MAX6675_SCK_GPIO    32
+#define MAX6675_SO_GPIO     35
+#define MAX6675_CS_GPIO     33
 
 /**
  * @brief Initialize MAX6675 sensor (SPI bit-bang)

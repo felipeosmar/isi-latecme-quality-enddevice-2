@@ -188,6 +188,12 @@ class EspHal : public RadioLibHal {
     }
 
     void delayMicroseconds(unsigned long us) override {
+      if(us > 5000) {
+        // For delays > 5ms, use FreeRTOS delay to avoid starving other tasks
+        vTaskDelay(us / 1000 / portTICK_PERIOD_MS);
+        us = us % 1000; // remaining microseconds
+        if(us == 0) return;
+      }
       uint64_t m = (uint64_t)esp_timer_get_time();
       if(us) {
         uint64_t e = (m + us);
@@ -270,7 +276,14 @@ class EspHal : public RadioLibHal {
       this->spi->miso_dlen.usr_miso_dbitlen = 7;
       this->spi->data_buf[0] = b;
       this->spi->cmd.usr = 1;
-      while(this->spi->cmd.usr);
+      // Timeout protection: SPI transfer should complete in microseconds.
+      // If hardware doesn't respond, bail out instead of hanging forever.
+      uint32_t timeout = 10000; // ~10ms at worst
+      while(this->spi->cmd.usr && --timeout > 0);
+      if(timeout == 0) {
+        ESP_LOGE("EspHal", "SPI transfer timeout - check radio hardware");
+        return(0xFF);
+      }
       return(this->spi->data_buf[0] & 0xFF);
     }
 

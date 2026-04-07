@@ -125,6 +125,11 @@ esp_err_t web_server_init(const web_server_config_t *config)
     httpd_register_uri_handler(s_server, &tabs_files_js);
     httpd_register_uri_handler(s_server, &tabs_tasks_js);
 
+    httpd_uri_t tabs_ota_html = { .uri = "/tabs/ota.html", .method = HTTP_GET, .handler = tabs_html_handler };
+    httpd_uri_t tabs_ota_js = { .uri = "/tabs/ota.js", .method = HTTP_GET, .handler = tabs_js_handler };
+    httpd_register_uri_handler(s_server, &tabs_ota_html);
+    httpd_register_uri_handler(s_server, &tabs_ota_js);
+
     // ========================================================================
     // Register Routes - API: File Manager
     // ========================================================================
@@ -202,6 +207,22 @@ esp_err_t web_server_init(const web_server_config_t *config)
     httpd_register_uri_handler(s_server, &lorawan_config_get);
     httpd_register_uri_handler(s_server, &lorawan_config_post);
     httpd_register_uri_handler(s_server, &lorawan_join);
+
+    // ========================================================================
+    // Register Routes - API: OTA
+    // ========================================================================
+
+    httpd_uri_t ota_status = { .uri = "/api/ota/status", .method = HTTP_GET, .handler = api_ota_status_handler };
+    httpd_uri_t ota_fw_upload = { .uri = "/api/ota/firmware/upload", .method = HTTP_POST, .handler = api_ota_firmware_upload_handler };
+    httpd_uri_t ota_fw_url = { .uri = "/api/ota/firmware/url", .method = HTTP_POST, .handler = api_ota_firmware_url_handler };
+    httpd_uri_t ota_www_upload = { .uri = "/api/ota/www/upload", .method = HTTP_POST, .handler = api_ota_www_upload_handler };
+    httpd_uri_t ota_rollback = { .uri = "/api/ota/rollback", .method = HTTP_POST, .handler = api_ota_rollback_handler };
+
+    httpd_register_uri_handler(s_server, &ota_status);
+    httpd_register_uri_handler(s_server, &ota_fw_upload);
+    httpd_register_uri_handler(s_server, &ota_fw_url);
+    httpd_register_uri_handler(s_server, &ota_www_upload);
+    httpd_register_uri_handler(s_server, &ota_rollback);
 
     // ========================================================================
     // Initialization Complete

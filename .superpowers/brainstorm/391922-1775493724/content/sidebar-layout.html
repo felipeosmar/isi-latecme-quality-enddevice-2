@@ -1,0 +1,108 @@
+<h2>Como a sidebar se comporta no mobile?</h2>
+<p class="subtitle">No desktop a sidebar fica visível na lateral. No mobile (tela pequena), qual comportamento você prefere?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="bottom-nav" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0d1117;padding:12px;border-radius:6px;height:200px;display:flex;flex-direction:column;gap:8px">
+      <!-- phone mockup -->
+      <div style="background:#161b22;border:1px solid #30363d;border-radius:6px;flex:1;padding:10px;display:flex;flex-direction:column">
+        <div style="color:#58a6ff;font-size:11px;font-weight:600;margin-bottom:8px">LoRaWAN Sensor</div>
+        <div style="background:#0d1117;border-radius:4px;flex:1;padding:8px">
+          <div style="color:#8b949e;font-size:10px">Conteúdo da aba ativa</div>
+          <div style="height:4px;background:#30363d;border-radius:2px;margin-top:6px"></div>
+          <div style="height:4px;background:#30363d;border-radius:2px;margin-top:4px;width:70%"></div>
+        </div>
+        <!-- bottom nav bar -->
+        <div style="display:flex;justify-content:space-around;background:#161b22;border-top:1px solid #30363d;padding:6px 0;margin-top:8px;border-radius:0 0 4px 4px">
+          <div style="text-align:center">
+            <div style="font-size:14px">📡</div>
+            <div style="font-size:8px;color:#58a6ff">Sensors</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:14px">🔗</div>
+            <div style="font-size:8px;color:#8b949e">LoRa</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:14px">⚙️</div>
+            <div style="font-size:8px;color:#8b949e">Config</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:14px">•••</div>
+            <div style="font-size:8px;color:#8b949e">Mais</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Barra inferior (Bottom Nav)</h3>
+      <p>As abas principais ficam na barra inferior, acessível com o polegar. Abas secundárias em um menu "Mais". Padrão de apps mobile modernos.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Prós</h4><ul><li>Ergonomia excelente no celular</li><li>Sempre visível</li><li>Familiar para usuários mobile</li></ul></div>
+        <div class="cons"><h4>Contras</h4><ul><li>Menos espaço vertical para conteúdo</li><li>Comportamento diferente no desktop</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="hamburger" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0d1117;padding:12px;border-radius:6px;height:200px;display:flex;flex-direction:column;gap:8px">
+      <div style="background:#161b22;border:1px solid #30363d;border-radius:6px;flex:1;padding:10px;display:flex;flex-direction:column">
+        <!-- header with hamburger -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-size:14px;color:#58a6ff">☰</div>
+          <div style="color:#58a6ff;font-size:11px;font-weight:600;flex:1">LoRaWAN Sensor</div>
+          <div style="display:flex;gap:4px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#3fb950"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#f85149"></div>
+          </div>
+        </div>
+        <div style="background:#0d1117;border-radius:4px;flex:1;padding:8px">
+          <div style="color:#8b949e;font-size:10px">Conteúdo da aba ativa</div>
+          <div style="height:4px;background:#30363d;border-radius:2px;margin-top:6px"></div>
+          <div style="height:4px;background:#30363d;border-radius:2px;margin-top:4px;width:70%"></div>
+          <div style="height:4px;background:#30363d;border-radius:2px;margin-top:4px;width:50%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Hamburger (menu deslizante)</h3>
+      <p>Ícone ☰ no header abre uma sidebar que desliza sobre o conteúdo. Comum em dashboards web.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Prós</h4><ul><li>Máximo espaço para conteúdo</li><li>Mesmo padrão desktop e mobile</li></ul></div>
+        <div class="cons"><h4>Contras</h4><ul><li>Navegação escondida — 2 toques para trocar de aba</li><li>Menos ergonômico no celular</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="icon-rail" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0d1117;padding:12px;border-radius:6px;height:200px;display:flex;flex-direction:column;gap:8px">
+      <div style="background:#161b22;border:1px solid #30363d;border-radius:6px;flex:1;display:flex;overflow:hidden">
+        <!-- icon rail sidebar -->
+        <div style="background:#161b22;border-right:1px solid #30363d;padding:8px 6px;display:flex;flex-direction:column;gap:8px;width:36px">
+          <div style="font-size:14px;text-align:center">📡</div>
+          <div style="font-size:14px;text-align:center;opacity:0.4">🔗</div>
+          <div style="font-size:14px;text-align:center;opacity:0.4">💻</div>
+          <div style="font-size:14px;text-align:center;opacity:0.4">📋</div>
+          <div style="font-size:14px;text-align:center;opacity:0.4">⚙️</div>
+          <div style="font-size:14px;text-align:center;opacity:0.4">📁</div>
+          <div style="font-size:14px;text-align:center;opacity:0.4">🔄</div>
+        </div>
+        <!-- content -->
+        <div style="flex:1;padding:10px">
+          <div style="color:#8b949e;font-size:10px">Conteúdo</div>
+          <div style="height:4px;background:#30363d;border-radius:2px;margin-top:6px"></div>
+          <div style="height:4px;background:#30363d;border-radius:2px;margin-top:4px;width:70%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Icon Rail (sidebar estreita com ícones)</h3>
+      <p>Sidebar sempre visível com apenas ícones. No mobile ocupa pouco espaço (36–40px). No desktop pode expandir com label ao hover.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Prós</h4><ul><li>Sempre acessível, 1 toque</li><li>Consistente desktop/mobile</li><li>Espaço mínimo usado</li></ul></div>
+        <div class="cons"><h4>Contras</h4><ul><li>Ícones precisam ser autoexplicativos</li><li>No mobile muito estreito pode ser difícil de tocar</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>

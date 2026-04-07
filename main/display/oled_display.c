@@ -236,6 +236,53 @@ void oled_display_text(uint8_t x, uint8_t page, const char *text)
     }
 }
 
+/**
+ * @brief Draw a character scaled 2x (12x16 pixels, spans 2 pages)
+ */
+static void draw_char_2x(uint8_t x, uint8_t page, char c)
+{
+    if (c < 32 || c > 126) c = ' ';
+    int idx = c - 32;
+
+    for (int col = 0; col < 6; col++) {
+        uint8_t src = font_6x8[idx][col];
+        // Stretch each bit vertically: 1 src bit -> 2 dst bits
+        uint16_t stretched = 0;
+        for (int bit = 0; bit < 8; bit++) {
+            if (src & (1 << bit)) {
+                stretched |= (3 << (bit * 2));  // 2 bits per original bit
+            }
+        }
+        uint8_t lo = (uint8_t)(stretched & 0xFF);
+        uint8_t hi = (uint8_t)((stretched >> 8) & 0xFF);
+
+        // Write 2 columns (horizontal stretch)
+        uint8_t dx = x + col * 2;
+        if (dx < OLED_WIDTH && page < 8) {
+            framebuffer[page * OLED_WIDTH + dx] = lo;
+            framebuffer[page * OLED_WIDTH + dx + 1] = lo;
+        }
+        if (dx < OLED_WIDTH && (page + 1) < 8) {
+            framebuffer[(page + 1) * OLED_WIDTH + dx] = hi;
+            framebuffer[(page + 1) * OLED_WIDTH + dx + 1] = hi;
+        }
+    }
+}
+
+/**
+ * @brief Write text at 2x scale (12x16 per char, spans 2 pages)
+ */
+static void oled_display_text_2x(uint8_t x, uint8_t page, const char *text)
+{
+    if (!text || page >= 7) return;
+
+    while (*text && x < OLED_WIDTH) {
+        draw_char_2x(x, page, *text);
+        x += 12;
+        text++;
+    }
+}
+
 void oled_display_update(void)
 {
     if (!oled_dev || !oled_initialized) return;
@@ -258,44 +305,103 @@ void oled_display_update(void)
     }
 }
 
-void oled_display_show_sensors(float temp, float hum, float ds_temp, float tc_temp, const char *sensor_name)
+/**
+ * @brief Draw a character scaled 3x (18x24 pixels, spans 3 pages)
+ */
+static void draw_char_3x(uint8_t x, uint8_t page, char c)
+{
+    if (c < 32 || c > 126) c = ' ';
+    int idx = c - 32;
+
+    for (int col = 0; col < 6; col++) {
+        uint8_t src = font_6x8[idx][col];
+        // Stretch each bit vertically: 1 src bit -> 3 dst bits
+        uint32_t stretched = 0;
+        for (int bit = 0; bit < 8; bit++) {
+            if (src & (1 << bit)) {
+                stretched |= (7U << (bit * 3));  // 3 bits per original bit
+            }
+        }
+        uint8_t b0 = (uint8_t)(stretched & 0xFF);
+        uint8_t b1 = (uint8_t)((stretched >> 8) & 0xFF);
+        uint8_t b2 = (uint8_t)((stretched >> 16) & 0xFF);
+
+        // Write 3 columns (horizontal stretch)
+        for (int dx = 0; dx < 3; dx++) {
+            uint8_t px = x + col * 3 + dx;
+            if (px >= OLED_WIDTH) break;
+            if (page < 8)     framebuffer[page * OLED_WIDTH + px] = b0;
+            if (page + 1 < 8) framebuffer[(page + 1) * OLED_WIDTH + px] = b1;
+            if (page + 2 < 8) framebuffer[(page + 2) * OLED_WIDTH + px] = b2;
+        }
+    }
+}
+
+/**
+ * @brief Write text at 3x scale (18x24 per char, spans 3 pages)
+ */
+static void oled_display_text_3x(uint8_t x, uint8_t page, const char *text)
+{
+    if (!text || page >= 6) return;
+
+    while (*text && x < OLED_WIDTH) {
+        draw_char_3x(x, page, *text);
+        x += 18;
+        text++;
+    }
+}
+
+// Sensor sub-page counter for alternating T/H on external sensor
+static uint8_t sensor_subpage = 0;
+
+void oled_display_show_sensors(float temp, float hum, float tc_temp)
 {
     if (!oled_initialized) return;
 
-    char line[22];
+    char line[16];
+    uint8_t x;
 
     oled_display_clear();
 
-    oled_display_text(0, 0, "=== SENSORS ===");
-
-    snprintf(line, sizeof(line), "Sensor: %s", sensor_name ? sensor_name : "None");
-    oled_display_text(0, 2, line);
-
-    if (!isnan(temp)) {
-        snprintf(line, sizeof(line), "Temp: %.1f C", temp);
-        oled_display_text(0, 3, line);
-    }
-
-    if (!isnan(hum)) {
-        snprintf(line, sizeof(line), "Hum:  %.1f %%", hum);
-        oled_display_text(0, 4, line);
-    }
-
-    if (!isnan(ds_temp)) {
-        snprintf(line, sizeof(line), "DS18B20: %.1f C", ds_temp);
-        oled_display_text(0, 5, line);
-    }
-
+    // Row 1 (pages 0-2): TC — always visible, 3x font
+    oled_display_text(0, 0, "Int.");
     if (!isnan(tc_temp)) {
-        snprintf(line, sizeof(line), "TC: %.1f C", tc_temp);
-        oled_display_text(0, 6, line);
+        snprintf(line, sizeof(line), "%.1fC", tc_temp);
+    } else {
+        snprintf(line, sizeof(line), "--");
     }
+    x = (OLED_WIDTH - strlen(line) * 18) / 2;
+    oled_display_text_3x(x, 1, line);
+
+    // Row 2 (pages 4-6): Alternate between T and H, 3x font
+    oled_display_text(0, 4, "Ext.");
+    if (sensor_subpage == 0) {
+        // Show temperature
+        if (!isnan(temp)) {
+            snprintf(line, sizeof(line), "%.1fC", temp);
+        } else {
+            snprintf(line, sizeof(line), "--");
+        }
+    } else {
+        // Show humidity
+        if (!isnan(hum)) {
+            snprintf(line, sizeof(line), "%.1f%%", hum);
+        } else {
+            snprintf(line, sizeof(line), "--");
+        }
+    }
+    x = (OLED_WIDTH - strlen(line) * 18) / 2;
+    oled_display_text_3x(x, 5, line);
+
+    // Toggle subpage for next call
+    sensor_subpage = (sensor_subpage + 1) % 2;
 
     oled_display_update();
 }
 
-void oled_display_show_lorawan(bool joined, uint32_t dev_addr,
-                                uint32_t uplink_count, int16_t rssi, float snr)
+void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t free_heap,
+                               bool lora_joined, uint32_t dev_addr,
+                               uint32_t uplink_count, int16_t rssi, float snr)
 {
     if (!oled_initialized) return;
 
@@ -303,50 +409,38 @@ void oled_display_show_lorawan(bool joined, uint32_t dev_addr,
 
     oled_display_clear();
 
-    oled_display_text(0, 0, "=== LoRaWAN ===");
+    oled_display_text(0, 0, "--- SYSTEM ---");
 
-    snprintf(line, sizeof(line), "Status: %s", joined ? "Joined" : "Not Joined");
-    oled_display_text(0, 2, line);
+    // IP
+    snprintf(line, sizeof(line), "IP:%s", ip_addr ? ip_addr : "N/A");
+    oled_display_text(0, 1, line);
 
-    if (joined) {
-        snprintf(line, sizeof(line), "Addr: %08lX", (unsigned long)dev_addr);
-        oled_display_text(0, 3, line);
-
-        snprintf(line, sizeof(line), "Uplinks: %lu", (unsigned long)uplink_count);
-        oled_display_text(0, 4, line);
-
-        snprintf(line, sizeof(line), "RSSI: %d dBm", rssi);
-        oled_display_text(0, 5, line);
-
-        snprintf(line, sizeof(line), "SNR:  %.1f dB", snr);
-        oled_display_text(0, 6, line);
-    }
-
-    oled_display_update();
-}
-
-void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t free_heap)
-{
-    if (!oled_initialized) return;
-
-    char line[22];
-
-    oled_display_clear();
-
-    oled_display_text(0, 0, "=== SYSTEM ===");
-
-    snprintf(line, sizeof(line), "IP: %s", ip_addr ? ip_addr : "N/A");
-    oled_display_text(0, 2, line);
-
+    // Uptime
     uint32_t hours = uptime_s / 3600;
     uint32_t mins = (uptime_s % 3600) / 60;
     uint32_t secs = uptime_s % 60;
-    snprintf(line, sizeof(line), "Up: %luh %02lum %02lus",
+    snprintf(line, sizeof(line), "Up:%luh%02lum%02lus",
              (unsigned long)hours, (unsigned long)mins, (unsigned long)secs);
+    oled_display_text(0, 2, line);
+
+    // Heap
+    snprintf(line, sizeof(line), "Heap:%luKB", (unsigned long)(free_heap / 1024));
+    oled_display_text(0, 3, line);
+
+    // LoRaWAN status
+    snprintf(line, sizeof(line), "LoRa:%s", lora_joined ? "Joined" : "No Join");
     oled_display_text(0, 4, line);
 
-    snprintf(line, sizeof(line), "Heap: %lu KB", (unsigned long)(free_heap / 1024));
-    oled_display_text(0, 6, line);
+    if (lora_joined) {
+        snprintf(line, sizeof(line), "Addr:%08lX", (unsigned long)dev_addr);
+        oled_display_text(0, 5, line);
+
+        snprintf(line, sizeof(line), "Up:%lu R:%ddBm", (unsigned long)uplink_count, rssi);
+        oled_display_text(0, 6, line);
+
+        snprintf(line, sizeof(line), "SNR:%.1fdB", snr);
+        oled_display_text(0, 7, line);
+    }
 
     oled_display_update();
 }

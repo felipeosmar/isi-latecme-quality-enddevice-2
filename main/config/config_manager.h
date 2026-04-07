@@ -80,13 +80,11 @@ void config_set_adr_enabled(bool enabled);
 uint32_t config_get_sensor_interval(void);
 float config_get_temp_correction(void);
 float config_get_hum_correction(void);
-bool config_get_ds18b20_enabled(void);
 const char* config_get_device_name(void);
 
 void config_set_sensor_interval(uint32_t seconds);
 void config_set_temp_correction(float correction);
 void config_set_hum_correction(float correction);
-void config_set_ds18b20_enabled(bool enabled);
 void config_set_device_name(const char *name);
 
 bool config_get_thermocouple_enabled(void);
@@ -100,6 +98,33 @@ void config_set_thermocouple_max_temp(float max_temp);
 void config_set_thermocouple_sck_pin(uint8_t pin);
 void config_set_thermocouple_so_pin(uint8_t pin);
 void config_set_thermocouple_cs_pin(uint8_t pin);
+float config_get_thermocouple_min_temp(void);
+float config_get_thermocouple_correction(void);
+void config_set_thermocouple_min_temp(float min_temp);
+void config_set_thermocouple_correction(float correction);
+
+// ============================================================================
+// Interface Configuration
+// ============================================================================
+
+uint8_t config_get_buzzer_volume(void);
+void config_set_buzzer_volume(uint8_t volume);
+
+bool config_get_led_enabled(void);
+uint8_t config_get_led_brightness(void);
+uint32_t config_get_led_blink_interval_ms(void);
+const char* config_get_led_color_normal(void);
+const char* config_get_led_color_lorawan(void);
+const char* config_get_led_color_wifi(void);
+const char* config_get_led_color_error(void);
+
+void config_set_led_enabled(bool enabled);
+void config_set_led_brightness(uint8_t brightness);
+void config_set_led_blink_interval_ms(uint32_t ms);
+void config_set_led_color_normal(const char *color);
+void config_set_led_color_lorawan(const char *color);
+void config_set_led_color_wifi(const char *color);
+void config_set_led_color_error(const char *color);
 
 // ============================================================================
 // Web Server Configuration

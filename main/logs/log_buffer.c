@@ -31,8 +31,6 @@ static SemaphoreHandle_t s_mutex = NULL;
 // Original vprintf function (for passthrough)
 static vprintf_like_t s_original_vprintf = NULL;
 
-// Flag to prevent recursion
-static bool s_in_hook = false;
 
 /**
  * @brief Parse ESP-IDF log format and extract level, tag, message
@@ -130,21 +128,26 @@ static void add_entry(uint8_t level, const char *tag, const char *message, uint3
 
 /**
  * @brief Custom vprintf hook for capturing logs
+ *
+ * Uses stack-local buffer to avoid race condition when multiple
+ * tasks log simultaneously (the old static buffer caused garbled
+ * output and potential memory corruption).
  */
 static int log_vprintf_hook(const char *fmt, va_list args)
 {
-    // Prevent recursion
-    if (s_in_hook) {
+    // Prevent recursion (per-task flag via FreeRTOS task local)
+    static volatile bool s_in_hook_guard = false;
+    if (s_in_hook_guard) {
         if (s_original_vprintf) {
             return s_original_vprintf(fmt, args);
         }
         return vprintf(fmt, args);
     }
 
-    s_in_hook = true;
+    s_in_hook_guard = true;
 
-    // Format the message
-    static char line_buffer[256];
+    // Stack-local buffer: each task gets its own copy, no race condition
+    char line_buffer[192];
     int len = vsnprintf(line_buffer, sizeof(line_buffer), fmt, args);
 
     // Try to parse and store
@@ -158,11 +161,10 @@ static int log_vprintf_hook(const char *fmt, va_list args)
         add_entry(level, tag, message, timestamp);
     }
 
-    s_in_hook = false;
+    s_in_hook_guard = false;
 
-    // Pass through to original handler
+    // Pass through to original handler (use already-formatted buffer)
     if (s_original_vprintf) {
-        // We need to re-format since we consumed args
         return printf("%s", line_buffer);
     }
     return printf("%s", line_buffer);

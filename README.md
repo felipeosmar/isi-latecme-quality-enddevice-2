@@ -1,17 +1,17 @@
 # LoRaWAN End Device - Sensor Node
 
-ESP32-based LoRaWAN end device for environmental sensor data collection and transmission to a ChirpStack network server. Collects temperature and humidity data from I2C sensors and DS18B20, encodes it as CayenneLPP, and sends it via LoRaWAN Class A with OTAA activation.
+ESP32-based LoRaWAN end device for environmental sensor data collection and transmission to a ChirpStack network server. Collects temperature and humidity data from I2C sensors and thermocouple temperature via MAX6675, encodes it as CayenneLPP, and sends it via LoRaWAN Class A with OTAA activation.
 
 ## Features
 
 - **LoRaWAN Class A**: OTAA activation with RadioLib + SX1276/SX1278 (AU915, sub-band configurable)
 - **Auto-Detect Sensors**: SHT20, SHT3x (SHT30/SHT31/SHT40), AM2315C/AHT20 over I2C
-- **DS18B20**: 1-Wire temperature sensor support via RMT peripheral
 - **CayenneLPP Payload**: ChirpStack built-in decoder, zero custom codec needed
 - **OLED Display**: SSD1306 128x64 with auto-cycling pages (Sensors, LoRaWAN, System)
 - **Web Interface**: Configuration and real-time monitoring via browser
 - **Dual WiFi Modes**: Station (STA) or Access Point (AP) for configuration
 - **Persistent Configuration**: JSON-based config stored in LittleFS, preserved across firmware updates
+- **OTA Updates**: Over-the-air firmware and web UI updates via web browser or URL pull, with A/B partition rollback
 - **Industrial-Grade**: Watchdog timers, stack protection, coredump, brownout detection
 
 ## Hardware
@@ -23,7 +23,7 @@ ESP32-based LoRaWAN end device for environmental sensor data collection and tran
 | ESP32 Board | ESP32-WROOM-32, DevKitC, or compatible |
 | LoRa Module | SX1276/SX1278 (868/915 MHz) |
 | I2C Sensor | SHT20, SHT30, SHT40, or AM2315C (any one) |
-| DS18B20 | 1-Wire temperature sensor (optional) |
+| MAX6675 | Thermocouple temperature sensor (optional) |
 | OLED Display | SSD1306 128x64 I2C (optional) |
 
 ### Pin Mapping
@@ -41,6 +41,11 @@ LoRa SPI (SX1276/SX1278)
 I2C Bus (Sensors + OLED)
   SDA ............ GPIO21
   SCL ............ GPIO22
+
+MAX6675 Thermocouple (Software SPI)
+  SCK ............ GPIO32
+  SO  ............ GPIO35
+  CS  ............ GPIO33
 
 Peripherals
   LED ............ GPIO2
@@ -61,7 +66,7 @@ Sensors and OLED share the same I2C bus. On boot, the sensor manager probes addr
 
 ## Prerequisites
 
-**ESP-IDF v5.x** (tested with v5.5.0):
+**ESP-IDF v5.x** (tested with v5.5.3):
 
 ```bash
 # Install dependencies (Ubuntu/Debian)
@@ -71,11 +76,11 @@ sudo apt-get install git wget flex bison gperf python3 python3-pip \
 
 # Clone and install ESP-IDF
 mkdir -p ~/esp && cd ~/esp
-git clone -b v5.5 --recursive https://github.com/espressif/esp-idf.git
+git clone -b v5.5.3 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf && ./install.sh esp32
 
 # Activate environment (run before each session)
-. ~/esp/esp-idf/export.sh
+. /home/felipe/.espressif/v5.5.3/esp-idf/export.sh
 ```
 
 ## Quick Start
@@ -83,7 +88,7 @@ cd esp-idf && ./install.sh esp32
 ### 1. Build
 
 ```bash
-. ~/esp/esp-idf/export.sh    # activate ESP-IDF
+. /home/felipe/.espressif/v5.5.3/esp-idf/export.sh    # activate ESP-IDF
 idf.py build
 ```
 
@@ -138,20 +143,21 @@ Once joined, sensor data appears automatically in ChirpStack decoded as CayenneL
 |---------|------|-------|
 | 1 | Temperature (0x67) | I2C sensor temperature |
 | 2 | Humidity (0x68) | I2C sensor humidity |
-| 3 | Temperature (0x67) | DS18B20 temperature |
+| 4 | Temperature (0x67) | MAX6675 thermocouple temperature |
 
 ## Web Interface
 
-The web interface has six tabs:
+The web interface has seven tabs:
 
 | Tab | Description |
 |-----|-------------|
-| **Sensors** | Live temperature, humidity, DS18B20 readings |
+| **Sensors** | Live temperature, humidity, thermocouple readings |
 | **LoRaWAN** | Join status, DevAddr, RSSI/SNR, uplink count, config |
 | **System** | Uptime, memory, WiFi status, logs |
 | **Tasks** | FreeRTOS task monitoring, CPU usage, stack usage |
 | **Config** | WiFi, sensor corrections, device name, web auth |
 | **Files** | Browse/upload/download files on userdata partition |
+| **OTA** | Firmware and web UI updates, rollback to previous firmware |
 
 ## REST API
 
@@ -193,6 +199,44 @@ curl http://<ip>/api/logs            # System logs
 curl -X POST http://<ip>/api/restart # Restart device
 ```
 
+### OTA
+
+```bash
+# Get OTA status (current partition, version, state, progress)
+curl http://<ip>/api/ota/status
+
+# Upload firmware binary (streams directly to flash — no heap buffering)
+curl -X POST http://<ip>/api/ota/firmware/upload \
+  --data-binary @build/lorawan-enddevice.bin
+
+# Pull firmware from URL (background task, poll /api/ota/status for progress)
+curl -X POST http://<ip>/api/ota/firmware/url \
+  -H "Content-Type: application/json" \
+  -d '{"url": "http://192.168.1.100/firmware.bin"}'
+
+# Upload new web interface partition image
+curl -X POST http://<ip>/api/ota/www/upload \
+  --data-binary @build/www.bin
+
+# Roll back to previous firmware
+curl -X POST http://<ip>/api/ota/rollback
+```
+
+Example status response:
+```json
+{
+  "state": "idle",
+  "current_partition": "ota_0",
+  "app_version": "1.0.0",
+  "idf_version": "v5.5.3",
+  "rollback_possible": false,
+  "bytes_written": 0,
+  "total_bytes": 0
+}
+```
+
+`state` values: `idle`, `in_progress`, `rebooting`, `failed`
+
 ## Configuration
 
 User configuration is stored in `/userdata/config.json` on the ESP32:
@@ -219,8 +263,15 @@ User configuration is stored in `/userdata/config.json` on the ESP32:
         "interval": 30,
         "temp_correction": 0.0,
         "hum_correction": 0.0,
-        "ds18b20_enabled": true,
-        "device_name": "sensor-01"
+        "device_name": "sensor-01",
+        "thermocouple_enabled": true,
+        "thermocouple_max_temp": 200.0,
+        "thermocouple_sck_pin": 32,
+        "thermocouple_so_pin": 35,
+        "thermocouple_cs_pin": 33
+    },
+    "interface": {
+        "buzzer_volume": 10
     },
     "web": {
         "username": "admin",
@@ -247,7 +298,7 @@ lorawan-enddevice/
 │   │   ├── sht20_driver.c/h    # SHT20 (I2C 0x40)
 │   │   ├── sht3x_driver.c/h    # SHT30/SHT40 (I2C 0x44)
 │   │   ├── am2315c_driver.c/h  # AM2315C/AHT20 (I2C 0x38)
-│   │   └── ds18b20_driver.c/h  # DS18B20 (1-Wire via RMT)
+│   │   └── max6675_driver.c/h  # MAX6675 thermocouple (SPI bit-bang)
 │   ├── payload/
 │   │   └── cayenne_lpp.c/h     # CayenneLPP encoder
 │   ├── display/
@@ -258,7 +309,7 @@ lorawan-enddevice/
 │   │   └── config_manager.c/h  # JSON config (LittleFS)
 │   ├── webserver/
 │   │   ├── web_server.c/h      # HTTP server, route registration
-│   │   └── handlers/           # API handlers (system, wifi, sensors, lorawan, files)
+│   │   └── handlers/           # API handlers (system, wifi, sensors, lorawan, files, ota)
 │   ├── health/
 │   │   └── health_monitor.c/h  # Watchdog, heap monitoring
 │   ├── logs/
@@ -282,17 +333,53 @@ lorawan-enddevice/
 
 ## Partition Table
 
-| Name | Type | Offset | Size |
-|------|------|--------|------|
-| nvs | data/nvs | 0x9000 | 24 KB |
-| phy_init | data/phy | 0xF000 | 4 KB |
-| factory | app | 0x10000 | 1664 KB |
-| coredump | data/coredump | 0x1B0000 | 64 KB |
-| www | data/spiffs | 0x1C0000 | 192 KB |
-| userdata | data/spiffs | 0x1F0000 | 64 KB |
+OTA A/B scheme with automatic rollback (uses 3.69 MB of 4 MB flash):
 
-- **www**: Web interface files (flashed with firmware, safe to update)
-- **userdata**: User config (preserved across firmware updates, auto-formatted on first boot)
+| Name | Type | Offset | Size | Description |
+|------|------|--------|------|-------------|
+| nvs | data/nvs | 0x9000 | 24 KB | WiFi credentials, system state |
+| phy_init | data/phy | 0xF000 | 4 KB | RF calibration |
+| otadata | data/ota | 0x10000 | 8 KB | Tracks active OTA slot |
+| ota_0 | app/ota_0 | 0x20000 | 1664 KB | Firmware slot A |
+| ota_1 | app/ota_1 | 0x1C0000 | 1664 KB | Firmware slot B |
+| coredump | data/coredump | 0x360000 | 64 KB | Crash coredump |
+| www | data/spiffs | 0x370000 | 192 KB | Web interface files |
+| userdata | data/spiffs | 0x3A0000 | 64 KB | User config (JSON) |
+
+- **ota_0 / ota_1**: Active and standby firmware slots. OTA updates write to the inactive slot and reboot. On failure, the bootloader rolls back automatically.
+- **www**: Web interface files (can be updated independently via `./flash.sh www` or OTA tab)
+- **userdata**: User config — preserved across firmware updates. Never erased by `idf.py flash`.
+
+## OTA Firmware Updates
+
+### First-Time Migration
+
+If the device is running firmware with the old `factory` partition layout, the **first update must be a full flash** to install the new partition table:
+
+```bash
+./flash.sh all    # erases everything including userdata (one-time only)
+```
+
+After this, all future updates can use OTA (web UI or `./flash.sh update`). The userdata partition is preserved across all subsequent updates.
+
+### Updating via Web Interface
+
+1. Build the firmware: `idf.py build`
+2. Open the device web UI → **OTA** tab
+3. **Firmware update**: select `build/lorawan-enddevice.bin` → click **Flash**
+   - A progress bar shows upload progress
+   - Device reboots automatically into the new firmware slot
+4. **Web UI update**: select `build/www.bin` → click **Flash Web UI**
+
+### Automatic Rollback
+
+With `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y`, the bootloader marks new firmware as "pending verification" on first boot. The health monitor validates it after WiFi connects and system health checks pass:
+
+```
+I (xxx) HEALTH: OTA firmware validated (WiFi OK, system healthy)
+```
+
+If validation never happens (crash/hang), the bootloader rolls back to the previous slot on the next reboot. Manual rollback is also available via the OTA tab or `POST /api/ota/rollback`.
 
 ## Troubleshooting
 
@@ -339,8 +426,6 @@ idf.py coredump-info
 |---------|---------|---------|
 | [RadioLib](https://github.com/jgromes/RadioLib) | ^7.5.0 | LoRaWAN + SX127x driver |
 | [LittleFS](https://github.com/joltwallet/esp_littlefs) | * | Filesystem for config and web UI |
-| [onewire_bus](https://components.espressif.com/components/espressif/onewire_bus) | ^1.0.4 | 1-Wire bus driver (RMT) |
-| [ds18b20](https://components.espressif.com/components/espressif/ds18b20) | ^0.1.2 | DS18B20 temperature sensor |
 
 ## License
 

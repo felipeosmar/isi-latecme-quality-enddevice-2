@@ -4,6 +4,7 @@
  *
  * I2C Address: 0x3C
  * Shares I2C bus with sensors (GPIO21/GPIO22).
+ * Two pages: Sensors (split view) and System (with LoRaWAN status).
  */
 
 #ifndef OLED_DISPLAY_H
@@ -26,16 +27,12 @@ extern "C" {
  */
 typedef enum {
     OLED_PAGE_SENSORS = 0,
-    OLED_PAGE_LORAWAN,
     OLED_PAGE_SYSTEM,
     OLED_PAGE_MAX
 } oled_page_t;
 
 /**
  * @brief Initialize OLED display
- *
- * @param i2c_bus I2C master bus handle (from sensor_manager)
- * @return ESP_OK on success
  */
 esp_err_t oled_display_init(void *i2c_bus);
 
@@ -46,10 +43,6 @@ void oled_display_clear(void);
 
 /**
  * @brief Write text at position
- *
- * @param x X position (0-127)
- * @param y Y position in pages (0-7, each page = 8 pixels)
- * @param text String to display
  */
 void oled_display_text(uint8_t x, uint8_t y, const char *text);
 
@@ -59,36 +52,19 @@ void oled_display_text(uint8_t x, uint8_t y, const char *text);
 void oled_display_update(void);
 
 /**
- * @brief Show sensor data page
+ * @brief Show sensor data page (split layout)
  *
- * @param temp Temperature in °C
- * @param hum Humidity in %
- * @param ds_temp DS18B20 temperature (or NAN if not available)
- * @param tc_temp Thermocouple temperature (or NAN if not available)
- * @param sensor_name Name of the detected sensor
+ * Left half: T and H from I2C sensor
+ * Right half: T from thermocouple
  */
-void oled_display_show_sensors(float temp, float hum, float ds_temp, float tc_temp, const char *sensor_name);
+void oled_display_show_sensors(float temp, float hum, float tc_temp);
 
 /**
- * @brief Show LoRaWAN status page
- *
- * @param joined true if joined to network
- * @param dev_addr Device address (0 if not joined)
- * @param uplink_count Number of uplinks sent
- * @param rssi Last RSSI value
- * @param snr Last SNR value
+ * @brief Show system info + LoRaWAN status page
  */
-void oled_display_show_lorawan(bool joined, uint32_t dev_addr,
-                                uint32_t uplink_count, int16_t rssi, float snr);
-
-/**
- * @brief Show system info page
- *
- * @param ip_addr IP address string
- * @param uptime_s Uptime in seconds
- * @param free_heap Free heap in bytes
- */
-void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t free_heap);
+void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t free_heap,
+                               bool lora_joined, uint32_t dev_addr,
+                               uint32_t uplink_count, int16_t rssi, float snr);
 
 /**
  * @brief Cycle to the next display page

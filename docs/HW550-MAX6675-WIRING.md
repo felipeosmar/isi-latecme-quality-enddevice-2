@@ -23,8 +23,8 @@ Baseado no esquemático `Schematic_SPECIAL-LINE-LA-T-H-JVTECH-v1.2_2026-01-13.pd
 | 13 | SX1276 DIO1 | ❌ |
 | 14 | SX1276 RST | ❌ |
 | 15 | Livre no MIJ (boot strap — evitar) | ⚠️ |
-| 16 | Livre (RXD2) | ✅ |
-| 17 | Livre (TXD2) | ✅ |
+| 16 | Livre (RXD2) — **crash na JVTECH v1.2 como output** | ❌ |
+| 17 | Livre (TXD2) — **crash na JVTECH v1.2 como output** | ❌ |
 | 18 | SX1276 SCLK (SPI) | ❌ |
 | 19 | SX1276 MISO (SPI) | ❌ |
 | 21 | I2C SDA → Sensor I2C (U3) + Display OLED (U4) | ❌ |
@@ -37,8 +37,8 @@ Baseado no esquemático `Schematic_SPECIAL-LINE-LA-T-H-JVTECH-v1.2_2026-01-13.pd
 | 33 | Livre | ✅ |
 | 34 | Livre (input only) | ✅ (só input) |
 | 35 | Livre (input only) | ✅ (só input) |
-| 36 | Livre (input only) | ✅ (só input) |
-| 39 | Livre (input only) | ✅ (só input) |
+| 36 | Livre (input only) — **interferência WiFi** | ⚠️ Evitar |
+| 39 | Livre (input only) — **interferência WiFi** | ⚠️ Evitar |
 
 ## Pinagem Escolhida para o HW-550
 
@@ -49,25 +49,28 @@ dedicado ao SX1276 (LoRa), usaremos **SPI por software (bit-bang)** em GPIOs liv
 |-------------|--------|-----------|----------|---------------|
 | **VCC** | Alimentação 3.3V | 3V3 (ESP32) | Pino 2, 21, 22 ou 32 | 3.3V direto do MIJ |
 | **GND** | Terra | GND | Pino 1, 15, 17 ou 18 | Qualquer GND |
-| **SCK** | SPI Clock | **GPIO 33** | Pino 9 | Livre, I/O, sem conflito |
-| **SO** | SPI Data Out (MISO) | **GPIO 27** | Pino 12 | Livre, I/O, sem conflito |
-| **CS** | Chip Select | **GPIO 32** | Pino 8 | Livre, I/O, sem conflito |
+| **SCK** | SPI Clock | **GPIO 32** | Pino 8 do MIJ | Livre, I/O, sem restrição de boot |
+| **SO** | SPI Data Out (MISO) | **GPIO 35** | Pino 7 do MIJ | Input-only, ideal para leitura |
+| **CS** | Chip Select | **GPIO 33** | Pino 9 do MIJ | Livre, I/O, sem restrição de boot |
 
 ### Por que esses GPIOs?
 
-- **GPIO 33, 27, 32** — Todos livres, sem função na placa v1.2, sem restrições de boot
-- **GPIO 27** como SO (MISO) — Data out do MAX6675, precisa ser I/O (leitura)
-- **GPIO 33** como SCK — Clock gerado pelo ESP32, precisa ser output
-- **GPIO 32** como CS — Chip select, precisa ser output
+- **GPIO 32, 33** — Livres, sem função na placa v1.2, sem restrições de boot
+- **GPIO 35** como SO (MISO) — Input-only, perfeito para leitura de dados do MAX6675. Pull-down externo dispensável: o MAX6675 drive ativamente o SO quando CS=LOW (durante leitura), e o estado flutuante quando CS=HIGH (idle) não afeta as medições
+- **GPIO 32** como SCK — Clock gerado pelo ESP32, precisa ser output
+- **GPIO 33** como CS — Chip select, precisa ser output
 - Nenhum conflita com LoRa (SPI HSPI), I2C (sensores/OLED), UART0, buzzer ou botão
 
 ### Alternativas (se algum pino estiver fisicamente inacessível)
 
-| Função | Alternativa 1 | Alternativa 2 |
-|--------|--------------|--------------|
-| SCK | GPIO 16 (pino 27) | GPIO 17 (pino 28) |
-| SO | GPIO 34 (pino 6, input-only — OK pra SO) | GPIO 36 (pino 4, input-only) |
-| CS | GPIO 16 (pino 27) | GPIO 17 (pino 28) |
+| Função | Alternativa 1 | Alternativa 2 | Observação |
+|--------|--------------|--------------|------------|
+| SCK | GPIO 12 (boot strap — cuidado) | GPIO 15 (boot strap — cuidado) | Precisa ser output |
+| SO | GPIO 27 (pino 12, I/O) | GPIO 34 (pino 6, input-only) | Input-only OK para SO |
+| CS | GPIO 12 (boot strap — cuidado) | GPIO 15 (boot strap — cuidado) | Precisa ser output |
+
+> **Evitar GPIO 16/17** — causam crash na placa JVTECH v1.2 quando configurados como output.
+> **Evitar GPIO 36/39** — sofrem interferência do WiFi (bug do hall sensor do ESP32).
 
 ## Diagrama de Conexão
 
@@ -79,11 +82,12 @@ dedicado ao SX1276 (LoRa), usaremos **SPI por software (bit-bang)** em GPIOs liv
     │                     │              │              │
     │  GND (Pino 1/15)  ─┼──────────────┼─ GND         │
     │                     │              │              │
-    │  GPIO33 (Pino 9)  ─┼──────────────┼─ SCK         │
+    │  GPIO32 (Pino 8)  ─┼──────────────┼─ SCK         │
     │                     │              │              │     ┌─────────────┐
-    │  GPIO27 (Pino 12) ─┼──────────────┼─ SO          │     │ Termopar    │
-    │                     │              │          T+  ┼─────┤ Tipo K      │
-    │  GPIO32 (Pino 8)  ─┼──────────────┼─ CS      T-  ┼─────┤ 0-200°C     │
+    │  GPIO35 (Pino 7)  ─┼──────────────┼─ SO          │     │             │
+    │                     │              │          T+  ┼─────┤ Termopar    │
+    │  GPIO33 (Pino 9)  ─┼──────────────┼─ CS      T-  ┼─────┤ Tipo K      │
+    │                     │              │              │     │ 0-200°C     │
     │                     │              │              │     └─────────────┘
     └─────────────────────┘              └──────────────┘
 ```
@@ -92,9 +96,9 @@ dedicado ao SX1276 (LoRa), usaremos **SPI por software (bit-bang)** em GPIOs liv
 
 Os pinos do MIJ são pads de 1.27mm de espaçamento. Referência:
 
-1. **GPIO 33 (SCK)** → Pino 9 do MIJ (lado esquerdo, fileira superior)
-2. **GPIO 27 (SO)** → Pino 12 do MIJ (lado esquerdo, fileira superior)
-3. **GPIO 32 (CS)** → Pino 8 do MIJ (lado esquerdo, fileira superior)
+1. **GPIO 32 (SCK)** → Pino 8 do MIJ (lado esquerdo, fileira superior)
+2. **GPIO 35 (SO)** → Pino 7 do MIJ (input-only)
+3. **GPIO 33 (CS)** → Pino 9 do MIJ (lado esquerdo, fileira superior)
 4. **3V3** → Pino 2 ou 21/22/32 do MIJ (alimentação ESP32)
 5. **GND** → Pino 1, 15, 17 ou 18 do MIJ
 
@@ -102,7 +106,7 @@ Os pinos do MIJ são pads de 1.27mm de espaçamento. Referência:
 
 - Use fio 30 AWG (wire-wrap) para conectar os pads do MIJ ao módulo HW-550
 - Os pads são de 1.27mm — ponta de ferro fina e flux ajudam muito
-- Alternativamente, se a placa base tem headers de 2.54mm expostos (H1/H2), verifique se GPIO 27/32/33 estão acessíveis por ali
+- Alternativamente, se a placa base tem headers de 2.54mm expostos (H1/H2), verifique se GPIO 32/33/35 estão acessíveis por ali
 
 ### Headers H1 e H2 (da placa base, conforme esquemático)
 
@@ -126,7 +130,7 @@ Os pinos do MIJ são pads de 1.27mm de espaçamento. Referência:
 **Header RECORD** (HDR-M-2.54 1x6):
 - 3V3, EN, GND, GPIO00, RXD0, TXD0
 
-> ⚠️ GPIO 27, 32 e 33 **NÃO estão expostos em nenhum header da placa base**.
+> ⚠️ GPIO 32, 33 e 35 **NÃO estão expostos em nenhum header da placa base**.
 > Será necessário soldar diretamente nos pads do módulo MIJ.
 
 ## Protocolo SPI do MAX6675
@@ -162,18 +166,18 @@ No `config.json`, será adicionada a seção:
   "sensors": {
     "thermocouple_enabled": true,
     "thermocouple_max_temp": 200.0,
-    "thermocouple_sck_pin": 33,
-    "thermocouple_so_pin": 27,
-    "thermocouple_cs_pin": 32
+    "thermocouple_sck_pin": 32,
+    "thermocouple_so_pin": 35,
+    "thermocouple_cs_pin": 33
   }
 }
 ```
 
 ## Checklist de Montagem
 
-- [ ] Soldar fio no pad GPIO 33 (pino 9 MIJ) → SCK do HW-550
-- [ ] Soldar fio no pad GPIO 27 (pino 12 MIJ) → SO do HW-550
-- [ ] Soldar fio no pad GPIO 32 (pino 8 MIJ) → CS do HW-550
+- [ ] Soldar fio no pad GPIO 32 (pino 8 MIJ) → SCK do HW-550
+- [ ] Soldar fio no pad GPIO 35 (pino 7 MIJ) → SO do HW-550
+- [ ] Soldar fio no pad GPIO 33 (pino 9 MIJ) → CS do HW-550
 - [ ] Conectar 3V3 do MIJ → VCC do HW-550
 - [ ] Conectar GND do MIJ → GND do HW-550
 - [ ] Conectar termopar tipo K nos terminais T+/T- do HW-550
