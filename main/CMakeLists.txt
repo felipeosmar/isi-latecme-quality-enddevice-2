@@ -27,6 +27,7 @@ idf_component_register(
         "clock_sync/clock_sync.c"
         "alarm/alarm_manager.c"
         "interface/button_handler.c"
+        "update/auto_updater.c"
     INCLUDE_DIRS
         "."
         "lorawan"
@@ -42,6 +43,7 @@ idf_component_register(
         "interface"
         "clock_sync"
         "alarm"
+        "update"
     REQUIRES
         driver
         nvs_flash
@@ -53,4 +55,5 @@ idf_component_register(
         freertos
         app_update
         esp_http_client
+        esp_crt_bundle
 )
