@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "alarm_manager.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,6 +76,15 @@ void oled_display_next_page(void);
  * @brief Get current page
  */
 oled_page_t oled_display_get_page(void);
+
+/**
+ * @brief Show alarm page with 1Hz blinking header.
+ *        Toggles display inversion each call (call at 500ms interval for 1Hz blink).
+ *        Resets inversion to normal automatically when alarm clears.
+ *
+ * @param info Active alarm details from alarm_manager_get_active_info()
+ */
+void oled_display_show_alarm(const alarm_info_t *info);
 
 #ifdef __cplusplus
 }

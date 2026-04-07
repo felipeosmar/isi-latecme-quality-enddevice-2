@@ -104,6 +104,30 @@ void config_set_thermocouple_min_temp(float min_temp);
 void config_set_thermocouple_correction(float correction);
 
 // ============================================================================
+// Alarm Threshold Configuration
+// ============================================================================
+
+bool  config_get_alarm_temp_enabled(void);
+float config_get_alarm_temp_low(void);
+float config_get_alarm_temp_high(void);
+bool  config_get_alarm_hum_enabled(void);
+float config_get_alarm_hum_low(void);
+float config_get_alarm_hum_high(void);
+bool  config_get_alarm_tc_enabled(void);
+float config_get_alarm_tc_low(void);
+float config_get_alarm_tc_high(void);
+
+void config_set_alarm_temp_enabled(bool enabled);
+void config_set_alarm_temp_low(float val);
+void config_set_alarm_temp_high(float val);
+void config_set_alarm_hum_enabled(bool enabled);
+void config_set_alarm_hum_low(float val);
+void config_set_alarm_hum_high(float val);
+void config_set_alarm_tc_enabled(bool enabled);
+void config_set_alarm_tc_low(float val);
+void config_set_alarm_tc_high(float val);
+
+// ============================================================================
 // Interface Configuration
 // ============================================================================
 

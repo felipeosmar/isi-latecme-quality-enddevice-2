@@ -71,6 +71,15 @@ esp_err_t api_sensors_config_get_handler(httpd_req_t *req)
     cJSON_AddNumberToObject(root, "thermocouple_min_temp", config_get_thermocouple_min_temp());
     cJSON_AddNumberToObject(root, "thermocouple_correction", config_get_thermocouple_correction());
     cJSON_AddNumberToObject(root, "buzzer_volume", config_get_buzzer_volume());
+    cJSON_AddBoolToObject(root, "alarm_temp_enabled", config_get_alarm_temp_enabled());
+    cJSON_AddNumberToObject(root, "alarm_temp_low",   config_get_alarm_temp_low());
+    cJSON_AddNumberToObject(root, "alarm_temp_high",  config_get_alarm_temp_high());
+    cJSON_AddBoolToObject(root, "alarm_hum_enabled",  config_get_alarm_hum_enabled());
+    cJSON_AddNumberToObject(root, "alarm_hum_low",    config_get_alarm_hum_low());
+    cJSON_AddNumberToObject(root, "alarm_hum_high",   config_get_alarm_hum_high());
+    cJSON_AddBoolToObject(root, "alarm_tc_enabled",   config_get_alarm_tc_enabled());
+    cJSON_AddNumberToObject(root, "alarm_tc_low",     config_get_alarm_tc_low());
+    cJSON_AddNumberToObject(root, "alarm_tc_high",    config_get_alarm_tc_high());
 
     char *json_str = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
@@ -86,7 +95,7 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req)
 {
     if (!check_auth(req)) return send_unauthorized(req);
 
-    char buf[512];
+    char buf[1024];
     int received = httpd_req_recv(req, buf, sizeof(buf) - 1);
     if (received <= 0) {
         httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "No data");
@@ -140,6 +149,24 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req)
         buzzer_set_volume(vol);
         buzzer_beep(100);  // Test beep at new volume
     }
+    if ((item = cJSON_GetObjectItem(json, "alarm_temp_enabled")) && cJSON_IsBool(item))
+        config_set_alarm_temp_enabled(cJSON_IsTrue(item));
+    if ((item = cJSON_GetObjectItem(json, "alarm_temp_low")) && cJSON_IsNumber(item))
+        config_set_alarm_temp_low((float)item->valuedouble);
+    if ((item = cJSON_GetObjectItem(json, "alarm_temp_high")) && cJSON_IsNumber(item))
+        config_set_alarm_temp_high((float)item->valuedouble);
+    if ((item = cJSON_GetObjectItem(json, "alarm_hum_enabled")) && cJSON_IsBool(item))
+        config_set_alarm_hum_enabled(cJSON_IsTrue(item));
+    if ((item = cJSON_GetObjectItem(json, "alarm_hum_low")) && cJSON_IsNumber(item))
+        config_set_alarm_hum_low((float)item->valuedouble);
+    if ((item = cJSON_GetObjectItem(json, "alarm_hum_high")) && cJSON_IsNumber(item))
+        config_set_alarm_hum_high((float)item->valuedouble);
+    if ((item = cJSON_GetObjectItem(json, "alarm_tc_enabled")) && cJSON_IsBool(item))
+        config_set_alarm_tc_enabled(cJSON_IsTrue(item));
+    if ((item = cJSON_GetObjectItem(json, "alarm_tc_low")) && cJSON_IsNumber(item))
+        config_set_alarm_tc_low((float)item->valuedouble);
+    if ((item = cJSON_GetObjectItem(json, "alarm_tc_high")) && cJSON_IsNumber(item))
+        config_set_alarm_tc_high((float)item->valuedouble);
 
     cJSON_Delete(json);
 
