@@ -20,6 +20,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "driver/gpio.h"
 
 #include "wifi_manager.h"
 #include "web_server.h"
@@ -208,6 +209,9 @@ void app_main(void)
 {
     // Initialize log buffer FIRST to capture all logs
     log_buffer_init();
+
+    // Install GPIO ISR service once here; all drivers (LoRa, button) reuse it
+    gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
 
     // Set log level to WARN (suppress INFO and DEBUG messages)
     esp_log_level_set("*", ESP_LOG_WARN);

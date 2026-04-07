@@ -108,13 +108,6 @@ esp_err_t button_handler_init(void)
         return ESP_ERR_NO_MEM;
     }
 
-    // Install ISR service (ignore ESP_ERR_INVALID_STATE = already installed)
-    ret = gpio_install_isr_service(0);
-    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-        ESP_LOGE(TAG, "gpio_install_isr_service failed: %s", esp_err_to_name(ret));
-        return ret;
-    }
-
     ret = gpio_isr_handler_add(BUTTON_GPIO, gpio_isr_handler, NULL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "gpio_isr_handler_add failed: %s", esp_err_to_name(ret));
