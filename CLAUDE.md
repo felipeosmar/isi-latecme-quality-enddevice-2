@@ -11,6 +11,15 @@ Requires ESP-IDF v5.5.3. Always source the environment first:
 idf.py build
 ```
 
+**Two firmware variants** are built from this single codebase via `CONFIG_THERMOCOUPLE_ENABLED`:
+
+| Variant | Build command | Enables |
+|---|---|---|
+| Standard | `idf.py build` | I2C temp/humidity only |
+| Salt spray | `idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.salt_spray" build` | + MAX6675 thermocouple |
+
+**Local variant switching:** The committed `sdkconfig` reflects the standard variant (`CONFIG_THERMOCOUPLE_ENABLED=n`). To build the salt spray variant locally, delete `sdkconfig` first and use the `-DSDKCONFIG_DEFAULTS` flag above. CI always uses fresh sdkconfig from defaults.
+
 Flash modes (via `./flash.sh`):
 - `./flash.sh update` — firmware + web UI, preserves user config (most common)
 - `./flash.sh app` — firmware only
