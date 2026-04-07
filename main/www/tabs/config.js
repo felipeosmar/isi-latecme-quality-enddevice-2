@@ -59,6 +59,15 @@ async function loadSensorConfig() {
         const vol = d.buzzer_volume !== undefined ? d.buzzer_volume : 80;
         document.getElementById('cfg-buzzer-vol').value = vol;
         document.getElementById('cfg-buzzer-vol-val').textContent = vol;
+        document.getElementById('cfg-alarm-temp-en').checked    = d.alarm_temp_enabled || false;
+        document.getElementById('cfg-alarm-temp-low').value     = d.alarm_temp_low  !== undefined ? d.alarm_temp_low  : 0;
+        document.getElementById('cfg-alarm-temp-high').value    = d.alarm_temp_high !== undefined ? d.alarm_temp_high : 0;
+        document.getElementById('cfg-alarm-hum-en').checked     = d.alarm_hum_enabled || false;
+        document.getElementById('cfg-alarm-hum-low').value      = d.alarm_hum_low   !== undefined ? d.alarm_hum_low   : 0;
+        document.getElementById('cfg-alarm-hum-high').value     = d.alarm_hum_high  !== undefined ? d.alarm_hum_high  : 0;
+        document.getElementById('cfg-alarm-tc-en').checked      = d.alarm_tc_enabled || false;
+        document.getElementById('cfg-alarm-tc-low').value       = d.alarm_tc_low    !== undefined ? d.alarm_tc_low    : 0;
+        document.getElementById('cfg-alarm-tc-high').value      = d.alarm_tc_high   !== undefined ? d.alarm_tc_high   : 0;
     } catch (e) {
         console.error('Failed to load sensor config:', e);
     }
@@ -106,6 +115,35 @@ async function saveBuzzerConfig() {
         }
     } catch (e) {
         toast('Failed to save buzzer config', 'error');
+    }
+}
+
+// ============================================================================
+// Alarm Configuration
+// ============================================================================
+
+async function saveAlarmConfig() {
+    const config = {
+        alarm_temp_enabled: document.getElementById('cfg-alarm-temp-en').checked,
+        alarm_temp_low:     parseFloat(document.getElementById('cfg-alarm-temp-low').value),
+        alarm_temp_high:    parseFloat(document.getElementById('cfg-alarm-temp-high').value),
+        alarm_hum_enabled:  document.getElementById('cfg-alarm-hum-en').checked,
+        alarm_hum_low:      parseFloat(document.getElementById('cfg-alarm-hum-low').value),
+        alarm_hum_high:     parseFloat(document.getElementById('cfg-alarm-hum-high').value),
+        alarm_tc_enabled:   document.getElementById('cfg-alarm-tc-en').checked,
+        alarm_tc_low:       parseFloat(document.getElementById('cfg-alarm-tc-low').value),
+        alarm_tc_high:      parseFloat(document.getElementById('cfg-alarm-tc-high').value),
+    };
+
+    try {
+        const r = await api('sensors/config', 'POST', config);
+        if (r.success) {
+            toast('Configuração de alarmes salva', 'success');
+        } else {
+            toast(r.message || 'Falha ao salvar', 'error');
+        }
+    } catch (e) {
+        toast('Falha ao salvar alarmes', 'error');
     }
 }
 

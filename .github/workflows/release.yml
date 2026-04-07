@@ -1,0 +1,81 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+      - salt_spray
+  pull_request:
+    branches:
+      - main
+      - salt_spray
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v5.5.3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build firmware
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py build
+
+      - name: Upload firmware binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-binaries
+          path: |
+            build/lorawan-enddevice.bin
+            build/www.bin
+          retention-days: 1
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - name: Download firmware binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-binaries
+          path: artifacts/
+
+      - name: Calculate next release number
+        id: release_info
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          COUNT=$(gh api repos/${{ github.repository }}/releases \
+            --paginate \
+            --jq ".[] | select(.tag_name | startswith(\"${BRANCH}-r\")) | .tag_name" \
+            | wc -l)
+          NEXT=$((COUNT + 1))
+          echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
+          echo "number=${NEXT}" >> $GITHUB_OUTPUT
+          echo "tag=${BRANCH}-r${NEXT}" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Rename binaries with branch and release number
+        run: |
+          BRANCH="${{ steps.release_info.outputs.branch }}"
+          N="${{ steps.release_info.outputs.number }}"
+          mv artifacts/lorawan-enddevice.bin \
+             artifacts/lorawan-enddevice-${BRANCH}-r${N}.bin
+          mv artifacts/www.bin \
+             artifacts/www-${BRANCH}-r${N}.bin
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: "[${{ steps.release_info.outputs.branch }}] Release #${{ steps.release_info.outputs.number }}"
+          generate_release_notes: true
+          files: |
+            artifacts/lorawan-enddevice-${{ steps.release_info.outputs.branch }}-r${{ steps.release_info.outputs.number }}.bin
+            artifacts/www-${{ steps.release_info.outputs.branch }}-r${{ steps.release_info.outputs.number }}.bin

@@ -10,10 +10,12 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include "esp_log.h"
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "clock_sync.h"
 
 static const char *TAG = "OLED";
 
@@ -357,6 +359,7 @@ static uint8_t sensor_subpage = 0;
 void oled_display_show_sensors(float temp, float hum, float tc_temp)
 {
     if (!oled_initialized) return;
+    oled_send_cmd(SSD1306_CMD_SET_NORMAL);  // ensure not inverted from alarm page
 
     char line[16];
     uint8_t x;
@@ -404,12 +407,22 @@ void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t f
                                uint32_t uplink_count, int16_t rssi, float snr)
 {
     if (!oled_initialized) return;
+    oled_send_cmd(SSD1306_CMD_SET_NORMAL);  // ensure not inverted from alarm page
 
     char line[22];
 
     oled_display_clear();
 
-    oled_display_text(0, 0, "--- SYSTEM ---");
+    if (clock_sync_is_synced()) {
+        time_t now = time(NULL);
+        struct tm ti;
+        gmtime_r(&now, &ti);
+        char time_line[22];
+        strftime(time_line, sizeof(time_line), "%d/%m %H:%M:%S UTC", &ti);
+        oled_display_text(0, 0, time_line);
+    } else {
+        oled_display_text(0, 0, "--/-- --:--:-- UTC");
+    }
 
     // IP
     snprintf(line, sizeof(line), "IP:%s", ip_addr ? ip_addr : "N/A");
@@ -453,4 +466,43 @@ void oled_display_next_page(void)
 oled_page_t oled_display_get_page(void)
 {
     return current_page;
+}
+
+void oled_display_show_alarm(const alarm_info_t *info)
+{
+    if (!oled_initialized || !info) return;
+
+    // Toggle hardware invert each call → 1Hz blink at 500ms call rate
+    static uint8_t blink_ctr = 0;
+    oled_send_cmd((blink_ctr % 2 == 0) ? 0xA7 : SSD1306_CMD_SET_NORMAL);
+    blink_ctr++;
+
+    oled_display_clear();
+
+    // Page 0: header
+    oled_display_text(0, 0, "*** ALARME ***");
+
+    // Page 2: label (+ extra count if multiple alarms)
+    if (info->extra_count > 0) {
+        char label_line[40];
+        snprintf(label_line, sizeof(label_line), "%s +%d", info->label, info->extra_count);
+        oled_display_text(0, 2, label_line);
+    } else {
+        oled_display_text(0, 2, info->label);
+    }
+
+    // Page 3: current value
+    char val_str[22];
+    snprintf(val_str, sizeof(val_str), "Atual: %.1f", info->value);
+    oled_display_text(0, 3, val_str);
+
+    // Page 4: violated threshold
+    char thr_str[22];
+    snprintf(thr_str, sizeof(thr_str), "Limite: %.1f", info->threshold);
+    oled_display_text(0, 4, thr_str);
+
+    // Page 6: hint
+    oled_display_text(0, 6, "Btn p/silenciar");
+
+    oled_display_update();
 }
