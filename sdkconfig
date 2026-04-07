@@ -433,6 +433,12 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
+# Firmware Variant
+#
+# CONFIG_THERMOCOUPLE_ENABLED is not set
+# end of Firmware Variant
+
+#
 # Compiler options
 #
 CONFIG_COMPILER_OPTIMIZATION_DEBUG=y
