@@ -52,7 +52,8 @@ jobs:
           BRANCH="${{ github.ref_name }}"
           COUNT=$(gh api repos/${{ github.repository }}/releases \
             --paginate \
-            --jq "[.[] | select(.tag_name | startswith(\"${BRANCH}-r\"))] | length")
+            --jq ".[] | select(.tag_name | startswith(\"${BRANCH}-r\")) | .tag_name" \
+            | wc -l)
           NEXT=$((COUNT + 1))
           echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
           echo "number=${NEXT}" >> $GITHUB_OUTPUT
