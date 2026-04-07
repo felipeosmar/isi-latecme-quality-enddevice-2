@@ -29,6 +29,9 @@ static const char *TAG = "AUTO_UPD";
 // GitHub repository (public, no auth needed)
 #define GITHUB_OWNER        "felipeosmar"
 #define GITHUB_REPO         "isi-latecme-quality-enddevice-2"
+// per_page=5: GitHub returns releases sorted by date descending.
+// The latest release for any branch is always in the first 5 results
+// as long as no more than 5 releases are created in rapid succession.
 #define GITHUB_API_URL      "https://api.github.com/repos/" GITHUB_OWNER "/" GITHUB_REPO "/releases?per_page=5"
 #define GITHUB_ASSET_BASE   "https://github.com/" GITHUB_OWNER "/" GITHUB_REPO "/releases/download"
 
@@ -323,6 +326,16 @@ static bool flash_www_from_url(const char *url)
         return false;
     }
 
+    // Check content length if known (may be 0 if server doesn't report it)
+    int content_length = esp_http_client_get_content_length(client);
+    if (content_length > 0 && (uint32_t)content_length > www_part->size) {
+        ESP_LOGE(TAG, "www binary (%d bytes) exceeds partition size (%lu bytes)",
+                 content_length, www_part->size);
+        esp_http_client_close(client);
+        esp_http_client_cleanup(client);
+        return false;
+    }
+
     // Unmount www before writing
     esp_err_t unregister_err = esp_vfs_littlefs_unregister("www");
     if (unregister_err != ESP_OK && unregister_err != ESP_ERR_INVALID_STATE) {
@@ -337,7 +350,7 @@ static bool flash_www_from_url(const char *url)
         return false;
     }
 
-    char *buf = malloc(OTA_CHUNK_SIZE + 3);  // +3 for 4-byte alignment padding
+    char *buf = malloc(OTA_CHUNK_SIZE + 3);  // +3 for 4-byte alignment padding on last chunk
     if (!buf) {
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
@@ -346,22 +359,38 @@ static bool flash_www_from_url(const char *url)
 
     bool error = false;
     uint32_t offset = 0;
+    uint32_t buf_fill = 0;
+
     while (1) {
-        int n = esp_http_client_read(client, buf, OTA_CHUNK_SIZE);
+        int n = esp_http_client_read(client, buf + buf_fill, OTA_CHUNK_SIZE - (int)buf_fill);
         if (n < 0) { ESP_LOGE(TAG, "www HTTP read error at offset %lu", offset); error = true; break; }
         if (n == 0) break;
+        buf_fill += (uint32_t)n;
 
-        // esp_partition_write requires 4-byte aligned size
-        int write_size = (n + 3) & ~3;
-        if (write_size > n) memset(buf + n, 0xFF, write_size - n);
+        if (buf_fill < OTA_CHUNK_SIZE) continue; // Fill buffer completely before writing
 
-        err = esp_partition_write(www_part, offset, buf, write_size);
+        // Full aligned chunk: write directly (OTA_CHUNK_SIZE is 4096, always 4-byte aligned)
+        err = esp_partition_write(www_part, offset, buf, OTA_CHUNK_SIZE);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "www write failed at offset %lu: %s", offset, esp_err_to_name(err));
             error = true;
             break;
         }
-        offset += write_size;
+        offset += OTA_CHUNK_SIZE;
+        buf_fill = 0;
+    }
+
+    // Write remaining bytes (last partial chunk), padded to 4-byte alignment
+    if (!error && buf_fill > 0) {
+        uint32_t write_size = (buf_fill + 3) & ~3U;
+        if (write_size > buf_fill) memset(buf + buf_fill, 0xFF, write_size - buf_fill);
+        err = esp_partition_write(www_part, offset, buf, write_size);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "www write failed at offset %lu: %s", offset, esp_err_to_name(err));
+            error = true;
+        } else {
+            offset += buf_fill;  // Track actual data bytes written
+        }
     }
 
     free(buf);
