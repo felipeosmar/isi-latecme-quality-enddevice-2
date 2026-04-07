@@ -10,10 +10,12 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include "esp_log.h"
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "clock_sync.h"
 
 static const char *TAG = "OLED";
 
@@ -409,7 +411,16 @@ void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t f
 
     oled_display_clear();
 
-    oled_display_text(0, 0, "--- SYSTEM ---");
+    if (clock_sync_is_synced()) {
+        time_t now = time(NULL);
+        struct tm ti;
+        gmtime_r(&now, &ti);
+        char time_line[22];
+        strftime(time_line, sizeof(time_line), "%d/%m %H:%M:%S UTC", &ti);
+        oled_display_text(0, 0, time_line);
+    } else {
+        oled_display_text(0, 0, "--/-- --:--:-- UTC");
+    }
 
     // IP
     snprintf(line, sizeof(line), "IP:%s", ip_addr ? ip_addr : "N/A");

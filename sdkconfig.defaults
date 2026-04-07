@@ -61,6 +61,11 @@ CONFIG_LOG_DEFAULT_LEVEL_INFO=y
 CONFIG_LOG_DEFAULT_LEVEL=3
 
 # =============================================================================
+# Log timestamps — use real UTC time after clock sync (TS003)
+# =============================================================================
+CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM=y
+
+# =============================================================================
 # Partition Table & Serial Flasher Config
 # =============================================================================
 CONFIG_PARTITION_TABLE_CUSTOM=y
