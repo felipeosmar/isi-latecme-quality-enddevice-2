@@ -517,7 +517,7 @@ esp_err_t api_ota_www_upload_handler(httpd_req_t *req)
             write_error = true;
             break;
         }
-        offset += write_size;
+        offset += received;
         remaining -= received;
     }
 
