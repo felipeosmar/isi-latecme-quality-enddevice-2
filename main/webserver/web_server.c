@@ -70,7 +70,7 @@ esp_err_t web_server_init(const web_server_config_t *config)
     // Configure HTTP server
     httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
     http_config.server_port = g_web_config.port;
-    http_config.max_uri_handlers = 60;
+    http_config.max_uri_handlers = 70;
     http_config.stack_size = 8192;
 
     ESP_LOGI(TAG, "Starting server on port %d", http_config.server_port);
@@ -222,22 +222,34 @@ esp_err_t web_server_init(const web_server_config_t *config)
     // Register Routes - API: OTA
     // ========================================================================
 
-    httpd_uri_t ota_status = { .uri = "/api/ota/status", .method = HTTP_GET, .handler = api_ota_status_handler };
-    httpd_uri_t ota_fw_upload = { .uri = "/api/ota/firmware/upload", .method = HTTP_POST, .handler = api_ota_firmware_upload_handler };
-    httpd_uri_t ota_fw_url = { .uri = "/api/ota/firmware/url", .method = HTTP_POST, .handler = api_ota_firmware_url_handler };
-    httpd_uri_t ota_www_upload = { .uri = "/api/ota/www/upload", .method = HTTP_POST, .handler = api_ota_www_upload_handler };
-    httpd_uri_t ota_rollback = { .uri = "/api/ota/rollback", .method = HTTP_POST, .handler = api_ota_rollback_handler };
+    httpd_uri_t ota_status         = { .uri = "/api/ota/status",           .method = HTTP_GET,     .handler = api_ota_status_handler };
+    httpd_uri_t ota_status_opt     = { .uri = "/api/ota/status",           .method = HTTP_OPTIONS, .handler = api_ota_status_options_handler };
+    httpd_uri_t ota_fw_upload      = { .uri = "/api/ota/firmware/upload",  .method = HTTP_POST,    .handler = api_ota_firmware_upload_handler };
+    httpd_uri_t ota_fw_upload_opt  = { .uri = "/api/ota/firmware/upload",  .method = HTTP_OPTIONS, .handler = api_ota_fw_upload_options_handler };
+    httpd_uri_t ota_fw_url         = { .uri = "/api/ota/firmware/url",     .method = HTTP_POST,    .handler = api_ota_firmware_url_handler };
+    httpd_uri_t ota_fw_url_opt     = { .uri = "/api/ota/firmware/url",     .method = HTTP_OPTIONS, .handler = api_ota_fw_url_options_handler };
+    httpd_uri_t ota_www_upload     = { .uri = "/api/ota/www/upload",       .method = HTTP_POST,    .handler = api_ota_www_upload_handler };
+    httpd_uri_t ota_www_upload_opt = { .uri = "/api/ota/www/upload",       .method = HTTP_OPTIONS, .handler = api_ota_www_upload_options_handler };
+    httpd_uri_t ota_rollback       = { .uri = "/api/ota/rollback",         .method = HTTP_POST,    .handler = api_ota_rollback_handler };
+    httpd_uri_t ota_rollback_opt   = { .uri = "/api/ota/rollback",         .method = HTTP_OPTIONS, .handler = api_ota_rollback_options_handler };
 
     httpd_register_uri_handler(s_server, &ota_status);
+    httpd_register_uri_handler(s_server, &ota_status_opt);
     httpd_register_uri_handler(s_server, &ota_fw_upload);
+    httpd_register_uri_handler(s_server, &ota_fw_upload_opt);
     httpd_register_uri_handler(s_server, &ota_fw_url);
+    httpd_register_uri_handler(s_server, &ota_fw_url_opt);
     httpd_register_uri_handler(s_server, &ota_www_upload);
+    httpd_register_uri_handler(s_server, &ota_www_upload_opt);
     httpd_register_uri_handler(s_server, &ota_rollback);
+    httpd_register_uri_handler(s_server, &ota_rollback_opt);
 
-    httpd_uri_t ota_auto_update_get  = { .uri = "/api/ota/auto-update", .method = HTTP_GET,  .handler = api_ota_auto_update_get_handler };
-    httpd_uri_t ota_auto_update_post = { .uri = "/api/ota/auto-update", .method = HTTP_POST, .handler = api_ota_auto_update_post_handler };
+    httpd_uri_t ota_auto_update_get  = { .uri = "/api/ota/auto-update", .method = HTTP_GET,     .handler = api_ota_auto_update_get_handler };
+    httpd_uri_t ota_auto_update_post = { .uri = "/api/ota/auto-update", .method = HTTP_POST,    .handler = api_ota_auto_update_post_handler };
+    httpd_uri_t ota_auto_update_opt  = { .uri = "/api/ota/auto-update", .method = HTTP_OPTIONS, .handler = api_ota_auto_update_options_handler };
     httpd_register_uri_handler(s_server, &ota_auto_update_get);
     httpd_register_uri_handler(s_server, &ota_auto_update_post);
+    httpd_register_uri_handler(s_server, &ota_auto_update_opt);
 
     // ========================================================================
     // Initialization Complete
