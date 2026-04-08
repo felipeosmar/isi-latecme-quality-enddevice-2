@@ -69,6 +69,8 @@ esp_err_t api_ota_status_handler(httpd_req_t *req)
 
     char *json_str = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     httpd_resp_send(req, json_str, strlen(json_str));
     free(json_str);
     cJSON_Delete(root);
@@ -180,6 +182,8 @@ esp_err_t api_ota_firmware_upload_handler(httpd_req_t *req)
     cJSON_AddStringToObject(resp, "partition", update_partition->label);
     char *json_str = cJSON_PrintUnformatted(resp);
     httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     httpd_resp_send(req, json_str, strlen(json_str));
     free(json_str);
     cJSON_Delete(resp);
@@ -387,6 +391,8 @@ esp_err_t api_ota_firmware_url_handler(httpd_req_t *req)
     cJSON_AddStringToObject(resp, "message", "OTA started, poll /api/ota/status for progress");
     char *json_str = cJSON_PrintUnformatted(resp);
     httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     httpd_resp_send(req, json_str, strlen(json_str));
     free(json_str);
     cJSON_Delete(resp);
@@ -492,6 +498,8 @@ esp_err_t api_ota_www_upload_handler(httpd_req_t *req)
     cJSON_AddStringToObject(resp, "message", "www updated, rebooting");
     char *json_str = cJSON_PrintUnformatted(resp);
     httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     httpd_resp_send(req, json_str, strlen(json_str));
     free(json_str);
     cJSON_Delete(resp);
@@ -515,6 +523,8 @@ esp_err_t api_ota_rollback_handler(httpd_req_t *req)
         cJSON_AddStringToObject(resp, "message", "Rollback not available");
         char *json_str = cJSON_PrintUnformatted(resp);
         httpd_resp_set_type(req, "application/json");
+        httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+        httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
         httpd_resp_send(req, json_str, strlen(json_str));
         free(json_str);
         cJSON_Delete(resp);
@@ -528,6 +538,8 @@ esp_err_t api_ota_rollback_handler(httpd_req_t *req)
     cJSON_AddStringToObject(resp, "message", "Rolling back to previous firmware");
     char *json_str = cJSON_PrintUnformatted(resp);
     httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     httpd_resp_send(req, json_str, strlen(json_str));
     free(json_str);
     cJSON_Delete(resp);
@@ -564,6 +576,8 @@ esp_err_t api_ota_auto_update_get_handler(httpd_req_t *req)
 
     char *json_str = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     httpd_resp_send(req, json_str, strlen(json_str));
     free(json_str);
     cJSON_Delete(root);
@@ -619,8 +633,74 @@ esp_err_t api_ota_auto_update_post_handler(httpd_req_t *req)
     cJSON_AddStringToObject(resp, "message", trigger ? "Config saved, check triggered" : "Config saved");
     char *json_str = cJSON_PrintUnformatted(resp);
     httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     httpd_resp_send(req, json_str, strlen(json_str));
     free(json_str);
     cJSON_Delete(resp);
+    return ESP_OK;
+}
+
+// ============================================================================
+// OPTIONS handlers — CORS preflight (no auth check)
+// ============================================================================
+
+esp_err_t api_ota_status_options_handler(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Authorization, Content-Type");
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
+}
+
+esp_err_t api_ota_fw_upload_options_handler(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Authorization, Content-Type");
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
+}
+
+esp_err_t api_ota_fw_url_options_handler(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Authorization, Content-Type");
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
+}
+
+esp_err_t api_ota_www_upload_options_handler(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Authorization, Content-Type");
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
+}
+
+esp_err_t api_ota_rollback_options_handler(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Authorization, Content-Type");
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
+}
+
+esp_err_t api_ota_auto_update_options_handler(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Authorization, Content-Type");
+    httpd_resp_send(req, NULL, 0);
     return ESP_OK;
 }
