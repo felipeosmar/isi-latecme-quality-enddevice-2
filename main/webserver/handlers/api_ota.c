@@ -320,6 +320,9 @@ static void ota_url_task(void *pvParameters)
 
     bool ota_error = false;
     s_ota.bytes_written = 0;
+    int last_logged_pct = -1;
+
+    ESP_LOGI(TAG, "URL OTA download started (%lu bytes)", s_ota.total_bytes);
 
     while (1) {
         int data_read = esp_http_client_read(client, buf, OTA_CHUNK_SIZE);
@@ -337,6 +340,15 @@ static void ota_url_task(void *pvParameters)
             break;
         }
         s_ota.bytes_written += data_read;
+
+        if (s_ota.total_bytes > 0) {
+            int pct = (int)((s_ota.bytes_written * 100) / s_ota.total_bytes);
+            if (pct / 10 > last_logged_pct / 10) {
+                ESP_LOGI(TAG, "URL OTA progress: %d%% (%lu / %lu bytes)",
+                         pct, s_ota.bytes_written, s_ota.total_bytes);
+                last_logged_pct = pct;
+            }
+        }
     }
 
     free(buf);
@@ -517,7 +529,7 @@ esp_err_t api_ota_www_upload_handler(httpd_req_t *req)
             write_error = true;
             break;
         }
-        offset += write_size;
+        offset += received;
         remaining -= received;
     }
 
