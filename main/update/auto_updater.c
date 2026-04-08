@@ -29,10 +29,10 @@ static const char *TAG = "AUTO_UPD";
 // GitHub repository (public, no auth needed)
 #define GITHUB_OWNER        "felipeosmar"
 #define GITHUB_REPO         "isi-latecme-quality-enddevice-2"
-// per_page=5: GitHub returns releases sorted by date descending.
-// The latest release for any branch is always in the first 5 results
-// as long as no more than 5 releases are created in rapid succession.
-#define GITHUB_API_URL      "https://api.github.com/repos/" GITHUB_OWNER "/" GITHUB_REPO "/releases?per_page=5"
+// per_page=1: GitHub returns releases sorted by date descending.
+// The first result is always the latest release. The tag-prefix check
+// in find_latest_tag() still validates the branch match.
+#define GITHUB_API_URL      "https://api.github.com/repos/" GITHUB_OWNER "/" GITHUB_REPO "/releases?per_page=1"
 #define GITHUB_ASSET_BASE   "https://github.com/" GITHUB_OWNER "/" GITHUB_REPO "/releases/download"
 
 // Compile-time variant string — selects the correct firmware binary from the release
