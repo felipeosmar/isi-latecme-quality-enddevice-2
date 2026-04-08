@@ -7,6 +7,7 @@
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
 #include "esp_http_client.h"
+#include "esp_crt_bundle.h"
 #include "esp_app_desc.h"
 #include "auto_updater.h"
 
@@ -209,10 +210,12 @@ static void ota_url_task(void *pvParameters)
     ESP_LOGI(TAG, "OTA URL task started: %s", params->url);
 
     esp_http_client_config_t http_config = {
-        .url = params->url,
-        .timeout_ms = 30000,
-        .buffer_size = OTA_CHUNK_SIZE,
-        .skip_cert_common_name_check = true,
+        .url                = params->url,
+        .timeout_ms         = 60000,
+        .buffer_size        = OTA_CHUNK_SIZE,
+        .buffer_size_tx     = 2048,
+        .crt_bundle_attach  = esp_crt_bundle_attach,
+        .max_redirection_count = 5,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&http_config);
@@ -224,6 +227,7 @@ static void ota_url_task(void *pvParameters)
         vTaskDelete(NULL);
         return;
     }
+
     esp_err_t err = esp_http_client_open(client, 0);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "HTTP open failed: %s", esp_err_to_name(err));
@@ -235,7 +239,45 @@ static void ota_url_task(void *pvParameters)
         return;
     }
 
-    int content_length = esp_http_client_fetch_headers(client);
+    // Follow redirects — GitHub release assets redirect (302) to CDN
+    int content_length = 0;
+    int status = 0;
+    for (int redir = 0; redir <= 5; redir++) {
+        content_length = esp_http_client_fetch_headers(client);
+        status = esp_http_client_get_status_code(client);
+        if (status < 300 || status >= 400) break;
+        ESP_LOGI(TAG, "URL OTA HTTP %d redirect (hop %d)", status, redir + 1);
+        esp_http_client_close(client);
+        if (esp_http_client_set_redirection(client) != ESP_OK || redir == 5) {
+            ESP_LOGE(TAG, "Redirect failed or limit reached");
+            snprintf(s_ota.error_msg, sizeof(s_ota.error_msg), "Redirect failed");
+            s_ota.state = OTA_STATE_FAILED;
+            esp_http_client_cleanup(client);
+            free(params);
+            vTaskDelete(NULL);
+            return;
+        }
+        err = esp_http_client_open(client, 0);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "HTTP open (redirect) failed: %s", esp_err_to_name(err));
+            snprintf(s_ota.error_msg, sizeof(s_ota.error_msg), "Redirect open failed");
+            s_ota.state = OTA_STATE_FAILED;
+            esp_http_client_cleanup(client);
+            free(params);
+            vTaskDelete(NULL);
+            return;
+        }
+    }
+    if (status != 200) {
+        ESP_LOGE(TAG, "URL OTA HTTP %d", status);
+        snprintf(s_ota.error_msg, sizeof(s_ota.error_msg), "HTTP %d", status);
+        s_ota.state = OTA_STATE_FAILED;
+        esp_http_client_close(client);
+        esp_http_client_cleanup(client);
+        free(params);
+        vTaskDelete(NULL);
+        return;
+    }
     if (content_length < 0) content_length = 0;
     s_ota.total_bytes = (uint32_t)content_length;
 
