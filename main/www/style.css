@@ -84,7 +84,7 @@ body.sidebar-open #sidebar-overlay { display: block; }
     position: fixed;
     top: 0;
     left: -260px;
-    bottom: 0;
+    bottom: 36px;
     width: 260px;
     background: var(--surface);
     border-right: 1px solid var(--border);
@@ -147,6 +147,10 @@ main { padding: 16px; max-width: 600px; margin: 0 auto; }
     main {
         margin-left: 260px;
         margin-right: 0;
+    }
+
+    .connection-banner.show {
+        margin-left: 260px;
     }
 }
 
@@ -854,7 +858,7 @@ input:focus, select:focus {
     right: 0;
     background: var(--surface);
     border-top: 1px solid var(--border);
-    z-index: 50;
+    z-index: 96;
     transition: height 0.3s ease;
 }
 
@@ -1041,6 +1045,10 @@ body {
 
 body.log-expanded {
     padding-bottom: 300px;
+}
+
+body.log-expanded #sidebar {
+    bottom: 300px;
 }
 
 /* ============================================================================
