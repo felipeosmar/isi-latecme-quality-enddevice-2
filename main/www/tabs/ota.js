@@ -1,9 +1,12 @@
 // OTA Tab Module
 let otaStatusTimer = null;
+let otaWasInProgress = false;
+let otaUnreachableCount = 0;
 
 async function refreshOtaStatus() {
     try {
         const d = await api('ota/status');
+        otaUnreachableCount = 0;
         document.getElementById('ota-partition').textContent = d.current_partition || '-';
         document.getElementById('ota-app-version').textContent = d.app_version || '-';
         document.getElementById('ota-idf-version').textContent = d.idf_version || '-';
@@ -19,12 +22,16 @@ async function refreshOtaStatus() {
         }
 
         if (d.state === 'in_progress' && d.total_bytes > 0) {
+            otaWasInProgress = true;
             const pct = Math.round((d.bytes_written / d.total_bytes) * 100);
             document.getElementById('ota-firmware-bar').style.width = pct + '%';
             document.getElementById('ota-firmware-status-msg').textContent =
                 `Downloading... ${pct}% (${d.bytes_written} / ${d.total_bytes} bytes)`;
             document.getElementById('ota-firmware-progress').classList.remove('hidden');
-        } else if (d.state === 'rebooting') {
+        } else {
+            otaWasInProgress = false;
+        }
+        if (d.state === 'rebooting') {
             document.getElementById('ota-firmware-status-msg').textContent = 'Update complete! Device rebooting...';
             document.getElementById('ota-firmware-progress').classList.remove('hidden');
         } else if (d.state === 'failed') {
@@ -32,7 +39,15 @@ async function refreshOtaStatus() {
             document.getElementById('ota-firmware-progress').classList.remove('hidden');
         }
     } catch (e) {
-        // Ignore — device may be rebooting
+        if (otaWasInProgress) {
+            otaUnreachableCount++;
+            if (otaUnreachableCount >= 2) {
+                document.getElementById('ota-firmware-bar').style.width = '100%';
+                document.getElementById('ota-firmware-status-msg').textContent = 'Update complete! Device rebooting...';
+                document.getElementById('ota-firmware-progress').classList.remove('hidden');
+                otaWasInProgress = false;
+            }
+        }
     }
 
     try {
@@ -171,6 +186,8 @@ async function otaFirmwareUrl() {
         toast('Enter a URL', 'error');
         return;
     }
+    otaWasInProgress = false;
+    otaUnreachableCount = 0;
     const statusMsg = document.getElementById('ota-firmware-status-msg');
     const progressDiv = document.getElementById('ota-firmware-progress');
     progressDiv.classList.remove('hidden');
