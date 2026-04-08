@@ -355,6 +355,8 @@ static void oled_display_text_3x(uint8_t x, uint8_t page, const char *text)
 
 // Sensor sub-page counter for alternating T/H on external sensor
 static uint8_t sensor_subpage = 0;
+static uint8_t sensor_subpage_ticks = 0;
+#define SENSOR_SUBPAGE_INTERVAL 6  // calls before switching (500ms loop × 6 = 3s)
 
 void oled_display_show_sensors(float temp, float hum, float tc_temp)
 {
@@ -396,8 +398,12 @@ void oled_display_show_sensors(float temp, float hum, float tc_temp)
     x = (OLED_WIDTH - strlen(line) * 18) / 2;
     oled_display_text_3x(x, 5, line);
 
-    // Toggle subpage for next call
-    sensor_subpage = (sensor_subpage + 1) % 2;
+    // Toggle subpage every SENSOR_SUBPAGE_INTERVAL calls (3s at 500ms loop)
+    sensor_subpage_ticks++;
+    if (sensor_subpage_ticks >= SENSOR_SUBPAGE_INTERVAL) {
+        sensor_subpage_ticks = 0;
+        sensor_subpage = (sensor_subpage + 1) % 2;
+    }
 
     oled_display_update();
 }
