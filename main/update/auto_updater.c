@@ -206,10 +206,14 @@ static bool flash_firmware_from_url(const char *url)
 {
     ESP_LOGI(TAG, "Flashing firmware from: %s", url);
 
+    // buffer_size_tx: GitHub CDN redirect URLs contain long AWS query strings
+    // (~800-1200 chars). The default TX buffer (512 bytes) is too small to fit
+    // the GET request line; 2048 provides enough headroom.
     esp_http_client_config_t cfg = {
         .url                    = url,
         .timeout_ms             = 60000,
         .buffer_size            = OTA_CHUNK_SIZE,
+        .buffer_size_tx         = 2048,
         .crt_bundle_attach      = esp_crt_bundle_attach,
         .max_redirection_count  = 5,
     };
@@ -324,6 +328,7 @@ static bool flash_www_from_url(const char *url)
         .url                    = url,
         .timeout_ms             = 60000,
         .buffer_size            = OTA_CHUNK_SIZE,
+        .buffer_size_tx         = 2048,
         .crt_bundle_attach      = esp_crt_bundle_attach,
         .max_redirection_count  = 5,
     };
