@@ -35,6 +35,13 @@ static const char *TAG = "AUTO_UPD";
 #define GITHUB_API_URL      "https://api.github.com/repos/" GITHUB_OWNER "/" GITHUB_REPO "/releases?per_page=5"
 #define GITHUB_ASSET_BASE   "https://github.com/" GITHUB_OWNER "/" GITHUB_REPO "/releases/download"
 
+// Compile-time variant string — selects the correct firmware binary from the release
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
+#define FIRMWARE_VARIANT    "salt_spray"
+#else
+#define FIRMWARE_VARIANT    "standard"
+#endif
+
 // JSON response buffer size: GitHub releases include auto-generated notes which can be large.
 // 32KB provides comfortable margin for 5 releases with long release notes.
 #define API_RESPONSE_BUF_SIZE  32768
@@ -486,7 +493,7 @@ static void run_check(void)
 
         char fw_url[256];
         snprintf(fw_url, sizeof(fw_url),
-                 GITHUB_ASSET_BASE "/%s/lorawan-enddevice-%s.bin",
+                 GITHUB_ASSET_BASE "/%s/lorawan-enddevice-%s-" FIRMWARE_VARIANT ".bin",
                  latest_tag, latest_tag);
 
         if (!flash_firmware_from_url(fw_url)) {
