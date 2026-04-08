@@ -206,10 +206,14 @@ static bool flash_firmware_from_url(const char *url)
 {
     ESP_LOGI(TAG, "Flashing firmware from: %s", url);
 
+    // buffer_size_tx: GitHub CDN redirect URLs contain long AWS query strings
+    // (~800-1200 chars). The default TX buffer (512 bytes) is too small to fit
+    // the GET request line; 2048 provides enough headroom.
     esp_http_client_config_t cfg = {
         .url                    = url,
         .timeout_ms             = 60000,
         .buffer_size            = OTA_CHUNK_SIZE,
+        .buffer_size_tx         = 2048,
         .crt_bundle_attach      = esp_crt_bundle_attach,
         .max_redirection_count  = 5,
     };
@@ -226,8 +230,28 @@ static bool flash_firmware_from_url(const char *url)
         return false;
     }
 
-    int content_len = esp_http_client_fetch_headers(client);
-    int status = esp_http_client_get_status_code(client);
+    // Follow redirects — GitHub release assets redirect (302) to CDN.
+    // esp_http_client streaming API does not follow redirects automatically.
+    int content_len = 0;
+    int status = 0;
+    for (int redir = 0; redir <= 5; redir++) {
+        content_len = esp_http_client_fetch_headers(client);
+        status = esp_http_client_get_status_code(client);
+        if (status < 300 || status >= 400) break;
+        ESP_LOGI(TAG, "Firmware HTTP %d redirect (hop %d)", status, redir + 1);
+        esp_http_client_close(client);
+        if (esp_http_client_set_redirection(client) != ESP_OK || redir == 5) {
+            ESP_LOGE(TAG, "Redirect failed or limit reached");
+            esp_http_client_cleanup(client);
+            return false;
+        }
+        err = esp_http_client_open(client, 0);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "HTTP open (redirect) failed: %s", esp_err_to_name(err));
+            esp_http_client_cleanup(client);
+            return false;
+        }
+    }
     if (status != 200) {
         ESP_LOGE(TAG, "Firmware URL returned HTTP %d", status);
         esp_http_client_close(client);
@@ -304,6 +328,7 @@ static bool flash_www_from_url(const char *url)
         .url                    = url,
         .timeout_ms             = 60000,
         .buffer_size            = OTA_CHUNK_SIZE,
+        .buffer_size_tx         = 2048,
         .crt_bundle_attach      = esp_crt_bundle_attach,
         .max_redirection_count  = 5,
     };
@@ -320,8 +345,26 @@ static bool flash_www_from_url(const char *url)
         return false;
     }
 
-    esp_http_client_fetch_headers(client);
-    int status = esp_http_client_get_status_code(client);
+    // Follow redirects — GitHub release assets redirect (302) to CDN.
+    int status = 0;
+    for (int redir = 0; redir <= 5; redir++) {
+        esp_http_client_fetch_headers(client);
+        status = esp_http_client_get_status_code(client);
+        if (status < 300 || status >= 400) break;
+        ESP_LOGI(TAG, "www HTTP %d redirect (hop %d)", status, redir + 1);
+        esp_http_client_close(client);
+        if (esp_http_client_set_redirection(client) != ESP_OK || redir == 5) {
+            ESP_LOGE(TAG, "Redirect failed or limit reached");
+            esp_http_client_cleanup(client);
+            return false;
+        }
+        err = esp_http_client_open(client, 0);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "HTTP open (redirect) failed: %s", esp_err_to_name(err));
+            esp_http_client_cleanup(client);
+            return false;
+        }
+    }
     if (status != 200) {
         ESP_LOGE(TAG, "www URL returned HTTP %d", status);
         esp_http_client_close(client);
