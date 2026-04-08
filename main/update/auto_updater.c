@@ -29,10 +29,11 @@ static const char *TAG = "AUTO_UPD";
 // GitHub repository (public, no auth needed)
 #define GITHUB_OWNER        "felipeosmar"
 #define GITHUB_REPO         "isi-latecme-quality-enddevice-2"
-// per_page=1: GitHub returns releases sorted by date descending.
-// The first result is always the latest release. The tag-prefix check
-// in find_latest_tag() still validates the branch match.
-#define GITHUB_API_URL      "https://api.github.com/repos/" GITHUB_OWNER "/" GITHUB_REPO "/releases?per_page=1"
+// /releases/latest: returns the single release marked as "Latest" on GitHub.
+// More reliable than paginated list — GitHub sorts list by created_at, not
+// published_at, so per_page=1 can return an older release if the latest was
+// re-published after a newer draft was created.
+#define GITHUB_API_URL      "https://api.github.com/repos/" GITHUB_OWNER "/" GITHUB_REPO "/releases/latest"
 #define GITHUB_ASSET_BASE   "https://github.com/" GITHUB_OWNER "/" GITHUB_REPO "/releases/download"
 
 // Compile-time variant string — selects the correct firmware binary from the release
@@ -156,7 +157,8 @@ cleanup:
 }
 
 /**
- * Find the latest release tag for the given branch from the parsed JSON array.
+ * Extract the release tag from the /releases/latest JSON object and validate
+ * it belongs to the given branch (matches "{branch}-rN" pattern).
  * Writes result into `out_tag` (size >= 32). Returns true if found.
  */
 static bool find_latest_tag(const char *json, const char *branch,
@@ -167,36 +169,30 @@ static bool find_latest_tag(const char *json, const char *branch,
         ESP_LOGE(TAG, "cJSON_Parse failed — first 120 chars: %.120s", json);
         return false;
     }
-    if (!cJSON_IsArray(root)) {
-        ESP_LOGE(TAG, "Expected JSON array, got type %d — first 120 chars: %.120s", root->type, json);
+    if (!cJSON_IsObject(root)) {
+        ESP_LOGE(TAG, "Expected JSON object, got type %d — first 120 chars: %.120s", root->type, json);
         cJSON_Delete(root);
         return false;
     }
 
-    int best_n = -1;
-    const char *best_tag = NULL;
-
-    cJSON *release;
-    cJSON_ArrayForEach(release, root) {
-        cJSON *tag_item = cJSON_GetObjectItem(release, "tag_name");
-        if (!tag_item || !cJSON_IsString(tag_item)) continue;
-
-        int n = parse_release_number(tag_item->valuestring, branch);
-        if (n > best_n) {
-            best_n = n;
-            best_tag = tag_item->valuestring;
-        }
-    }
-
-    if (best_n < 0 || !best_tag) {
-        ESP_LOGW(TAG, "No releases found for branch '%s'", branch);
+    cJSON *tag_item = cJSON_GetObjectItem(root, "tag_name");
+    if (!tag_item || !cJSON_IsString(tag_item)) {
+        ESP_LOGE(TAG, "Missing 'tag_name' in release JSON");
         cJSON_Delete(root);
         return false;
     }
 
-    strncpy(out_tag, best_tag, out_tag_size - 1);
+    int n = parse_release_number(tag_item->valuestring, branch);
+    if (n < 0) {
+        ESP_LOGW(TAG, "No releases found for branch '%s' (latest tag is '%s')",
+                 branch, tag_item->valuestring);
+        cJSON_Delete(root);
+        return false;
+    }
+
+    strncpy(out_tag, tag_item->valuestring, out_tag_size - 1);
     out_tag[out_tag_size - 1] = '\0';
-    ESP_LOGI(TAG, "Latest tag for branch '%s': %s (N=%d)", branch, out_tag, best_n);
+    ESP_LOGI(TAG, "Latest tag for branch '%s': %s (N=%d)", branch, out_tag, n);
 
     cJSON_Delete(root);
     return true;
