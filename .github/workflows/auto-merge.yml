@@ -1,21 +1,40 @@
-name: Auto Merge
+name: Merge and Release
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
-    branches:
-      - main
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main_dev]
 
 jobs:
-  enable-auto-merge:
+  merge-and-release:
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    if: github.head_ref == 'main_dev'
     permissions:
-      pull-requests: write
       contents: write
+      pull-requests: write
+      actions: write
     steps:
-      - name: Enable auto-merge
-        run: gh pr merge --auto --merge "${{ github.event.pull_request.number }}"
+      - name: Find open PR (main_dev -> main)
+        id: find_pr
+        run: |
+          PR=$(gh pr list --base main --head main_dev --state open --json number --jq '.[0].number // empty')
+          echo "pr_number=$PR" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Merge PR
+        if: steps.find_pr.outputs.pr_number != ''
+        id: merge
+        run: gh pr merge "${{ steps.find_pr.outputs.pr_number }}" --merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Trigger release
+        if: steps.find_pr.outputs.pr_number != '' && steps.merge.outcome == 'success'
+        run: gh workflow run release.yml --ref main
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
