@@ -1,18 +1,22 @@
 name: Release
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
 
 jobs:
   build-standard:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'main_dev'
     runs-on: ubuntu-latest
     container:
       image: espressif/idf:v5.5.3
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
 
       - name: Build standard variant
         run: |
@@ -32,12 +36,15 @@ jobs:
           retention-days: 1
 
   build-salt-spray:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'main_dev'
     runs-on: ubuntu-latest
     container:
       image: espressif/idf:v5.5.3
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
 
       - name: Build salt spray variant
         run: |
