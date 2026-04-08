@@ -40,6 +40,19 @@ static ota_status_t s_ota = {
     .error_msg = ""
 };
 
+// Cached once at first call — esp_ota_check_rollback_is_possible() uses
+// bootloader_mmap internally and is not re-entrant; concurrent HTTP requests
+// to /api/ota/status would otherwise trigger "tried to bootloader_mmap twice".
+static int s_rollback_possible = -1;  // -1 = not yet evaluated
+
+static bool get_rollback_possible(void)
+{
+    if (s_rollback_possible == -1) {
+        s_rollback_possible = esp_ota_check_rollback_is_possible() ? 1 : 0;
+    }
+    return s_rollback_possible == 1;
+}
+
 // ============================================================================
 // GET /api/ota/status
 // ============================================================================
@@ -61,7 +74,7 @@ esp_err_t api_ota_status_handler(httpd_req_t *req)
     cJSON_AddStringToObject(root, "current_partition", running ? running->label : "unknown");
     cJSON_AddStringToObject(root, "app_version", app_desc ? app_desc->version : "unknown");
     cJSON_AddStringToObject(root, "idf_version", app_desc ? app_desc->idf_ver : "unknown");
-    cJSON_AddBoolToObject(root, "rollback_possible", esp_ota_check_rollback_is_possible());
+    cJSON_AddBoolToObject(root, "rollback_possible", get_rollback_possible());
     cJSON_AddNumberToObject(root, "bytes_written", s_ota.bytes_written);
     cJSON_AddNumberToObject(root, "total_bytes", s_ota.total_bytes);
     if (s_ota.state == OTA_STATE_FAILED) {
