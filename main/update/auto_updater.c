@@ -700,3 +700,13 @@ void auto_updater_trigger_now(void)
         xEventGroupSetBits(s_event_group, TRIGGER_BIT);
     }
 }
+
+bool auto_updater_is_checking(void)
+{
+    return s_is_checking;
+}
+
+const char *auto_updater_get_last_run_log(void)
+{
+    return s_last_run_log;
+}
