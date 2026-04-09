@@ -368,7 +368,8 @@ void oled_display_show_sensors(float temp, float hum, float tc_temp)
 
     oled_display_clear();
 
-    // Row 1 (pages 0-2): TC — always visible, 3x font
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
+    // Thermocouple variant: TC (Int.) on top, Ext. alternating T/H on bottom
     oled_display_text(0, 0, "Int.");
     if (!isnan(tc_temp)) {
         snprintf(line, sizeof(line), "%.1fC", tc_temp);
@@ -378,17 +379,14 @@ void oled_display_show_sensors(float temp, float hum, float tc_temp)
     x = (OLED_WIDTH - strlen(line) * 18) / 2;
     oled_display_text_3x(x, 1, line);
 
-    // Row 2 (pages 4-6): Alternate between T and H, 3x font
     oled_display_text(0, 4, "Ext.");
     if (sensor_subpage == 0) {
-        // Show temperature
         if (!isnan(temp)) {
             snprintf(line, sizeof(line), "%.1fC", temp);
         } else {
             snprintf(line, sizeof(line), "--");
         }
     } else {
-        // Show humidity
         if (!isnan(hum)) {
             snprintf(line, sizeof(line), "%.1f%%", hum);
         } else {
@@ -398,12 +396,31 @@ void oled_display_show_sensors(float temp, float hum, float tc_temp)
     x = (OLED_WIDTH - strlen(line) * 18) / 2;
     oled_display_text_3x(x, 5, line);
 
-    // Toggle subpage every SENSOR_SUBPAGE_INTERVAL calls (3s at 500ms loop)
     sensor_subpage_ticks++;
     if (sensor_subpage_ticks >= SENSOR_SUBPAGE_INTERVAL) {
         sensor_subpage_ticks = 0;
         sensor_subpage = (sensor_subpage + 1) % 2;
     }
+#else
+    // Standard variant: temperature on top, humidity on bottom — no alternating
+    oled_display_text(0, 0, "Temp");
+    if (!isnan(temp)) {
+        snprintf(line, sizeof(line), "%.1fC", temp);
+    } else {
+        snprintf(line, sizeof(line), "--");
+    }
+    x = (OLED_WIDTH - strlen(line) * 18) / 2;
+    oled_display_text_3x(x, 1, line);
+
+    oled_display_text(0, 4, "Hum");
+    if (!isnan(hum)) {
+        snprintf(line, sizeof(line), "%.1f%%", hum);
+    } else {
+        snprintf(line, sizeof(line), "--");
+    }
+    x = (OLED_WIDTH - strlen(line) * 18) / 2;
+    oled_display_text_3x(x, 5, line);
+#endif
 
     oled_display_update();
 }
