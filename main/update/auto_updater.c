@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>     // time(NULL) for Unix timestamp
+#include <stdarg.h>
 
 static const char *TAG = "AUTO_UPD";
 
@@ -62,6 +63,35 @@ static EventGroupHandle_t   s_event_group  = NULL;
 static auto_update_result_t s_last_result  = AUTO_UPDATE_RESULT_NEVER;
 static int64_t              s_last_check   = 0;   // Unix seconds
 static bool                 s_initialized  = false;
+#define LAST_RUN_LOG_SIZE 1024
+static char s_last_run_log[LAST_RUN_LOG_SIZE] = {0};
+static volatile bool s_is_checking = false;
+
+// ============================================================================
+// Log helper — appends to in-memory log buffer AND writes to serial
+// ============================================================================
+
+static void upd_log(const char *fmt, ...)
+{
+    char line[256];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(line, sizeof(line), fmt, args);
+    va_end(args);
+
+    ESP_LOGI(TAG, "%s", line);
+
+    size_t used = strlen(s_last_run_log);
+    size_t remaining = LAST_RUN_LOG_SIZE - used;
+    if (remaining < 2) return;  // buffer full, drop line
+
+    strncat(s_last_run_log, line, remaining - 1);
+    used = strlen(s_last_run_log);
+    if (used < LAST_RUN_LOG_SIZE - 1) {
+        s_last_run_log[used]     = '\n';
+        s_last_run_log[used + 1] = '\0';
+    }
+}
 
 // ============================================================================
 // Helpers
@@ -192,7 +222,7 @@ static bool find_latest_tag(const char *json, const char *branch,
 
     strncpy(out_tag, tag_item->valuestring, out_tag_size - 1);
     out_tag[out_tag_size - 1] = '\0';
-    ESP_LOGI(TAG, "Latest tag for branch '%s': %s (N=%d)", branch, out_tag, n);
+    upd_log("Latest tag for branch '%s': %s (N=%d)", branch, out_tag, n);
 
     cJSON_Delete(root);
     return true;
@@ -204,7 +234,7 @@ static bool find_latest_tag(const char *json, const char *branch,
  */
 static bool flash_firmware_from_url(const char *url)
 {
-    ESP_LOGI(TAG, "Flashing firmware from: %s", url);
+    upd_log("Flashing firmware from: %s", url);
 
     // buffer_size_tx: GitHub CDN redirect URLs contain long AWS query strings
     // (~800-1200 chars). The default TX buffer (512 bytes) is too small to fit
@@ -253,16 +283,16 @@ static bool flash_firmware_from_url(const char *url)
         }
     }
     if (status != 200) {
-        ESP_LOGE(TAG, "Firmware URL returned HTTP %d", status);
+        upd_log("Firmware URL returned HTTP %d", status);
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
         return false;
     }
-    ESP_LOGI(TAG, "Firmware size: %d bytes", content_len);
+    upd_log("Firmware size: %d bytes", content_len);
 
     const esp_partition_t *update_part = esp_ota_get_next_update_partition(NULL);
     if (!update_part) {
-        ESP_LOGE(TAG, "No OTA partition available");
+        upd_log("No OTA partition available");
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
         return false;
@@ -304,7 +334,7 @@ static bool flash_firmware_from_url(const char *url)
 
     err = esp_ota_end(ota_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_ota_end failed: %s", esp_err_to_name(err));
+        upd_log("OTA end failed: %s", esp_err_to_name(err));
         esp_ota_abort(ota_handle);
         return false;
     }
@@ -312,7 +342,7 @@ static bool flash_firmware_from_url(const char *url)
     err = esp_ota_set_boot_partition(update_part);
     if (err != ESP_OK) { ESP_LOGE(TAG, "esp_ota_set_boot_partition failed: %s", esp_err_to_name(err)); return false; }
 
-    ESP_LOGI(TAG, "Firmware flash complete (%lu bytes) -> %s", written, update_part->label);
+    upd_log("Firmware flash complete (%lu bytes) -> %s", written, update_part->label);
     return true;
 }
 
@@ -366,7 +396,7 @@ static bool flash_www_from_url(const char *url)
         }
     }
     if (status != 200) {
-        ESP_LOGE(TAG, "www URL returned HTTP %d", status);
+        upd_log("www URL returned HTTP %d", status);
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
         return false;
@@ -454,7 +484,7 @@ static bool flash_www_from_url(const char *url)
 
     if (error) { return false; }
 
-    ESP_LOGI(TAG, "www flash complete (%lu bytes)", offset);
+    upd_log("www flash complete (%lu bytes)", offset);
     return true;
 }
 
@@ -464,14 +494,19 @@ static bool flash_www_from_url(const char *url)
 
 static void run_check(void)
 {
+    s_is_checking = true;
+    s_last_run_log[0] = '\0';
+
     // Only run in STA mode with active connection
     if (wifi_manager_get_status() != WIFI_STATUS_CONNECTED) {
-        ESP_LOGI(TAG, "WiFi not connected in STA mode, skipping check");
+        upd_log("WiFi not connected, skipping check");
+        s_is_checking = false;
         return;
     }
 
     if (!config_get_auto_update_enabled()) {
-        ESP_LOGI(TAG, "Auto-update disabled, skipping check");
+        upd_log("Auto-update disabled, skipping check");
+        s_is_checking = false;
         return;
     }
 
@@ -480,8 +515,9 @@ static void run_check(void)
     branch[sizeof(branch) - 1] = '\0';
 
     if (strlen(branch) == 0) {
-        ESP_LOGW(TAG, "No branch configured");
+        upd_log("No branch configured");
         s_last_result = AUTO_UPDATE_RESULT_ERROR;
+        s_is_checking = false;
         return;
     }
 
@@ -490,8 +526,9 @@ static void run_check(void)
     // Fetch releases JSON
     char *json = github_fetch_releases_json();
     if (!json) {
-        ESP_LOGE(TAG, "Failed to fetch GitHub releases");
+        upd_log("Failed to fetch GitHub releases");
         s_last_result = AUTO_UPDATE_RESULT_ERROR;
+        s_is_checking = false;
         return;
     }
 
@@ -499,7 +536,9 @@ static void run_check(void)
     char latest_tag[32] = {0};
     if (!find_latest_tag(json, branch, latest_tag, sizeof(latest_tag))) {
         free(json);
+        upd_log("Failed to find release tag for branch '%s'", branch);
         s_last_result = AUTO_UPDATE_RESULT_ERROR;
+        s_is_checking = false;
         return;
     }
     free(json);
@@ -515,11 +554,12 @@ static void run_check(void)
     www_tag[sizeof(www_tag) - 1] = '\0';
 
     if (fw_tag[0] == '\0') {
-        ESP_LOGI(TAG, "First check: storing current latest tag '%s' without updating", latest_tag);
+        upd_log("First check: storing current latest tag '%s' without updating", latest_tag);
         config_set_auto_update_firmware_tag(latest_tag);
         config_set_auto_update_www_tag(latest_tag);
         config_save();
         s_last_result = AUTO_UPDATE_RESULT_UP_TO_DATE;
+        s_is_checking = false;
         return;
     }
 
@@ -528,7 +568,7 @@ static void run_check(void)
 
     // --- Step 1: Update firmware if needed ---
     if (latest_n > fw_n) {
-        ESP_LOGI(TAG, "New firmware available: %s -> %s", fw_tag, latest_tag);
+        upd_log("New firmware available: %s -> %s", fw_tag, latest_tag);
 
         char fw_url[256];
         snprintf(fw_url, sizeof(fw_url),
@@ -536,8 +576,9 @@ static void run_check(void)
                  latest_tag, latest_tag);
 
         if (!flash_firmware_from_url(fw_url)) {
-            ESP_LOGE(TAG, "Firmware flash failed");
+            upd_log("Firmware flash failed");
             s_last_result = AUTO_UPDATE_RESULT_ERROR;
+            s_is_checking = false;
             return;
         }
 
@@ -545,7 +586,7 @@ static void run_check(void)
         config_set_auto_update_firmware_tag(latest_tag);
         config_save();
 
-        ESP_LOGI(TAG, "Firmware updated to %s, rebooting...", latest_tag);
+        upd_log("Firmware updated to %s, rebooting...", latest_tag);
         s_last_result = AUTO_UPDATE_RESULT_UPDATED;
         vTaskDelay(pdMS_TO_TICKS(500));
         esp_restart();
@@ -554,7 +595,7 @@ static void run_check(void)
 
     // --- Step 2: Update www if firmware is current but www is not ---
     if (latest_n > www_n) {
-        ESP_LOGI(TAG, "www partition outdated: %s -> %s", www_tag, latest_tag);
+        upd_log("www partition outdated: %s -> %s", www_tag, latest_tag);
 
         char www_url[256];
         snprintf(www_url, sizeof(www_url),
@@ -570,23 +611,25 @@ static void run_check(void)
         config_save();
 
         if (!flash_www_from_url(www_url)) {
-            ESP_LOGE(TAG, "www flash failed");
+            upd_log("www flash failed");
             // Revert tag on failure
             config_set_auto_update_www_tag(www_tag);
             config_save();
             s_last_result = AUTO_UPDATE_RESULT_ERROR;
+            s_is_checking = false;
             return;
         }
 
-        ESP_LOGI(TAG, "www updated to %s, rebooting...", latest_tag);
+        upd_log("www updated to %s, rebooting...", latest_tag);
         s_last_result = AUTO_UPDATE_RESULT_UPDATED;
         vTaskDelay(pdMS_TO_TICKS(500));
         esp_restart();
         return; // unreachable
     }
 
-    ESP_LOGI(TAG, "Already up to date (%s)", latest_tag);
+    upd_log("Already up to date (%s)", latest_tag);
     s_last_result = AUTO_UPDATE_RESULT_UP_TO_DATE;
+    s_is_checking = false;
 }
 
 // ============================================================================
@@ -656,4 +699,14 @@ void auto_updater_trigger_now(void)
     if (s_event_group) {
         xEventGroupSetBits(s_event_group, TRIGGER_BIT);
     }
+}
+
+bool auto_updater_is_checking(void)
+{
+    return s_is_checking;
+}
+
+const char *auto_updater_get_last_run_log(void)
+{
+    return s_last_run_log;
 }

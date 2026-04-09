@@ -48,6 +48,17 @@ int64_t auto_updater_get_last_check_time(void);
  */
 void auto_updater_trigger_now(void);
 
+/**
+ * @brief Returns true if an update check is currently in progress.
+ */
+bool auto_updater_is_checking(void);
+
+/**
+ * @brief Returns the log from the last (or current) update check run.
+ *        String is newline-separated, up to 1024 bytes. Never NULL.
+ */
+const char *auto_updater_get_last_run_log(void);
+
 #ifdef __cplusplus
 }
 #endif
