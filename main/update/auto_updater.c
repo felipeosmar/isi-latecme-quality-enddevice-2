@@ -65,7 +65,7 @@ static int64_t              s_last_check   = 0;   // Unix seconds
 static bool                 s_initialized  = false;
 #define LAST_RUN_LOG_SIZE 1024
 static char s_last_run_log[LAST_RUN_LOG_SIZE] = {0};
-static bool s_is_checking = false;
+static volatile bool s_is_checking = false;
 
 // ============================================================================
 // Log helper — appends to in-memory log buffer AND writes to serial
