@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>     // time(NULL) for Unix timestamp
+#include <stdarg.h>
 
 static const char *TAG = "AUTO_UPD";
 
@@ -62,6 +63,35 @@ static EventGroupHandle_t   s_event_group  = NULL;
 static auto_update_result_t s_last_result  = AUTO_UPDATE_RESULT_NEVER;
 static int64_t              s_last_check   = 0;   // Unix seconds
 static bool                 s_initialized  = false;
+#define LAST_RUN_LOG_SIZE 1024
+static char s_last_run_log[LAST_RUN_LOG_SIZE] = {0};
+static bool s_is_checking = false;
+
+// ============================================================================
+// Log helper — appends to in-memory log buffer AND writes to serial
+// ============================================================================
+
+static void upd_log(const char *fmt, ...)
+{
+    char line[256];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(line, sizeof(line), fmt, args);
+    va_end(args);
+
+    ESP_LOGI(TAG, "%s", line);
+
+    size_t used = strlen(s_last_run_log);
+    size_t remaining = LAST_RUN_LOG_SIZE - used;
+    if (remaining < 2) return;  // buffer full, drop line
+
+    strncat(s_last_run_log, line, remaining - 1);
+    used = strlen(s_last_run_log);
+    if (used < LAST_RUN_LOG_SIZE - 1) {
+        s_last_run_log[used]     = '\n';
+        s_last_run_log[used + 1] = '\0';
+    }
+}
 
 // ============================================================================
 // Helpers
