@@ -283,7 +283,7 @@ static bool flash_firmware_from_url(const char *url)
         }
     }
     if (status != 200) {
-        ESP_LOGE(TAG, "Firmware URL returned HTTP %d", status);
+        upd_log("Firmware URL returned HTTP %d", status);
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
         return false;
@@ -292,7 +292,7 @@ static bool flash_firmware_from_url(const char *url)
 
     const esp_partition_t *update_part = esp_ota_get_next_update_partition(NULL);
     if (!update_part) {
-        ESP_LOGE(TAG, "No OTA partition available");
+        upd_log("No OTA partition available");
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
         return false;
@@ -334,7 +334,7 @@ static bool flash_firmware_from_url(const char *url)
 
     err = esp_ota_end(ota_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_ota_end failed: %s", esp_err_to_name(err));
+        upd_log("OTA end failed: %s", esp_err_to_name(err));
         esp_ota_abort(ota_handle);
         return false;
     }
@@ -396,7 +396,7 @@ static bool flash_www_from_url(const char *url)
         }
     }
     if (status != 200) {
-        ESP_LOGE(TAG, "www URL returned HTTP %d", status);
+        upd_log("www URL returned HTTP %d", status);
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
         return false;
@@ -484,7 +484,7 @@ static bool flash_www_from_url(const char *url)
 
     if (error) { return false; }
 
-    ESP_LOGI(TAG, "www flash complete (%lu bytes)", offset);
+    upd_log("www flash complete (%lu bytes)", offset);
     return true;
 }
 
