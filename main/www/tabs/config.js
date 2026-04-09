@@ -68,6 +68,11 @@ async function loadSensorConfig() {
         document.getElementById('cfg-alarm-tc-en').checked      = d.alarm_tc_enabled || false;
         document.getElementById('cfg-alarm-tc-low').value       = d.alarm_tc_low    !== undefined ? d.alarm_tc_low    : 0;
         document.getElementById('cfg-alarm-tc-high').value      = d.alarm_tc_high   !== undefined ? d.alarm_tc_high   : 0;
+        const tcHw = d.thermocouple_hw_enabled === true;
+        const tcCfg = document.getElementById('tc-config-section');
+        const tcAlarm = document.getElementById('tc-alarm-section');
+        if (tcCfg) tcCfg.classList.toggle('hidden', !tcHw);
+        if (tcAlarm) tcAlarm.classList.toggle('hidden', !tcHw);
     } catch (e) {
         console.error('Failed to load sensor config:', e);
     }
