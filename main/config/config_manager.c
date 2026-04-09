@@ -191,7 +191,7 @@ void config_reset_defaults(void)
 #endif
 
     // Auto-update defaults
-    s_config.auto_update_enabled = false;
+    s_config.auto_update_enabled = true;
     strcpy(s_config.auto_update_branch, "main");
     s_config.auto_update_firmware_tag[0] = '\0';
     s_config.auto_update_www_tag[0] = '\0';
