@@ -640,6 +640,8 @@ esp_err_t api_ota_auto_update_get_handler(httpd_req_t *req)
     cJSON_AddStringToObject(root, "www_tag",       config_get_auto_update_www_tag());
     cJSON_AddNumberToObject(root, "last_check_time", (double)auto_updater_get_last_check_time());
     cJSON_AddStringToObject(root, "last_check_result", result_str);
+    cJSON_AddBoolToObject(root,   "is_checking",      auto_updater_is_checking());
+    cJSON_AddStringToObject(root, "last_run_log",     auto_updater_get_last_run_log());
 
     char *json_str = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
