@@ -8,7 +8,9 @@ async function refreshSensors() {
         document.getElementById('sensor-hum').textContent = d.temp_hum_valid ? d.humidity.toFixed(1) + ' %' : 'N/A';
         document.getElementById('sensor-last-read').textContent = d.timestamp_ms ? formatUptime(d.timestamp_ms) : '--';
 
-        if (d.thermocouple_valid !== undefined) {
+        const tcCard = document.getElementById('thermocouple-card');
+        if (tcCard) tcCard.classList.toggle('hidden', !d.thermocouple_hw_enabled);
+        if (d.thermocouple_hw_enabled) {
             document.getElementById('tc-temp').textContent = d.thermocouple_valid ? d.thermocouple_temp.toFixed(1) + ' \u00b0C' : 'N/A';
             document.getElementById('tc-status').textContent = d.thermocouple_valid ? 'Connected' : 'Not connected';
         }
