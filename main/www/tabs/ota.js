@@ -125,15 +125,40 @@ async function auSaveConfig() {
 
 async function auCheckNow() {
     const btn = document.getElementById('au-check-btn');
+    const logBox = document.getElementById('au-log-box');
+    const logContent = document.getElementById('au-log-content');
+
     if (btn) btn.disabled = true;
+    if (logBox) logBox.classList.remove('hidden');
+    if (logContent) logContent.textContent = 'Aguardando resposta do dispositivo...';
+
     try {
         await api('ota/auto-update', 'POST', { trigger_now: true });
         toast('Check triggered', 'success');
     } catch (e) {
         toast('Failed to trigger check', 'error');
-    } finally {
-        if (btn) setTimeout(() => { btn.disabled = false; }, 3000);
+        if (btn) btn.disabled = false;
+        return;
     }
+
+    // Poll every 2s until check completes
+    let pollTimer = setInterval(async () => {
+        try {
+            const au = await api('ota/auto-update');
+            if (au.last_run_log) {
+                logContent.textContent = au.last_run_log;
+                logContent.scrollTop = logContent.scrollHeight;
+            }
+            if (!au.is_checking && au.last_run_log) {
+                clearInterval(pollTimer);
+                if (btn) btn.disabled = false;
+            }
+        } catch (e) {
+            // Device may be rebooting after firmware update — stop polling
+            clearInterval(pollTimer);
+            if (btn) btn.disabled = false;
+        }
+    }, 2000);
 }
 
 async function otaUploadFirmware() {
