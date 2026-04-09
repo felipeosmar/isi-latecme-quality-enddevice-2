@@ -435,7 +435,7 @@ CONFIG_PARTITION_TABLE_MD5=y
 #
 # Firmware Variant
 #
-CONFIG_THERMOCOUPLE_ENABLED=y
+# CONFIG_THERMOCOUPLE_ENABLED is not set
 # end of Firmware Variant
 
 #

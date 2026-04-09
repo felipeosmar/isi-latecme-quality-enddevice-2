@@ -47,6 +47,7 @@ jobs:
       - name: Build salt spray variant
         run: |
           . $IDF_PATH/export.sh
+          rm -f sdkconfig
           idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.salt_spray" build
 
       - name: Upload salt spray artifacts
