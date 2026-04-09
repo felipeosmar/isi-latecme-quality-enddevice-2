@@ -145,11 +145,11 @@ async function auCheckNow() {
     let pollTimer = setInterval(async () => {
         try {
             const au = await api('ota/auto-update');
-            if (au.last_run_log) {
+            if (logContent && au.last_run_log) {
                 logContent.textContent = au.last_run_log;
                 logContent.scrollTop = logContent.scrollHeight;
             }
-            if (!au.is_checking && au.last_run_log) {
+            if (!au.is_checking) {
                 clearInterval(pollTimer);
                 if (btn) btn.disabled = false;
             }
