@@ -16,6 +16,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "clock_sync.h"
+#include "config_manager.h"
+#include "esp_timer.h"
 
 static const char *TAG = "OLED";
 
@@ -41,6 +43,9 @@ static i2c_master_dev_handle_t oled_dev = NULL;
 static uint8_t framebuffer[OLED_WIDTH * OLED_HEIGHT / 8] = {0};
 static oled_page_t current_page = OLED_PAGE_SENSORS;
 static bool oled_initialized = false;
+static int64_t s_system_page_entered_us = 0;
+
+#define SYSTEM_PAGE_TIMEOUT_US  (5 * 1000 * 1000)  // 5 seconds
 
 // Basic 6x8 font (ASCII 32-126)
 static const uint8_t font_6x8[][6] = {
@@ -425,7 +430,7 @@ void oled_display_show_sensors(float temp, float hum, float tc_temp)
     oled_display_update();
 }
 
-void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t free_heap,
+void oled_display_show_system(const char *ip_addr, uint32_t uptime_s,
                                bool lora_joined, uint32_t dev_addr,
                                uint32_t uplink_count, int16_t rssi, float snr)
 {
@@ -459,8 +464,8 @@ void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t f
              (unsigned long)hours, (unsigned long)mins, (unsigned long)secs);
     oled_display_text(0, 2, line);
 
-    // Heap
-    snprintf(line, sizeof(line), "Heap:%luKB", (unsigned long)(free_heap / 1024));
+    // Device name
+    snprintf(line, sizeof(line), "%.21s", config_get_device_name());
     oled_display_text(0, 3, line);
 
     // LoRaWAN status
@@ -481,13 +486,53 @@ void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t f
     oled_display_update();
 }
 
+void oled_display_show_factory_reset(uint8_t percent)
+{
+    if (!oled_initialized) return;
+    oled_send_cmd(SSD1306_CMD_SET_NORMAL);
+    oled_display_clear();
+
+    oled_display_text(0, 0, "*** RESET ***");
+    oled_display_text(0, 1, "de fabrica");
+
+    // Progress bar at pages 3-4 (rows 24-39, 16px tall)
+    // Left/right edges always solid; interior filled proportionally
+    uint8_t inner_fill = (uint8_t)((uint32_t)percent * 126 / 100);
+    for (uint8_t x = 0; x < OLED_WIDTH; x++) {
+        uint8_t p3, p4;
+        if (x == 0 || x == OLED_WIDTH - 1) {
+            p3 = 0xFF; p4 = 0xFF;           // solid left/right border columns
+        } else if ((x - 1) < inner_fill) {
+            p3 = 0xFF; p4 = 0xFF;           // filled interior
+        } else {
+            p3 = 0x01; p4 = 0x80;           // empty interior: only top/bottom border pixels
+        }
+        framebuffer[3 * OLED_WIDTH + x] = p3;
+        framebuffer[4 * OLED_WIDTH + x] = p4;
+    }
+
+    char line[22];
+    uint32_t secs = (uint32_t)percent * 30 / 100;
+    snprintf(line, sizeof(line), "%lus / 30s", (unsigned long)secs);
+    oled_display_text(0, 6, line);
+
+    oled_display_update();
+}
+
 void oled_display_next_page(void)
 {
     current_page = (oled_page_t)((current_page + 1) % OLED_PAGE_MAX);
+    if (current_page == OLED_PAGE_SYSTEM) {
+        s_system_page_entered_us = esp_timer_get_time();
+    }
 }
 
 oled_page_t oled_display_get_page(void)
 {
+    if (current_page == OLED_PAGE_SYSTEM &&
+        (esp_timer_get_time() - s_system_page_entered_us) >= SYSTEM_PAGE_TIMEOUT_US) {
+        current_page = OLED_PAGE_SENSORS;
+    }
     return current_page;
 }
 

@@ -132,10 +132,9 @@ static void display_task(void *param)
                     char ip[16] = "N/A";
                     wifi_manager_get_ip(ip);
                     uint32_t uptime_s  = xTaskGetTickCount() / configTICK_RATE_HZ;
-                    uint32_t free_heap = esp_get_free_heap_size();
                     lorawan_stats_t lora_stats;
                     lorawan_get_stats(&lora_stats);
-                    oled_display_show_system(ip, uptime_s, free_heap,
+                    oled_display_show_system(ip, uptime_s,
                                              lora_stats.joined, lora_stats.dev_addr,
                                              lora_stats.uplink_count, lora_stats.last_rssi,
                                              lora_stats.last_snr);

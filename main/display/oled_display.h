@@ -63,7 +63,7 @@ void oled_display_show_sensors(float temp, float hum, float tc_temp);
 /**
  * @brief Show system info + LoRaWAN status page
  */
-void oled_display_show_system(const char *ip_addr, uint32_t uptime_s, uint32_t free_heap,
+void oled_display_show_system(const char *ip_addr, uint32_t uptime_s,
                                bool lora_joined, uint32_t dev_addr,
                                uint32_t uplink_count, int16_t rssi, float snr);
 
@@ -76,6 +76,13 @@ void oled_display_next_page(void);
  * @brief Get current page
  */
 oled_page_t oled_display_get_page(void);
+
+/**
+ * @brief Show factory reset progress screen.
+ *        Call repeatedly during button long press to give visual feedback.
+ * @param percent 0-100 progress towards triggering the reset
+ */
+void oled_display_show_factory_reset(uint8_t percent);
 
 /**
  * @brief Show alarm page with 1Hz blinking header.

@@ -37,6 +37,13 @@ esp_err_t config_save(void);
  */
 void config_reset_defaults(void);
 
+/**
+ * @brief Reset configuration to defaults and save to flash (thread-safe).
+ *        Use this instead of calling config_reset_defaults() + config_save() separately.
+ * @return esp_err_t ESP_OK on success
+ */
+esp_err_t config_factory_reset(void);
+
 // ============================================================================
 // WiFi Configuration
 // ============================================================================
