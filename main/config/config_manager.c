@@ -148,7 +148,7 @@ void config_reset_defaults(void)
     s_config.adr_enabled = true;
 
     // Sensor defaults
-    s_config.sensor_interval = 30;
+    s_config.sensor_interval = 3;
     s_config.temp_correction = 0.0f;
     s_config.hum_correction = 0.0f;
     strcpy(s_config.device_name, "sensor-01");
@@ -549,6 +549,20 @@ esp_err_t config_save(void)
         return ESP_ERR_TIMEOUT;
     }
 
+    esp_err_t ret = _config_save_internal();
+
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    return ret;
+}
+
+esp_err_t config_factory_reset(void)
+{
+    if (s_config_mutex && xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire config mutex for factory reset");
+        return ESP_ERR_TIMEOUT;
+    }
+
+    config_reset_defaults();
     esp_err_t ret = _config_save_internal();
 
     if (s_config_mutex) xSemaphoreGive(s_config_mutex);

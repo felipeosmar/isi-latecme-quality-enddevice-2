@@ -48,6 +48,7 @@ static void button_task(void *param)
 
         int64_t press_start_us = esp_timer_get_time();
         bool long_press_fired  = false;
+        uint8_t oled_tick      = 0;
 
         // Poll until button is released or long press threshold reached
         while (gpio_get_level(BUTTON_GPIO) == 0) {
@@ -58,10 +59,16 @@ static void button_task(void *param)
                 ESP_LOGW(TAG, "Long press: factory reset");
                 alarm_manager_acknowledge();   // silence siren before beeping
                 buzzer_beep_pattern(3, 200, 100);
-                config_reset_defaults();
-                config_save();
+                config_factory_reset();
                 vTaskDelay(pdMS_TO_TICKS(500));
                 esp_restart();
+            }
+
+            // Show progress bar on OLED after 1s of holding (update every ~240ms)
+            if (held_ms >= 1000 && (oled_tick++ % 12) == 0) {
+                uint8_t pct = (uint8_t)((uint32_t)held_ms * 100 / LONG_PRESS_MS);
+                if (pct > 100) pct = 100;
+                oled_display_show_factory_reset(pct);
             }
 
             vTaskDelay(pdMS_TO_TICKS(20));
