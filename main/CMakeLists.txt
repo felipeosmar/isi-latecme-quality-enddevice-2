@@ -47,13 +47,13 @@ set(requires
     mbedtls
     esp_timer
     freertos
+    app_update
 )
 
 if(CONFIG_WIFI_ENABLED)
     list(APPEND requires
         esp_wifi
         esp_http_server
-        app_update
         esp_http_client
     )
 endif()
