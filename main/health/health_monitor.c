@@ -15,7 +15,9 @@
 #include "esp_littlefs.h"
 #include "esp_ota_ops.h"
 
+#if CONFIG_WIFI_ENABLED
 #include "wifi_manager.h"
+#endif
 #include "status_led.h"
 
 static const char *TAG = "HEALTH";
@@ -65,7 +67,9 @@ static void health_monitor_task(void *pvParameters)
             s_health.min_free_heap = esp_get_minimum_free_heap_size();
 
             // Check WiFi
+#if CONFIG_WIFI_ENABLED
             s_health.wifi_connected = wifi_manager_is_connected();
+#endif
 
             // LoRaWAN join status will be updated externally via lorawan_handler
 
