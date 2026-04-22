@@ -80,6 +80,29 @@ check_build() {
     fi
 }
 
+get_www_offset() {
+    # Query partition table from current sdkconfig to find www partition offset
+    if [ ! -f "sdkconfig" ]; then
+        echo "Error: sdkconfig not found. Run '$0 build' first."
+        exit 1
+    fi
+
+    # Extract partition table filename from sdkconfig
+    local partition_file=$(grep "CONFIG_PARTITION_TABLE_CUSTOM_FILENAME" sdkconfig | cut -d'"' -f2)
+    if [ -z "$partition_file" ]; then
+        partition_file="partitions.csv"
+    fi
+
+    # Find www partition offset in the CSV
+    local offset=$(grep "^www," "$partition_file" | awk -F',' '{print $4}' | tr -d ' ')
+    if [ -z "$offset" ]; then
+        echo "Error: Could not determine www partition offset from $partition_file"
+        exit 1
+    fi
+
+    echo "$offset"
+}
+
 flash_all() {
     echo "=== Full Flash (Factory Reset) ==="
     echo "WARNING: This will erase ALL user configuration!"
@@ -102,7 +125,8 @@ flash_www() {
         echo "Error: www.bin not found. Run '$0 build' first."
         exit 1
     fi
-    esptool.py -p "$PORT" -b "$BAUD" write_flash 0x370000 build/www.bin
+    local www_offset=$(get_www_offset)
+    esptool.py -p "$PORT" -b "$BAUD" write_flash "$www_offset" build/www.bin
 }
 
 flash_update() {
@@ -114,7 +138,8 @@ flash_update() {
 
     if [ -f "build/www.bin" ]; then
         echo "Flashing web interface..."
-        esptool.py -p "$PORT" -b "$BAUD" write_flash 0x370000 build/www.bin
+        local www_offset=$(get_www_offset)
+        esptool.py -p "$PORT" -b "$BAUD" write_flash "$www_offset" build/www.bin
     fi
 
     echo "=== Update Complete ==="
