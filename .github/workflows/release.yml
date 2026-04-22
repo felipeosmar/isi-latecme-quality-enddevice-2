@@ -34,7 +34,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  build-salt-spray:
+  build-jvtech-4mb-thermocouple:
     runs-on: ubuntu-latest
     container:
       image: espressif/idf:v5.5.3
@@ -44,16 +44,16 @@ jobs:
         with:
           ref: main
 
-      - name: Build salt spray variant
+      - name: Build jvtech_4mb_thermocouple variant
         run: |
           . $IDF_PATH/export.sh
           rm -f sdkconfig
-          idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.salt_spray" build
+          idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.thermocouple" build
 
-      - name: Upload salt spray artifacts
+      - name: Upload jvtech_4mb_thermocouple artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-salt-spray
+          name: firmware-jvtech-4mb-thermocouple
           path: |
             build/lorawan-enddevice.bin
             build/bootloader/bootloader.bin
@@ -62,7 +62,7 @@ jobs:
           retention-days: 1
 
   release:
-    needs: [build-standard, build-salt-spray]
+    needs: [build-standard, build-jvtech-4mb-thermocouple]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -92,7 +92,7 @@ jobs:
           mv artifacts/firmware-standard/www.bin                 artifacts/www-${TAG}.bin
           mv artifacts/firmware-standard/bootloader/bootloader.bin      artifacts/bootloader-${TAG}.bin
           mv artifacts/firmware-standard/partition_table/partition-table.bin  artifacts/partition-table-${TAG}.bin
-          mv artifacts/firmware-salt-spray/lorawan-enddevice.bin artifacts/lorawan-enddevice-${TAG}-salt_spray.bin
+          mv artifacts/firmware-jvtech-4mb-thermocouple/lorawan-enddevice.bin artifacts/lorawan-enddevice-${TAG}-jvtech_4mb_thermocouple.bin
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -103,7 +103,7 @@ jobs:
           generate_release_notes: true
           files: |
             artifacts/lorawan-enddevice-${{ steps.release_info.outputs.tag }}-standard.bin
-            artifacts/lorawan-enddevice-${{ steps.release_info.outputs.tag }}-salt_spray.bin
+            artifacts/lorawan-enddevice-${{ steps.release_info.outputs.tag }}-jvtech_4mb_thermocouple.bin
             artifacts/www-${{ steps.release_info.outputs.tag }}.bin
             artifacts/bootloader-${{ steps.release_info.outputs.tag }}.bin
             artifacts/partition-table-${{ steps.release_info.outputs.tag }}.bin
