@@ -16,11 +16,11 @@ idf.py build
 | Variant | Build command | Enables |
 |---|---|---|
 | Standard | `idf.py build` | I2C temp/humidity only |
-| Salt spray | `idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.salt_spray" build` | + MAX6675 thermocouple |
+| Thermocouple | `idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.thermocouple" build` | + MAX6675 thermocouple |
 
-**Local variant switching:** The committed `sdkconfig` reflects the standard variant (`CONFIG_THERMOCOUPLE_ENABLED=n`). To build the salt spray variant locally, delete `sdkconfig` first and use the `-DSDKCONFIG_DEFAULTS` flag above. CI always uses fresh sdkconfig from defaults.
+**Local variant switching:** The committed `sdkconfig` reflects the standard variant (`CONFIG_THERMOCOUPLE_ENABLED=n`). To build the thermocouple variant locally, delete `sdkconfig` first and use the `-DSDKCONFIG_DEFAULTS` flag above. CI always uses fresh sdkconfig from defaults.
 
-**Existing salt_spray devices in the field:** Devices with `auto_update_branch = "salt_spray"` will stop receiving updates after the Kconfig migration (no `salt_spray-rN` releases exist). Change `auto_update_branch` to `"main"` via the web UI (Config → Auto-Update → Branch). The auto-updater will then download `lorawan-enddevice-main-rN-salt_spray.bin` automatically based on the compiled variant.
+**Existing thermocouple devices in the field:** Devices with `auto_update_branch = "salt_spray"` will stop receiving updates after the Kconfig migration. Change `auto_update_branch` to `"main"` via the web UI (Config → Auto-Update → Branch). The auto-updater will then download `lorawan-enddevice-main-rN-jvtech_4mb_thermocouple.bin` automatically based on the compiled variant.
 
 Flash modes (via `./flash.sh`):
 - `./flash.sh update` — firmware + web UI, preserves user config (most common)

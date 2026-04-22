@@ -39,7 +39,7 @@ static const char *TAG = "AUTO_UPD";
 
 // Compile-time variant string — selects the correct firmware binary from the release
 #ifdef CONFIG_THERMOCOUPLE_ENABLED
-#define FIRMWARE_VARIANT    "salt_spray"
+#define FIRMWARE_VARIANT    "jvtech_4mb_thermocouple"
 #else
 #define FIRMWARE_VARIANT    "standard"
 #endif
