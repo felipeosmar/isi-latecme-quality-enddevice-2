@@ -2,7 +2,9 @@
 # Build and flash helper for lorawan-enddevice
 # Manages hardware SKU variants via layered sdkconfig.defaults files
 
-. /home/felipe/.espressif/v5.5.3/esp-idf/export.sh >/dev/null
+if [ -z "$IDF_PATH" ]; then
+    . /home/felipe/.espressif/v5.5.3/esp-idf/export.sh >/dev/null
+fi
 
 set -e
 

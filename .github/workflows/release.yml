@@ -38,7 +38,7 @@ jobs:
             build/bootloader/bootloader.bin
             build/partition_table/partition-table.bin
             build/www.bin
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 1
 
   release:
