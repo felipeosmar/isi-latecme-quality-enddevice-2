@@ -95,7 +95,11 @@ static void health_monitor_task(void *pvParameters)
             // OTA rollback validation: mark firmware valid once WiFi is connected and healthy
             static bool s_ota_validated = false;
             if (!s_ota_validated) {
+#if CONFIG_WIFI_ENABLED
                 if (s_health.wifi_connected && health_monitor_is_healthy()) {
+#else
+                if (health_monitor_is_healthy()) {
+#endif
                     if (esp_ota_check_rollback_is_possible()) {
                         esp_err_t ota_err = esp_ota_mark_app_valid_cancel_rollback();
                         if (ota_err == ESP_OK) {
@@ -178,9 +182,15 @@ void health_monitor_log_status(void)
     ESP_LOGI(TAG, "=== System Health ===");
     ESP_LOGI(TAG, "Uptime: %lu seconds", s_health.uptime_seconds);
     ESP_LOGI(TAG, "Heap: %lu free, %lu min", s_health.free_heap, s_health.min_free_heap);
+#if CONFIG_WIFI_ENABLED
     ESP_LOGI(TAG, "WiFi: %s, LoRaWAN: %s, FS: %s",
              s_health.wifi_connected ? "OK" : "DISC",
              s_health.lorawan_joined ? "JOINED" : "NOT JOINED",
              s_health.filesystem_ok ? "OK" : "ERR");
+#else
+    ESP_LOGI(TAG, "WiFi: N/A, LoRaWAN: %s, FS: %s",
+             s_health.lorawan_joined ? "JOINED" : "NOT JOINED",
+             s_health.filesystem_ok ? "OK" : "ERR");
+#endif
     ESP_LOGI(TAG, "Errors: %lu", s_health.total_error_count);
 }

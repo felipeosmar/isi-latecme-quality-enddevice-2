@@ -85,9 +85,11 @@ static led_state_t evaluate_state(const system_health_t *health)
     }
 
     // Priority 2: WiFi disconnected
+#if CONFIG_WIFI_ENABLED
     if (!health->wifi_connected) {
         return LED_STATE_WIFI_DISCONNECTED;
     }
+#endif
 
     // Priority 3: LoRaWAN not configured (keys empty)
     const char *dev_eui = config_get_dev_eui();
