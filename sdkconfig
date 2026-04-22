@@ -436,6 +436,8 @@ CONFIG_PARTITION_TABLE_MD5=y
 # Firmware Variant
 #
 # CONFIG_THERMOCOUPLE_ENABLED is not set
+CONFIG_OLED_ENABLED=y
+CONFIG_WIFI_ENABLED=y
 # end of Firmware Variant
 
 #

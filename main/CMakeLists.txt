@@ -48,15 +48,10 @@ set(requires
     esp_timer
     freertos
     app_update
+    esp_wifi
+    esp_http_server
+    esp_http_client
 )
-
-if(CONFIG_WIFI_ENABLED)
-    list(APPEND requires
-        esp_wifi
-        esp_http_server
-        esp_http_client
-    )
-endif()
 
 idf_component_register(
     SRCS ${srcs}
