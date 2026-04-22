@@ -237,9 +237,13 @@ void app_main(void)
     esp_log_level_set("LORAWAN", ESP_LOG_INFO);
     esp_log_level_set("SENSOR_MGR", ESP_LOG_INFO);
     esp_log_level_set("MAX6675", ESP_LOG_INFO);
+#if CONFIG_OLED_ENABLED
     esp_log_level_set("OLED", ESP_LOG_INFO);
+#endif
+#if CONFIG_WIFI_ENABLED
     esp_log_level_set("CLOCK_SYNC", ESP_LOG_INFO);
     esp_log_level_set("AUTO_UPD", ESP_LOG_INFO);
+#endif
 
     ESP_LOGI(TAG, "==========================================");
     ESP_LOGI(TAG, "  LoRaWAN End Device - Sensor Node");
