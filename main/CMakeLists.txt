@@ -50,14 +50,6 @@ set(requires
     app_update
 )
 
-if(CONFIG_WIFI_ENABLED)
-    list(APPEND requires
-        esp_wifi
-        esp_http_server
-        esp_http_client
-    )
-endif()
-
 idf_component_register(
     SRCS ${srcs}
     INCLUDE_DIRS
@@ -78,3 +70,10 @@ idf_component_register(
         "update"
     REQUIRES ${requires}
 )
+
+# Conditional WiFi dependencies via target_link_libraries (the documented ESP-IDF
+# approach for config-dependent requires — idf_component_register's REQUIRES is
+# evaluated during component discovery, before sdkconfig values are available).
+if(CONFIG_WIFI_ENABLED)
+    target_link_libraries(${COMPONENT_LIB} PUBLIC idf::esp_wifi idf::esp_http_server idf::esp_http_client)
+endif()
