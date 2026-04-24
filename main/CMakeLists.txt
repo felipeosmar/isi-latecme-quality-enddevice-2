@@ -41,6 +41,10 @@ if(CONFIG_WIFI_ENABLED)
     )
 endif()
 
+if(CONFIG_FUOTA_ENABLED)
+    list(APPEND srcs "fuota/fuota_manager.c")
+endif()
+
 set(requires
     driver
     nvs_flash
@@ -63,6 +67,7 @@ idf_component_register(
         "webserver"
         "webserver/handlers"
         "config"
+        "fuota"
         "health"
         "logs"
         "interface"
