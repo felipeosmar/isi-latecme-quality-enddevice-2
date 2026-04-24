@@ -67,7 +67,6 @@ idf_component_register(
         "webserver"
         "webserver/handlers"
         "config"
-        "fuota"
         "health"
         "logs"
         "interface"
@@ -83,4 +82,8 @@ idf_component_register(
 # evaluated during component discovery, before sdkconfig values are available).
 if(CONFIG_WIFI_ENABLED)
     target_link_libraries(${COMPONENT_LIB} PUBLIC idf::esp_wifi idf::esp_http_server idf::esp_http_client)
+endif()
+
+if(CONFIG_FUOTA_ENABLED)
+    target_include_directories(${COMPONENT_LIB} PUBLIC "fuota")
 endif()

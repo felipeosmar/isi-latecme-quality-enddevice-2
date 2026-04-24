@@ -14,15 +14,21 @@
 static const char *TAG = "FUOTA";
 static fuota_status_t s_status;
 static SemaphoreHandle_t s_mutex;
+static bool s_initialized;
 
 esp_err_t fuota_init(void)
 {
+    if (s_initialized) return ESP_OK;
     if (!s_mutex) {
         s_mutex = xSemaphoreCreateMutex();
         if (!s_mutex) return ESP_ERR_NO_MEM;
     }
+    // Init runs single-threaded (before fuota_task spawns), so no mutex
+    // is required here. Future writes to s_status from callbacks MUST
+    // take s_mutex — see fuota_get_status for the pattern.
     memset(&s_status, 0, sizeof(s_status));
     s_status.state = FUOTA_STATE_IDLE;
+    s_initialized = true;
     ESP_LOGI(TAG, "FUOTA manager initialized (fw version: %s)",
              config_get_firmware_version());
     return ESP_OK;

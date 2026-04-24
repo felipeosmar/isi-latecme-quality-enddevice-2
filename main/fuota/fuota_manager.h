@@ -5,13 +5,13 @@
 #ifndef FUOTA_MANAGER_H
 #define FUOTA_MANAGER_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum {
     FUOTA_STATE_IDLE = 0,
