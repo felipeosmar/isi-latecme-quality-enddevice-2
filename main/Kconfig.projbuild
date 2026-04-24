@@ -22,4 +22,15 @@ config WIFI_ENABLED
         Enables WiFi manager, HTTP web server, auto-updater, and NTP clock sync.
         Disable for variants without network connectivity.
 
+config FUOTA_ENABLED
+    bool "Enable LoRaWAN FUOTA (Class C multicast + delta-OTA)"
+    default y
+    depends on WIFI_ENABLED
+    help
+        Enables Firmware Update Over The Air via LoRaWAN multicast
+        (TS004/TS005/TS006 + esp_delta_ota). Requires dual OTA
+        partitions — disabled on 2MB SKUs via sdkconfig.defaults.2mb.
+        Depends on WIFI_ENABLED because firmware version reporting
+        and session state assume the full networking stack.
+
 endmenu
