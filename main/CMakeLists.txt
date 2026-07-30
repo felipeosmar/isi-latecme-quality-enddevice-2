@@ -13,7 +13,6 @@ set(srcs
     "logs/log_buffer.c"
     "alarm/alarm_manager.c"
     "interface/button_handler.c"
-    "setup/espnow_setup.c"
 )
 
 if(CONFIG_THERMOCOUPLE_ENABLED)
@@ -38,6 +37,7 @@ if(CONFIG_WIFI_ENABLED)
         "webserver/handlers/api_ota.c"
         "update/auto_updater.c"
         "clock_sync/clock_sync.c"
+        "setup/espnow_setup.c"
     )
 endif()
 
