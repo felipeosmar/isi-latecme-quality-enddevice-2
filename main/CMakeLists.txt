@@ -13,6 +13,7 @@ set(srcs
     "logs/log_buffer.c"
     "alarm/alarm_manager.c"
     "interface/button_handler.c"
+    "setup/espnow_setup.c"
 )
 
 if(CONFIG_THERMOCOUPLE_ENABLED)
@@ -68,6 +69,7 @@ idf_component_register(
         "clock_sync"
         "alarm"
         "update"
+        "setup"
     REQUIRES ${requires}
 )
 
