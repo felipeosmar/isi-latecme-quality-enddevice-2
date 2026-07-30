@@ -157,6 +157,9 @@ void config_set_led_color_lorawan(const char *color);
 void config_set_led_color_wifi(const char *color);
 void config_set_led_color_error(const char *color);
 
+bool config_get_factory_provisioned(void);
+void config_set_factory_provisioned(bool v);
+
 // ============================================================================
 // Web Server Configuration
 // ============================================================================
