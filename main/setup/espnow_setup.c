@@ -14,9 +14,11 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 
 #include "nvs_flash.h"
 #include "esp_netif.h"
@@ -42,8 +44,34 @@
 #define PROTOCOL_VERSION    1
 #define MAX_LINE_LEN         250   /* DISCOVER/READ replies stay well under this */
 
+/*
+ * ESP-NOW V2 (ESP-IDF >= v5.4, so v5.5.3) transparently sends/receives frames
+ * up to ESP_NOW_MAX_DATA_LEN_V2 (1470 B) with no enable step: there is no
+ * Kconfig, no per-peer version field, and no version setter API (only the
+ * read-only esp_now_get_version()). A device compiled against v5.5.3 IS a v2.0
+ * peer, so the encrypted SET frame (which exceeds the old 250 B V1 limit for
+ * real WiFi creds) transmits fine between the dongle and the device.
+ *
+ * MAX_FRAME_LEN bounds the frame size we ACCEPT and the work-buffer sizes. Real
+ * SET frames (base64(nonce|ct|tag) inside JSON, with SSID<=32 / pass<=64 / name)
+ * are well under 1 KB, so this stays far below the V2 ceiling while covering
+ * every protocol message. Frames larger than this are dropped.
+ */
+#define MAX_FRAME_LEN        1024
+#define RX_QUEUE_DEPTH       4
+
+/* A received ESP-NOW frame, copied out of the WiFi-task recv callback and
+ * handed to the espnow_setup_run loop task, which does the heavy work
+ * (base64 + GCM + cJSON + config apply + ACK) off the WiFi task stack. */
+typedef struct {
+    uint8_t src[6];
+    int     len;
+    uint8_t data[MAX_FRAME_LEN];
+} setup_rx_msg_t;
+
 static const char *TAG = "SETUP";
 static const uint8_t BCAST[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+static QueueHandle_t s_rx_queue;
 
 /* ---------------------------------------------------------------------- */
 /* Helpers                                                                 */
@@ -127,13 +155,18 @@ static void send_ack(const uint8_t *dst, const char *own_mac_str, bool ok,
  */
 static int gcm_open(const char *b64, uint8_t *out, size_t out_cap, size_t *out_len)
 {
-    uint8_t raw[1500];
-    size_t raw_len = 0;
-    if (mbedtls_base64_decode(raw, sizeof(raw), &raw_len,
-            (const uint8_t *)b64, strlen(b64)) != 0) {
+    /* Heap-allocate the base64-decode scratch so this decrypt path carries no
+     * large stack frame on the loop task (frames are bounded by MAX_FRAME_LEN,
+     * and base64 decodes to fewer bytes than its input). */
+    uint8_t *raw = malloc(MAX_FRAME_LEN);
+    if (!raw) {
         return -1;
     }
-    if (raw_len < 12 + 16) {
+    size_t raw_len = 0;
+    if (mbedtls_base64_decode(raw, MAX_FRAME_LEN, &raw_len,
+            (const uint8_t *)b64, strlen(b64)) != 0 ||
+        raw_len < 12 + 16) {
+        free(raw);
         return -1;
     }
     const uint8_t *nonce = raw;
@@ -141,6 +174,7 @@ static int gcm_open(const char *b64, uint8_t *out, size_t out_cap, size_t *out_l
     size_t ct_len = raw_len - 12 - 16;
     const uint8_t *tag = raw + 12 + ct_len;
     if (ct_len > out_cap) {
+        free(raw);
         return -1;
     }
 
@@ -152,10 +186,12 @@ static int gcm_open(const char *b64, uint8_t *out, size_t out_cap, size_t *out_l
                                        tag, 16, ct, out);
     }
     mbedtls_gcm_free(&g);
+    free(raw);
     if (rc == 0) {
         *out_len = ct_len;
+        return 0;
     }
-    return rc;
+    return -1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -233,15 +269,23 @@ static void handle_set(cJSON *req, const uint8_t *src)
         return;
     }
 
-    uint8_t plain[512];
+    /* Heap the plaintext buffer too: keeps the loop-task stack small and lets
+     * the plaintext be as large as any accepted frame. */
+    uint8_t *plain = malloc(MAX_FRAME_LEN);
+    if (!plain) {
+        send_ack(src, own_mac_str, false, "no mem", seq);
+        return;
+    }
     size_t plain_len = 0;
-    if (gcm_open(enc->valuestring, plain, sizeof(plain) - 1, &plain_len) != 0) {
+    if (gcm_open(enc->valuestring, plain, MAX_FRAME_LEN - 1, &plain_len) != 0) {
         send_ack(src, own_mac_str, false, "decrypt failed", seq);
+        free(plain);
         return;
     }
     plain[plain_len] = '\0';
 
     cJSON *payload = cJSON_ParseWithLength((const char *)plain, plain_len);
+    free(plain);
     if (!payload) {
         send_ack(src, own_mac_str, false, "bad json", seq);
         return;
@@ -341,12 +385,10 @@ static void handle_commit(cJSON *req, const uint8_t *src)
 /* ESP-NOW plumbing                                                        */
 /* ---------------------------------------------------------------------- */
 
-static void on_recv(const esp_now_recv_info_t *info, const uint8_t *data, int len)
+/* Dispatch one received frame. Runs on the espnow_setup_run loop task (NOT the
+ * WiFi task) so the base64/GCM/cJSON/config work has a normal-sized stack. */
+static void handle_frame(const uint8_t *data, int len, const uint8_t *src)
 {
-    if (!info || !data || len <= 0) {
-        return;
-    }
-
     cJSON *root = cJSON_ParseWithLength((const char *)data, (size_t)len);
     if (!root) {
         return;
@@ -355,19 +397,43 @@ static void on_recv(const esp_now_recv_info_t *info, const uint8_t *data, int le
     cJSON *ty = cJSON_GetObjectItem(root, "ty");
     if (cJSON_IsString(ty) && ty->valuestring) {
         if (strcmp(ty->valuestring, "DISCOVER") == 0) {
-            handle_discover(info->src_addr);
+            handle_discover(src);
         } else if (strcmp(ty->valuestring, "READ") == 0) {
-            handle_read(info->src_addr);
+            handle_read(src);
         } else if (strcmp(ty->valuestring, "SET") == 0) {
-            handle_set(root, info->src_addr);
+            handle_set(root, src);
         } else if (strcmp(ty->valuestring, "IDENTIFY") == 0) {
-            handle_identify(root, info->src_addr);
+            handle_identify(root, src);
         } else if (strcmp(ty->valuestring, "COMMIT") == 0) {
-            handle_commit(root, info->src_addr);
+            handle_commit(root, src);
         }
     }
 
     cJSON_Delete(root);
+}
+
+/* ESP-NOW recv callback: runs in the small WiFi task stack, so it does the
+ * minimum possible -- copy the frame + source MAC into a queue and return.
+ * All heavy work happens on the loop task in handle_frame(). */
+static void on_recv(const esp_now_recv_info_t *info, const uint8_t *data, int len)
+{
+    if (!info || !data || len <= 0 || len > MAX_FRAME_LEN) {
+        if (info && data && len > MAX_FRAME_LEN) {
+            ESP_LOGW(TAG, "dropping oversize frame (%d > %d)", len, MAX_FRAME_LEN);
+        }
+        return;
+    }
+    if (!s_rx_queue) {
+        return;
+    }
+
+    setup_rx_msg_t msg;
+    memcpy(msg.src, info->src_addr, 6);
+    msg.len = len;
+    memcpy(msg.data, data, (size_t)len);
+    if (xQueueSend(s_rx_queue, &msg, 0) != pdTRUE) {
+        ESP_LOGW(TAG, "rx queue full, dropping frame");
+    }
 }
 
 static void add_broadcast_peer(void)
@@ -382,7 +448,16 @@ static void add_broadcast_peer(void)
 
 static void wifi_espnow_init(void)
 {
-    ESP_ERROR_CHECK(nvs_flash_init());
+    /* A dirty/aged NVS partition must not panic-loop the setup path: erase and
+     * retry once, mirroring the pattern in main/wifi/wifi_manager.c. */
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGW(TAG, "NVS needs erase");
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
@@ -392,6 +467,10 @@ static void wifi_espnow_init(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_ERROR_CHECK(esp_wifi_set_channel(ESPNOW_CHANNEL, WIFI_SECOND_CHAN_NONE));
+
+    /* Queue must exist before the recv callback can fire. */
+    s_rx_queue = xQueueCreate(RX_QUEUE_DEPTH, sizeof(setup_rx_msg_t));
+    ESP_ERROR_CHECK(s_rx_queue ? ESP_OK : ESP_ERR_NO_MEM);
 
     ESP_ERROR_CHECK(esp_now_init());
     ESP_ERROR_CHECK(esp_now_register_recv_cb(on_recv));
@@ -417,10 +496,22 @@ void espnow_setup_run(void)
     ESP_LOGI(TAG, "setup mode ready, ch=%d mac=%02X:%02X:%02X:%02X:%02X:%02X",
              ESPNOW_CHANNEL, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
+    /* Statically size the drain buffer; it is large (setup_rx_msg_t holds a
+     * MAX_FRAME_LEN payload) so keep it off this task's stack. */
+    static setup_rx_msg_t rx;
+    TickType_t last_read = xTaskGetTickCount();
+    const TickType_t read_period = pdMS_TO_TICKS(2000);
+
     while (1) {
-        /* Keep sensor data reasonably fresh for READ requests; the actual
-         * request handling happens in the esp_now recv callback. */
-        sensor_manager_read();
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        /* Drain received frames promptly (heavy work runs here, off the WiFi
+         * task). Block up to read_period so sensor data stays fresh when idle. */
+        if (xQueueReceive(s_rx_queue, &rx, read_period) == pdTRUE) {
+            handle_frame(rx.data, rx.len, rx.src);
+        }
+
+        if (xTaskGetTickCount() - last_read >= read_period) {
+            sensor_manager_read();
+            last_read = xTaskGetTickCount();
+        }
     }
 }
