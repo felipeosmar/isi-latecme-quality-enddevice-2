@@ -325,7 +325,11 @@ static void handle_commit(cJSON *req, const uint8_t *src)
     }
 
     config_set_factory_provisioned(true);
-    config_save();
+    if (config_save() != ESP_OK) {
+        send_ack(src, own_mac_str, false, "save failed", seq);
+        return;
+    }
+
     send_ack(src, own_mac_str, true, NULL, seq);
 
     /* Let the ACK flush over the air before rebooting. */
