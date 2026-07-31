@@ -38,6 +38,7 @@
 #include "web_server.h"
 #include "clock_sync.h"
 #include "auto_updater.h"
+#include "espnow_setup.h"
 #endif
 
 #if CONFIG_OLED_ENABLED
@@ -258,6 +259,34 @@ void app_main(void)
         ESP_LOGE(TAG, "Failed to initialize configuration!");
         return;
     }
+
+#if CONFIG_WIFI_ENABLED
+    // Boot decision: enter factory setup mode when unprovisioned or the
+    // button (GPIO25) is held at boot. This MUST run before WiFi/web-server/
+    // LoRaWAN init so the radio is clean for ESP-NOW factory provisioning.
+    {
+        gpio_config_t btn_cfg = {
+            .pin_bit_mask = (1ULL << BUTTON_GPIO),
+            .mode = GPIO_MODE_INPUT,
+            .pull_up_en = GPIO_PULLUP_ENABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .intr_type = GPIO_INTR_DISABLE,
+        };
+        gpio_config(&btn_cfg);
+        bool button_held = (gpio_get_level(BUTTON_GPIO) == 0);
+
+        if (!config_get_factory_provisioned() || button_held) {
+            ESP_LOGW(TAG, "Entering FACTORY SETUP mode (prov=%d btn=%d)",
+                     config_get_factory_provisioned(), button_held);
+
+            if (sensor_manager_init() == ESP_OK) {
+                sensor_manager_read();
+            }
+
+            espnow_setup_run();
+        }
+    }
+#endif
 
     // Apply buzzer volume from config, then play startup melody
     buzzer_set_volume(config_get_buzzer_volume());

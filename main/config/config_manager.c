@@ -64,6 +64,9 @@ typedef struct {
     char web_password[64];
     bool web_auth_enabled;
 
+    // Factory provisioning
+    bool factory_provisioned;
+
     // Alarm thresholds
     bool  alarm_temp_enabled;
     float alarm_temp_low;
@@ -177,6 +180,9 @@ void config_reset_defaults(void)
     strcpy(s_config.web_password, "admin");
     s_config.web_auth_enabled = true;
 
+    // Factory provisioning defaults
+    s_config.factory_provisioned = false;
+
     // Alarm thresholds (all disabled by default)
     s_config.alarm_temp_enabled = false;
     s_config.alarm_temp_low     = 0.0f;
@@ -277,6 +283,9 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddStringToObject(web, "password", s_config.web_password);
     cJSON_AddBoolToObject(web, "auth_enabled", s_config.web_auth_enabled);
     cJSON_AddItemToObject(root, "web", web);
+
+    // Factory provisioning
+    cJSON_AddBoolToObject(root, "factory_provisioned", s_config.factory_provisioned);
 
     // Auto-update section
     cJSON *update = cJSON_CreateObject();
@@ -514,6 +523,14 @@ esp_err_t config_load(void)
         }
     }
 
+    // Factory provisioning
+    {
+        cJSON *item = cJSON_GetObjectItem(root, "factory_provisioned");
+        if (item && cJSON_IsBool(item)) {
+            s_config.factory_provisioned = cJSON_IsTrue(item);
+        }
+    }
+
     // Auto-update section
     cJSON *au = cJSON_GetObjectItem(root, "auto_update");
     if (au) {
@@ -748,6 +765,13 @@ void config_set_web_password(const char *password) {
     if (password) strncpy(s_config.web_password, password, sizeof(s_config.web_password) - 1);
 }
 void config_set_web_auth_enabled(bool enabled) { s_config.web_auth_enabled = enabled; }
+
+// ============================================================================
+// Getters/Setters - Factory Provisioning
+// ============================================================================
+
+bool config_get_factory_provisioned(void) { return s_config.factory_provisioned; }
+void config_set_factory_provisioned(bool v) { s_config.factory_provisioned = v; }
 
 // ============================================================================
 // Getters/Setters - Alarm Thresholds

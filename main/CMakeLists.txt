@@ -37,6 +37,7 @@ if(CONFIG_WIFI_ENABLED)
         "webserver/handlers/api_ota.c"
         "update/auto_updater.c"
         "clock_sync/clock_sync.c"
+        "setup/espnow_setup.c"
     )
 endif()
 
@@ -68,6 +69,7 @@ idf_component_register(
         "clock_sync"
         "alarm"
         "update"
+        "setup"
     REQUIRES ${requires}
 )
 
