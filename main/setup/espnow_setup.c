@@ -385,10 +385,47 @@ static void handle_commit(cJSON *req, const uint8_t *src)
 /* ESP-NOW plumbing                                                        */
 /* ---------------------------------------------------------------------- */
 
+/**
+ * @brief Ensure @p mac is a registered ESP-NOW peer before we try to reply to
+ * it.
+ *
+ * wifi_espnow_init() only registers the broadcast peer up front; the dongle's
+ * unicast MAC is never added. esp_now_send() to a MAC that is not a
+ * registered peer returns ESP_ERR_ESPNOW_NOT_FOUND and silently drops the
+ * frame, so every reply (ANNOUNCE/READING/ACK) would otherwise be lost even
+ * though DISCOVER/READ/SET/IDENTIFY/COMMIT are received fine (RX needs no
+ * peer). Learn the sender as a peer lazily, the first time we need to answer
+ * it.
+ */
+static void ensure_unicast_peer(const uint8_t *mac)
+{
+    if (memcmp(mac, BCAST, 6) == 0) {
+        return; /* broadcast peer already registered in wifi_espnow_init() */
+    }
+    if (esp_now_is_peer_exist(mac)) {
+        return;
+    }
+    esp_now_peer_info_t peer = {0};
+    memcpy(peer.peer_addr, mac, 6);
+    peer.channel = ESPNOW_CHANNEL;
+    peer.ifidx = WIFI_IF_STA;
+    peer.encrypt = false;
+    esp_err_t rc = esp_now_add_peer(&peer);
+    if (rc != ESP_OK) {
+        /* Defensive only: there is normally exactly one dongle, so the
+         * 20-peer cap (ESP_ERR_ESPNOW_FULL) should never actually trigger. */
+        ESP_LOGW(TAG, "add reply peer failed: %s", esp_err_to_name(rc));
+    }
+}
+
 /* Dispatch one received frame. Runs on the espnow_setup_run loop task (NOT the
  * WiFi task) so the base64/GCM/cJSON/config work has a normal-sized stack. */
 static void handle_frame(const uint8_t *data, int len, const uint8_t *src)
 {
+    /* Register src as a peer BEFORE any handler can reply, so ANNOUNCE,
+     * READING, and every ACK go out to a registered peer. */
+    ensure_unicast_peer(src);
+
     cJSON *root = cJSON_ParseWithLength((const char *)data, (size_t)len);
     if (!root) {
         return;
