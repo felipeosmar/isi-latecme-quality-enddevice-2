@@ -3,11 +3,9 @@
 
 #include <stdbool.h>
 #include "esp_err.h"
-#include "esp_wifi.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#if CONFIG_WIFI_ENABLED
+#include "esp_wifi.h"
 
 /**
  * @brief WiFi manager configuration
@@ -40,6 +38,38 @@ typedef struct {
     int8_t rssi;
     wifi_auth_mode_t authmode;
 } wifi_scan_result_t;
+
+#else // CONFIG_WIFI_ENABLED
+
+// Dummy types when WiFi is disabled
+typedef struct {
+    char sta_ssid[32];
+    char sta_password[64];
+    char ap_ssid[32];
+    char ap_password[64];
+    bool ap_mode_enabled;
+    uint32_t sta_timeout_ms;
+} wifi_manager_config_t;
+
+typedef enum {
+    WIFI_STATUS_DISCONNECTED = 0,
+    WIFI_STATUS_CONNECTING,
+    WIFI_STATUS_CONNECTED,
+    WIFI_STATUS_AP_MODE,
+    WIFI_STATUS_ERROR
+} wifi_status_t;
+
+typedef struct {
+    char ssid[33];
+    int8_t rssi;
+    uint32_t authmode;
+} wifi_scan_result_t;
+
+#endif // CONFIG_WIFI_ENABLED
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Initialize WiFi manager

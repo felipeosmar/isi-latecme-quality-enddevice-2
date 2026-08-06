@@ -22,27 +22,35 @@
 #include "esp_err.h"
 #include "driver/gpio.h"
 
-#include "wifi_manager.h"
-#include "web_server.h"
 #include "config_manager.h"
 #include "health_monitor.h"
 #include "log_buffer.h"
 #include "sensor_manager.h"
 #include "lorawan_handler.h"
-#include "oled_display.h"
 #include "cayenne_lpp.h"
 #include "buzzer.h"
 #include "status_led.h"
-#include "clock_sync.h"
 #include "alarm_manager.h"
 #include "button_handler.h"
+
+#if CONFIG_WIFI_ENABLED
+#include "wifi_manager.h"
+#include "web_server.h"
+#include "clock_sync.h"
 #include "auto_updater.h"
+#include "espnow_setup.h"
+#endif
+
+#if CONFIG_OLED_ENABLED
+#include "oled_display.h"
+#endif
 
 static const char *TAG = "MAIN";
 
 /**
  * @brief Initialize WiFi based on configuration
  */
+#if CONFIG_WIFI_ENABLED
 static esp_err_t init_wifi(void)
 {
     esp_err_t ret;
@@ -87,10 +95,12 @@ static esp_err_t init_wifi(void)
 
     return ret;
 }
+#endif
 
 /**
  * @brief Display update task - cycles OLED display pages
  */
+#if CONFIG_OLED_ENABLED
 static void display_task(void *param)
 {
     ESP_LOGI(TAG, "Display task started");
@@ -130,7 +140,9 @@ static void display_task(void *param)
                 }
                 case OLED_PAGE_SYSTEM: {
                     char ip[16] = "N/A";
+#if CONFIG_WIFI_ENABLED
                     wifi_manager_get_ip(ip);
+#endif
                     uint32_t uptime_s  = xTaskGetTickCount() / configTICK_RATE_HZ;
                     lorawan_stats_t lora_stats;
                     lorawan_get_stats(&lora_stats);
@@ -147,6 +159,7 @@ static void display_task(void *param)
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
+#endif
 
 /**
  * @brief Uplink task - builds CayenneLPP payload and sends via LoRaWAN
@@ -166,6 +179,7 @@ static void uplink_task(void *param)
         uint32_t interval_s = config_get_uplink_interval();
         if (interval_s < 10) interval_s = 10;
 
+#if CONFIG_WIFI_ENABLED
         if (clock_sync_is_synced()) {
             // Align to the next clock boundary (e.g., hourly at :00:00)
             time_t now = time(NULL);
@@ -176,6 +190,9 @@ static void uplink_task(void *param)
         } else {
             vTaskDelay(pdMS_TO_TICKS(interval_s * 1000));
         }
+#else
+        vTaskDelay(pdMS_TO_TICKS(interval_s * 1000));
+#endif
 
         if (!lorawan_is_joined()) {
             continue;
@@ -221,9 +238,13 @@ void app_main(void)
     esp_log_level_set("LORAWAN", ESP_LOG_INFO);
     esp_log_level_set("SENSOR_MGR", ESP_LOG_INFO);
     esp_log_level_set("MAX6675", ESP_LOG_INFO);
+#if CONFIG_OLED_ENABLED
     esp_log_level_set("OLED", ESP_LOG_INFO);
+#endif
+#if CONFIG_WIFI_ENABLED
     esp_log_level_set("CLOCK_SYNC", ESP_LOG_INFO);
     esp_log_level_set("AUTO_UPD", ESP_LOG_INFO);
+#endif
 
     ESP_LOGI(TAG, "==========================================");
     ESP_LOGI(TAG, "  LoRaWAN End Device - Sensor Node");
@@ -239,6 +260,34 @@ void app_main(void)
         return;
     }
 
+#if CONFIG_WIFI_ENABLED
+    // Boot decision: enter factory setup mode when unprovisioned or the
+    // button (GPIO25) is held at boot. This MUST run before WiFi/web-server/
+    // LoRaWAN init so the radio is clean for ESP-NOW factory provisioning.
+    {
+        gpio_config_t btn_cfg = {
+            .pin_bit_mask = (1ULL << BUTTON_GPIO),
+            .mode = GPIO_MODE_INPUT,
+            .pull_up_en = GPIO_PULLUP_ENABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .intr_type = GPIO_INTR_DISABLE,
+        };
+        gpio_config(&btn_cfg);
+        bool button_held = (gpio_get_level(BUTTON_GPIO) == 0);
+
+        if (!config_get_factory_provisioned() || button_held) {
+            ESP_LOGW(TAG, "Entering FACTORY SETUP mode (prov=%d btn=%d)",
+                     config_get_factory_provisioned(), button_held);
+
+            if (sensor_manager_init() == ESP_OK) {
+                sensor_manager_read();
+            }
+
+            espnow_setup_run();
+        }
+    }
+#endif
+
     // Apply buzzer volume from config, then play startup melody
     buzzer_set_volume(config_get_buzzer_volume());
     buzzer_tone(1800, 80);
@@ -252,6 +301,7 @@ void app_main(void)
         ESP_LOGW(TAG, "Failed to initialize status LED");
     }
 
+#if CONFIG_WIFI_ENABLED
     // Initialize WiFi
     ESP_LOGI(TAG, "Initializing WiFi...");
     if (init_wifi() != ESP_OK) {
@@ -283,6 +333,7 @@ void app_main(void)
         ESP_LOGI(TAG, "  Web Interface: http://%s", ip);
         ESP_LOGI(TAG, "==========================================");
     }
+#endif
 
     // Initialize health monitor (starts monitoring task)
     ESP_LOGI(TAG, "Starting health monitor...");
@@ -290,8 +341,10 @@ void app_main(void)
         ESP_LOGW(TAG, "Failed to start health monitor");
     }
 
+#if CONFIG_WIFI_ENABLED
     // Initialize clock sync module
     clock_sync_init();
+#endif
 
     // Initialize alarm manager
     if (alarm_manager_init() != ESP_OK) {
@@ -315,9 +368,12 @@ void app_main(void)
     // Uplink task - Core 0, Priority 4, Stack 4096
     xTaskCreatePinnedToCore(uplink_task, "uplink", 4096, NULL, 4, NULL, 0);
 
+#if CONFIG_OLED_ENABLED
     // Display task - Core 0, Priority 3, Stack 4096
     xTaskCreatePinnedToCore(display_task, "display", 4096, NULL, 3, NULL, 0);
+#endif
 
+#if CONFIG_WIFI_ENABLED
     // Clock sync task - Core 0, Priority 3, Stack 4096
     xTaskCreatePinnedToCore(clock_sync_task, "clock_sync", 4096, NULL, 3, NULL, 0);
 
@@ -325,6 +381,7 @@ void app_main(void)
     if (auto_updater_init() != ESP_OK) {
         ESP_LOGW(TAG, "Failed to start auto-updater");
     }
+#endif
 
     ESP_LOGI(TAG, "System ready!");
 }

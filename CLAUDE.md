@@ -8,25 +8,32 @@ Requires ESP-IDF v5.5.3. Always source the environment first:
 
 ```bash
 . /home/felipe/.espressif/v5.5.3/esp-idf/export.sh
-idf.py build
 ```
 
-**Two firmware variants** are built from this single codebase via `CONFIG_THERMOCOUPLE_ENABLED`:
+**Four hardware SKUs** — use `build.sh` for all build and flash operations:
 
-| Variant | Build command | Enables |
+```bash
+./build.sh skus                          # list all SKUs
+./build.sh build                         # build default SKU (jvtech_4mb_standard)
+./build.sh build jvtech_2mb_headless     # build a specific SKU
+```
+
+| SKU | Flash | Enables |
 |---|---|---|
-| Standard | `idf.py build` | I2C temp/humidity only |
-| Salt spray | `idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.salt_spray" build` | + MAX6675 thermocouple |
+| `jvtech_4mb_standard` | 4MB | I2C temp/humidity, OLED, WiFi, OTA |
+| `jvtech_4mb_thermocouple` | 4MB | + MAX6675 thermocouple |
+| `jvtech_2mb_standard` | 2MB | Same as standard, single factory partition, no OTA rollback |
+| `jvtech_2mb_headless` | 2MB | I2C temp/humidity only, no OLED, no WiFi |
 
-**Local variant switching:** The committed `sdkconfig` reflects the standard variant (`CONFIG_THERMOCOUPLE_ENABLED=n`). To build the salt spray variant locally, delete `sdkconfig` first and use the `-DSDKCONFIG_DEFAULTS` flag above. CI always uses fresh sdkconfig from defaults.
+**Local SKU switching:** Delete `sdkconfig` before building a different SKU. `build.sh build [SKU]` does this automatically.
 
-**Existing salt_spray devices in the field:** Devices with `auto_update_branch = "salt_spray"` will stop receiving updates after the Kconfig migration (no `salt_spray-rN` releases exist). Change `auto_update_branch` to `"main"` via the web UI (Config → Auto-Update → Branch). The auto-updater will then download `lorawan-enddevice-main-rN-salt_spray.bin` automatically based on the compiled variant.
+**Existing devices in the field:** Devices with `auto_update_branch = "salt_spray"` must change to `"main"` via the web UI (Config → Auto-Update → Branch). The auto-updater will then download `lorawan-enddevice-main-rN-jvtech_4mb_thermocouple.bin` based on the compiled variant.
 
-Flash modes (via `./flash.sh`):
-- `./flash.sh update` — firmware + web UI, preserves user config (most common)
-- `./flash.sh app` — firmware only
-- `./flash.sh www` — web interface only
-- `./flash.sh all` — factory reset (erases userdata partition)
+Flash modes (via `./build.sh`):
+- `./build.sh update` — firmware + web UI, preserves user config (most common)
+- `./build.sh app` — firmware only
+- `./build.sh www` — web interface only (offset detected automatically per SKU)
+- `./build.sh all` — factory reset (erases userdata partition)
 
 Monitor: `idf.py -p /dev/ttyUSB0 monitor` (exit with Ctrl+])
 

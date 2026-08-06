@@ -8,4 +8,18 @@ config THERMOCOUPLE_ENABLED
         fields, and thermocouple alarm thresholds. Disable for the standard
         (temperature + humidity only) variant.
 
+config OLED_ENABLED
+    bool "Enable OLED display"
+    default y
+    help
+        Enables the SSD1306 OLED display driver and display task.
+        Disable for headless hardware variants.
+
+config WIFI_ENABLED
+    bool "Enable WiFi, web server and OTA"
+    default y
+    help
+        Enables WiFi manager, HTTP web server, auto-updater, and NTP clock sync.
+        Disable for variants without network connectivity.
+
 endmenu
