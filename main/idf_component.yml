@@ -2,3 +2,4 @@ dependencies:
   joltwallet/littlefs: "*"
   jgromes/radiolib: "^7.5.0"
   espressif/led_strip: "^3.0.0"
+  espressif/esp_delta_ota: "^1.1.4"
