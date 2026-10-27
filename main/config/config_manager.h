@@ -157,6 +157,9 @@ void config_set_led_color_lorawan(const char *color);
 void config_set_led_color_wifi(const char *color);
 void config_set_led_color_error(const char *color);
 
+bool config_get_factory_provisioned(void);
+void config_set_factory_provisioned(bool v);
+
 // ============================================================================
 // Web Server Configuration
 // ============================================================================
@@ -182,6 +185,14 @@ void config_set_auto_update_enabled(bool enabled);
 void config_set_auto_update_branch(const char *branch);
 void config_set_auto_update_firmware_tag(const char *tag);
 void config_set_auto_update_www_tag(const char *tag);
+
+// ============================================================================
+// FUOTA (LoRaWAN firmware-update-over-the-air)
+// ============================================================================
+
+bool config_get_fuota_enabled(void);
+const char *config_get_firmware_version(void);
+esp_err_t config_set_firmware_version(const char *version);
 
 #ifdef __cplusplus
 }

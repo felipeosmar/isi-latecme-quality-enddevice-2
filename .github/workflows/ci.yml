@@ -41,7 +41,7 @@ jobs:
             build/partition_table/partition-table.bin
           retention-days: 7
 
-  build-salt-spray:
+  build-jvtech-4mb-thermocouple:
     needs: validate-source
     runs-on: ubuntu-latest
     container:
@@ -50,16 +50,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build salt spray variant
+      - name: Build thermocouple variant
         run: |
           . $IDF_PATH/export.sh
           rm -f sdkconfig
-          idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.salt_spray" build
+          idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.thermocouple" build
 
-      - name: Upload salt spray artifacts
+      - name: Upload thermocouple artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-salt-spray-pr${{ github.event.pull_request.number }}
+          name: firmware-jvtech-4mb-thermocouple-pr${{ github.event.pull_request.number }}
           path: |
             build/lorawan-enddevice.bin
             build/bootloader/bootloader.bin

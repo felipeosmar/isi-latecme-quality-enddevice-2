@@ -33,5 +33,9 @@
         "username": "admin",
         "password": "admin",
         "auth_enabled": true
+    },
+    "fuota": {
+        "enabled": true,
+        "firmware_version": ""
     }
 }

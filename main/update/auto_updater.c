@@ -39,9 +39,9 @@ static const char *TAG = "AUTO_UPD";
 
 // Compile-time variant string — selects the correct firmware binary from the release
 #ifdef CONFIG_THERMOCOUPLE_ENABLED
-#define FIRMWARE_VARIANT    "salt_spray"
+#define FIRMWARE_VARIANT    "jvtech_4mb_thermocouple"
 #else
-#define FIRMWARE_VARIANT    "standard"
+#define FIRMWARE_VARIANT    "jvtech_4mb_standard"
 #endif
 
 // JSON response buffer size: GitHub releases include auto-generated notes which can be large.
@@ -98,7 +98,7 @@ static void upd_log(const char *fmt, ...)
 // ============================================================================
 
 /**
- * Extract the release number N from a tag like "main-r5" or "salt_spray-r12".
+ * Extract the release number N from a tag like "main-r5".
  * Returns -1 if the tag doesn't match the expected pattern.
  */
 static int parse_release_number(const char *tag, const char *branch)

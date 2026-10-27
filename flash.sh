@@ -1,4 +1,8 @@
 #!/bin/bash
+# DEPRECATED: Use build.sh instead.
+# flash.sh hardcodes the www partition offset (0x370000) which is only correct
+# for 4MB SKUs. For 2MB SKUs, use ./build.sh www or ./build.sh update which
+# detect the correct offset automatically.
 # Flash helper script for lorawan-enddevice
 # Supports partial flashing to preserve user configuration
 

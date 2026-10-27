@@ -1,0 +1,1518 @@
+{
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/main.c": {
+    "mtime": 1776874927.8960361,
+    "hash": "7d242a64ae384b9d9d61232009e5ea4f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/health/health_monitor.h": {
+    "mtime": 1771514677.051899,
+    "hash": "c73cddf6f6f4b6a4fc373f563d8d1a79"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/health/health_monitor.c": {
+    "mtime": 1776874712.1769214,
+    "hash": "ebbf3958d8dfdb9a6aae23de2015a73f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/wifi/wifi_manager.h": {
+    "mtime": 1776875173.8282766,
+    "hash": "02b4d887f36263bf728b1016adf4fa29"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/wifi/wifi_manager.c": {
+    "mtime": 1771512054.720076,
+    "hash": "5443d983cc35d7e694d90bad2f1f11b0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/core.js": {
+    "mtime": 1775602772.8468568,
+    "hash": "046cf68678bfa56eaaca761e1e86a561"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/system.js": {
+    "mtime": 1771512054.723708,
+    "hash": "e92376412233427a2fc66b482771e7c1"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/files.js": {
+    "mtime": 1771512054.7233195,
+    "hash": "eec779b505c05500e587556e58887d88"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/sensors.js": {
+    "mtime": 1775746275.3066711,
+    "hash": "e60d9eee9a3401cbb1dbc982792499e0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/config.js": {
+    "mtime": 1775746275.3066711,
+    "hash": "a30708559e21637f08e286452833b368"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/ota.js": {
+    "mtime": 1775739618.2551475,
+    "hash": "2b9385b523793f2c529ff8e4e1e8065d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/tasks.js": {
+    "mtime": 1775602772.848383,
+    "hash": "ee578c947ddc2f1c12a24f255101694b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/lorawan.js": {
+    "mtime": 1775602772.847847,
+    "hash": "fbff634e4b1cbe24a230ea44db389cba"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/lorawan/EspHal.h": {
+    "mtime": 1775602772.8444257,
+    "hash": "874dc36853e31d067b9628aa13b87a82"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/lorawan/lorawan_handler.h": {
+    "mtime": 1775602772.8446202,
+    "hash": "38a0023bbf2dd638a53f88d4b3e1aebc"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/lorawan/lorawan_handler.cpp": {
+    "mtime": 1775602772.8446202,
+    "hash": "e16c0e37efff83e98b9a3d1ccc663828"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/interface/status_led.c": {
+    "mtime": 1776874715.836957,
+    "hash": "56dc22ecdf528d528da5ba9ed8b3a8c2"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/interface/buzzer.c": {
+    "mtime": 1775602772.8432636,
+    "hash": "edf2c70bcdf3448be4456a870d6a4b75"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/interface/button_handler.c": {
+    "mtime": 1776087190.2906184,
+    "hash": "90b76620a518e26d8a0fe0a6f203516f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/interface/status_led.h": {
+    "mtime": 1775602772.8433464,
+    "hash": "711bf2e0f4507c4f04f59ed2ec28e1d5"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/interface/button_handler.h": {
+    "mtime": 1775602772.8432636,
+    "hash": "38cd88413deac9728bcfd80e17c44bf1"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/interface/buzzer.h": {
+    "mtime": 1775602772.8433464,
+    "hash": "a3450a534e7f31c334509639c91f5cdd"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/update/auto_updater.h": {
+    "mtime": 1775739288.52681,
+    "hash": "e73f9630bf9a6ae1433603f91cc89388"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/update/auto_updater.c": {
+    "mtime": 1776876001.4629252,
+    "hash": "c26496a7c664f0e48628acfcc78d69df"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/webserver/web_server.h": {
+    "mtime": 1771512054.719727,
+    "hash": "aa4612819017b4d4b9596056cbb8a191"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/webserver/web_server.c": {
+    "mtime": 1775672542.704747,
+    "hash": "1d9d2fd691da378c1749ef811ff69483"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/webserver/handlers/static_files.c": {
+    "mtime": 1771514925.1936781,
+    "hash": "31069f52422951aa0b576f527d6583c7"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/webserver/handlers/api_lorawan.c": {
+    "mtime": 1775602772.8456922,
+    "hash": "e659d46fdfbfd52f2019ee85cdbed2c0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/webserver/handlers/auth.c": {
+    "mtime": 1771512054.7190292,
+    "hash": "5d82489984456e698b9cc3ffbfcc82b6"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/webserver/handlers/api_files.c": {
+    "mtime": 1771512054.71779,
+    "hash": "5cc6c1f124e1476591d86679a34534b3"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/webserver/handlers/handlers.h": {
+    "mtime": 1775672542.704747,
+    "hash": "c00a8e43d3e6cf49c6add983d1160f3c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/webserver/handlers/api_wifi.c": {
+    "mtime": 1771512054.7187455,
+    "hash": "141b3af4493d375a0b55bdbfdd57d8fc"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/webserver/handlers/api_system.c": {
+    "mtime": 1775602772.8460453,
+    "hash": "035b1c24f8ea3df1274ad21139c03a96"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/webserver/handlers/api_ota.c": {
+    "mtime": 1775739379.3133054,
+    "hash": "bf5b6e135990e9b50530fd97b3ef8e83"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/webserver/handlers/api_sensors.c": {
+    "mtime": 1775602772.8460453,
+    "hash": "7d38ebc027a3cfc1ef34e0c2b634d8f4"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/logs/log_buffer.c": {
+    "mtime": 1775602772.8433464,
+    "hash": "843d73ed84e9b1b96d1e7b6647cb9956"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/logs/log_buffer.h": {
+    "mtime": 1771512054.7149177,
+    "hash": "cfb65f85182b7ca107d0277c4e8832ca"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/alarm/alarm_manager.c": {
+    "mtime": 1775602772.8413463,
+    "hash": "34fa2e8d66eea6a25c30a01ce649c33f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/alarm/alarm_manager.h": {
+    "mtime": 1775602772.8423781,
+    "hash": "8f38cbafda364e762b579322fae78483"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/clock_sync/clock_sync.h": {
+    "mtime": 1775602772.8425915,
+    "hash": "a0616c7d7541d0af73a2b78478c8dd85"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/clock_sync/clock_sync.c": {
+    "mtime": 1775602772.8423781,
+    "hash": "a425468ff58de6b99b259e15bd34c092"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/sensors/sensor_manager.c": {
+    "mtime": 1775602772.8450618,
+    "hash": "540cdc61903f5a5dd31ae08427d4bf55"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/sensors/sht20_driver.c": {
+    "mtime": 1771516410.151145,
+    "hash": "7f8bba4c032c29f94ed579d2dec76b85"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/sensors/max6675_driver.c": {
+    "mtime": 1775602772.8450618,
+    "hash": "89138bb5e0442a36e8cccbf2f388efd1"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/sensors/am2315c_driver.h": {
+    "mtime": 1771516386.4571154,
+    "hash": "a69d263842a9df5c561c31b1ba40bf81"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/sensors/sht3x_driver.c": {
+    "mtime": 1771516421.016163,
+    "hash": "20b9582fa767982e1a961f8517fb67b6"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/sensors/sht3x_driver.h": {
+    "mtime": 1771516383.6811128,
+    "hash": "5e2a0ecaced7d19015679eb292707986"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/sensors/sensor_manager.h": {
+    "mtime": 1775602772.8450618,
+    "hash": "517845c7ec076c4ff553b4365d5da734"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/sensors/sht20_driver.h": {
+    "mtime": 1771516380.42611,
+    "hash": "fd7cf736e447eb21a00a854c3d56ed12"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/sensors/am2315c_driver.c": {
+    "mtime": 1771516436.9861948,
+    "hash": "0276a6843999b533dce5f9ff29dceb49"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/sensors/max6675_driver.h": {
+    "mtime": 1775602772.8450618,
+    "hash": "313c083200111cef5594cd598d3e46e7"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/display/oled_display.c": {
+    "mtime": 1776874594.584776,
+    "hash": "eef6eac3a22376644d3190a783da3d73"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/display/oled_display.h": {
+    "mtime": 1776875368.3988285,
+    "hash": "0662507aa43c2e92a44b3f849b3868a0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/payload/cayenne_lpp.h": {
+    "mtime": 1771516498.4603693,
+    "hash": "84451a92cae13c59ce9eb64bbe5816c1"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/payload/cayenne_lpp.c": {
+    "mtime": 1771516508.0584037,
+    "hash": "4872fe6bd337d0e857bec6b00a6a898c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/config/config_manager.c": {
+    "mtime": 1776087160.1401172,
+    "hash": "4ee948d39f8c3fc7ced9ce17f194da44"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/config/config_manager.h": {
+    "mtime": 1776087154.462022,
+    "hash": "52a0bb8c8f68acda698640f945a63454"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/include/esp_littlefs.h": {
+    "mtime": 1764879051.912476,
+    "hash": "f47d876c986185f08ddd373f51ba01f6"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/example/main/demo_esp_littlefs.c": {
+    "mtime": 1764879051.9307146,
+    "hash": "09cc39c8c2aaae284c4ae7e85de2f1a2"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/test/test_dir.c": {
+    "mtime": 1764879051.914288,
+    "hash": "eb511139ce3c6f3d41eea666e8589fd7"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/test/test_littlefs_common.h": {
+    "mtime": 1764879051.9147487,
+    "hash": "3507ae0d732982bea315913928b3b69c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/test/test_littlefs_static_partition.c": {
+    "mtime": 1764879051.9148765,
+    "hash": "f575193116ea85e38070771a24fd4483"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/test/test_littlefs_common.c": {
+    "mtime": 1764879051.914663,
+    "hash": "f3ff7bf4def4fb1e739a2a04cc412a3e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/test/test_benchmark.c": {
+    "mtime": 1764879051.914145,
+    "hash": "9446158747efc16671fd0805236988ae"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/test/test_littlefs.c": {
+    "mtime": 1764879051.9145389,
+    "hash": "e85adaee19c3da8d12020d47f5252b7e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs_esp_part.c": {
+    "mtime": 1764879051.9136658,
+    "hash": "af9f71b572ff75e455a6cd650a991390"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs_sdmmc.c": {
+    "mtime": 1764879051.9137652,
+    "hash": "02d2b732361bdb08c948662963d24fc8"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs_api.h": {
+    "mtime": 1764879051.9135575,
+    "hash": "729c46f687bd146c0b3d3ac8c18725c4"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/esp_littlefs.c": {
+    "mtime": 1764879051.9130268,
+    "hash": "340a577c0e1013520ff260ea4677428f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/lfs_config.h": {
+    "mtime": 1764879051.913424,
+    "hash": "cc6beada482bf95ca68ce1b1936f91df"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/lfs_config.c": {
+    "mtime": 1764879051.9132857,
+    "hash": "f83588cb9582361d4482a32c279f389c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/lfs_util.h": {
+    "mtime": 1764879051.9193923,
+    "hash": "571d377f194ea04b16428f3b2257adcd"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/lfs_util.c": {
+    "mtime": 1764879051.9192612,
+    "hash": "c564dc44fa3e18f4ddac4fb71a189950"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/lfs.h": {
+    "mtime": 1764879051.919143,
+    "hash": "10e9a150f1d9b45e9ac8a92cf1c57910"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/lfs.c": {
+    "mtime": 1764879051.9180422,
+    "hash": "898ce9a523a421f0053fd09ee60aef5d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/bd/lfs_rambd.c": {
+    "mtime": 1764879051.9201088,
+    "hash": "2d68da6ad96b39978608369e9e05908b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/bd/lfs_filebd.h": {
+    "mtime": 1764879051.9200208,
+    "hash": "35a099d57511febac3fb1e177458901c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/bd/lfs_rambd.h": {
+    "mtime": 1764879051.920204,
+    "hash": "4bc65ba33f4399bb456f6305b77ca758"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/bd/lfs_emubd.h": {
+    "mtime": 1764879051.9197814,
+    "hash": "479d8dd1e67f18ffea1caf5bb23af217"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/bd/lfs_filebd.c": {
+    "mtime": 1764879051.919891,
+    "hash": "8e4c494efb9a9c80a56809d3d5c74b72"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/bd/lfs_emubd.c": {
+    "mtime": 1764879051.9196343,
+    "hash": "8ef3110afdbec96a4dfaf7a0aa8d1f56"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/runners/test_runner.h": {
+    "mtime": 1764879051.921797,
+    "hash": "6f73375a0773fd2ef5d52c18a19d3e99"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/runners/test_runner.c": {
+    "mtime": 1764879051.9214287,
+    "hash": "fa336060ef6ee23560f6b291d52cb9fd"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/runners/bench_runner.c": {
+    "mtime": 1764879051.9208753,
+    "hash": "54f3472bee927995a997a7141a1bcbc1"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/runners/bench_runner.h": {
+    "mtime": 1764879051.921071,
+    "hash": "fb4d16c4d772c191b0cb71211cc29b09"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/code.py": {
+    "mtime": 1764879051.922545,
+    "hash": "a761275e380ac55a205e12eee6bc6328"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/plotmpl.py": {
+    "mtime": 1764879051.924417,
+    "hash": "ac69849e559c437a93d21f9f165a72a5"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/readmdir.py": {
+    "mtime": 1764879051.9248326,
+    "hash": "2e3cf5c6249845e4844f22b22d60699d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/readblock.py": {
+    "mtime": 1764879051.92469,
+    "hash": "1e338d53d68ba0dcf8bb64674fbae786"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/test.py": {
+    "mtime": 1764879051.9261668,
+    "hash": "c7073b0b6188ab6d4020b50ad2e283b9"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/watch.py": {
+    "mtime": 1764879051.9265935,
+    "hash": "98fdaee90b9cc71f580906ad344c0f0d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/stack.py": {
+    "mtime": 1764879051.9251766,
+    "hash": "124ac14980fd7c166b0ee8bb0ea8a973"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/tailpipe.py": {
+    "mtime": 1764879051.9257247,
+    "hash": "05d2c009c24a85af76650fc5bc113b18"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/tracebd.py": {
+    "mtime": 1764879051.9264486,
+    "hash": "56a1df45d93521bd07462a481b173cde"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/data.py": {
+    "mtime": 1764879051.9229953,
+    "hash": "2490ccd0eae92c3548c7384e689aaa00"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/cov.py": {
+    "mtime": 1764879051.9227688,
+    "hash": "e6dc20cfc5bb52ccafed892e8f4793fd"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/perfbd.py": {
+    "mtime": 1764879051.9236903,
+    "hash": "e6faec10761d35b473e75164988061de"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/plot.py": {
+    "mtime": 1764879051.92409,
+    "hash": "aa8527a45cde10a0f4922afa1d6e3bed"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/structs.py": {
+    "mtime": 1764879051.925382,
+    "hash": "2512d4a6ca243bdc30034e245de73908"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/bench.py": {
+    "mtime": 1764879051.9222016,
+    "hash": "5a21f1dabfbcc56f22daa8cc3401b7be"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/perf.py": {
+    "mtime": 1764879051.9233222,
+    "hash": "6929dbfc00f825881ee1118bb3af3c0a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/teepipe.py": {
+    "mtime": 1764879051.9258177,
+    "hash": "5b85dc14279d4e5ba2828fba0f0eb45b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/prettyasserts.py": {
+    "mtime": 1764879051.9245949,
+    "hash": "2f49218cff9a003093989665e7d2edf3"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/readtree.py": {
+    "mtime": 1764879051.9249668,
+    "hash": "7cace1d82b195b7db9de00232122e7f9"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/changeprefix.py": {
+    "mtime": 1764879051.9223483,
+    "hash": "8cf1839c3db4b31dc5e881c3be53364a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/scripts/summary.py": {
+    "mtime": 1764879051.9256034,
+    "hash": "15df3e6b621e2b85a350ba04d893517a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/template/ModuleTemplate.cpp": {
+    "mtime": 1771523043.5578568,
+    "hash": "c269db80b54cf5a6ee6111f262878382"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/template/ModuleTemplate.h": {
+    "mtime": 1771523043.5579073,
+    "hash": "0be80fd1db0aecd237a21b28f2c68727"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/SSTV_Image_Converter/ImageConverter.py": {
+    "mtime": 1771523043.557532,
+    "hash": "282acbcfd63f7478a367e42b41e3d1ba"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/SX126x_Spectrum_Scan/SpectrumScan.py": {
+    "mtime": 1771523043.5576966,
+    "hash": "b0c703b6c928b227e91033c94e91b363"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/test/unit/include/HardwareEmulation.hpp": {
+    "mtime": 1771523043.558524,
+    "hash": "f838d116a1853fa722e383c0e2719a7a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/test/unit/include/TestHal.hpp": {
+    "mtime": 1771523043.5585845,
+    "hash": "f963a5b3051a0f49384cc0de7950941f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/test/unit/tests/TestCalculateTimeOnAir.cpp": {
+    "mtime": 1771523043.5586643,
+    "hash": "1cb9df6251ec87ef16a7de86044f5ef2"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/test/unit/tests/main.cpp": {
+    "mtime": 1771523043.5587568,
+    "hash": "778a5b5f0657164cfc28faf525a37375"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/test/unit/tests/TestModule.cpp": {
+    "mtime": 1771523043.558716,
+    "hash": "00b98c6c0ae7a9d118459aceacc7269d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/test/SX126x/PiHal.h": {
+    "mtime": 1771523043.5580611,
+    "hash": "e0315847d60ba357fd826dcf3c70d9eb"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/test/SX126x/main.cpp": {
+    "mtime": 1771523043.5581608,
+    "hash": "01419b1a8e921b4f6c6adb3a2a14b80f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/Hal.h": {
+    "mtime": 1771523043.5115645,
+    "hash": "3245e13096f507aa725704b4d2e9f2c0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/Hal.cpp": {
+    "mtime": 1771523043.5115159,
+    "hash": "b68ccebac7f4b34498c5f12d4da74905"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/RadioLib.h": {
+    "mtime": 1771523043.5117855,
+    "hash": "262c69e2e082292842cdc81b85bde719"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/TypeDef.h": {
+    "mtime": 1771523043.5118613,
+    "hash": "9acbe4ff103ac76e41dd10d094a1f449"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/Module.h": {
+    "mtime": 1771523043.511733,
+    "hash": "94e43cda2297d8cf6e73f8792618ebb0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/BuildOpt.h": {
+    "mtime": 1771523043.5114305,
+    "hash": "4a117342a15455ccd5f3a890021731cb"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/Module.cpp": {
+    "mtime": 1771523043.5116398,
+    "hash": "c6ed210c12870e312f42a712bbfe794e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/BuildOptUser.h": {
+    "mtime": 1771523043.51148,
+    "hash": "4621b986b1774e322779ac0f55ff64df"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1278.h": {
+    "mtime": 1771523043.518709,
+    "hash": "6bd8e631165197070cf4b9c136e30c3b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1278.cpp": {
+    "mtime": 1771523043.5186281,
+    "hash": "b135364d6d1c03b0d17833e62faa2644"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX127x.h": {
+    "mtime": 1771523043.5191429,
+    "hash": "b9422bfc1d6452079e4a47a034e84c67"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1273.h": {
+    "mtime": 1771523043.5183697,
+    "hash": "75d56212ccd26f65b6a1d5623e17ae93"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX127x.cpp": {
+    "mtime": 1771523043.5189695,
+    "hash": "94ba36f3e13e01c4dd4054807eb6d836"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1276.h": {
+    "mtime": 1771523043.5184593,
+    "hash": "8ecbc6b47d6a05f97fae167a5fdf5a1e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1273.cpp": {
+    "mtime": 1771523043.5183268,
+    "hash": "38f169cedad875ce2218a0e79a9f2fd0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1276.cpp": {
+    "mtime": 1771523043.5184126,
+    "hash": "729b422566f48eea82b52d17637848eb"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1279.cpp": {
+    "mtime": 1771523043.5187511,
+    "hash": "b196ecd85dabac6fd6bb8c4684540a90"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1279.h": {
+    "mtime": 1771523043.5188024,
+    "hash": "c0389f1c3107cd4db034393639caf0bc"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1272.h": {
+    "mtime": 1771523043.5182807,
+    "hash": "77d377ad8d2e8adfd6fe2ca6f6ceba5a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1277.h": {
+    "mtime": 1771523043.5185528,
+    "hash": "262e2f93064235e7d4e30dd140592de0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1277.cpp": {
+    "mtime": 1771523043.5185041,
+    "hash": "b3e918fe6b69eb03ccdf9261242a1615"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX127x/SX1272.cpp": {
+    "mtime": 1771523043.5182037,
+    "hash": "66c32ae5d6462afaff7f71221f6cce37"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX1262.cpp": {
+    "mtime": 1771523043.5172818,
+    "hash": "60af969aae105644a7c431f37ca2717e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX126x_commands.h": {
+    "mtime": 1771523043.5179594,
+    "hash": "9794c982de659b1d0d346c06eef6324a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX126x_registers.h": {
+    "mtime": 1771523043.5181158,
+    "hash": "fa2afddbe5506e4bfd0a378ee8b7ab69"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/STM32WLx_Module.h": {
+    "mtime": 1771523043.517169,
+    "hash": "bdbc568c58880fa128f7ca3c5a067148"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX1261.h": {
+    "mtime": 1771523043.517239,
+    "hash": "c09fb5235943bca85186be4fae66ba22"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX126x_LR_FHSS.cpp": {
+    "mtime": 1771523043.517817,
+    "hash": "8cb2069a3e8ad4719df31fff44037616"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX1268.cpp": {
+    "mtime": 1771523043.5173802,
+    "hash": "e5d7cba6588f8c6daf2b9e00ff559e36"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX126x_commands.cpp": {
+    "mtime": 1771523043.5178778,
+    "hash": "be31c977d83d0c858661c56a78baf6ae"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX1261.cpp": {
+    "mtime": 1771523043.5172055,
+    "hash": "f0403b52b71d861515bf3e42a1664594"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/STM32WLx.h": {
+    "mtime": 1771523043.5170906,
+    "hash": "2d587c4ed17562db89ccdcc9d4835c5d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/STM32WLx_Module.cpp": {
+    "mtime": 1771523043.5171342,
+    "hash": "1c6460393a8741832b7e7523861c6b83"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX126x_config.cpp": {
+    "mtime": 1771523043.5180547,
+    "hash": "c8f2b9fee0d328ab4072fc8706f57458"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX126x.h": {
+    "mtime": 1771523043.517734,
+    "hash": "b9dd90188127e35c06072e563e22b2f4"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX126x.cpp": {
+    "mtime": 1771523043.5175989,
+    "hash": "7721fdabec140238ad61903a33028766"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/STM32WLx.cpp": {
+    "mtime": 1771523043.5170376,
+    "hash": "92c432aec82cd056960cc18a94c2d2e6"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX1262.h": {
+    "mtime": 1771523043.5173354,
+    "hash": "68e347d57f8629971f6c28f96da33b6f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/SX1268.h": {
+    "mtime": 1771523043.5174398,
+    "hash": "62e03a273d4f42f8133fb7500fb42b17"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX126x/patches/SX126x_patch_scan.h": {
+    "mtime": 1771523043.5205636,
+    "hash": "15c9a0ca3b8ca849aa7360aae00a202b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/RFM2x/RFM23.h": {
+    "mtime": 1771523043.5167706,
+    "hash": "a150bdcd7ff253f856d3e7c85c169b04"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/RFM2x/RFM22.h": {
+    "mtime": 1771523043.5167334,
+    "hash": "0adb5edfda122ec9aad718442971a753"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX128x/SX128x.cpp": {
+    "mtime": 1771523043.5195992,
+    "hash": "23a00c907e7b3dbd219448fff9ab8ec4"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX128x/SX128x.h": {
+    "mtime": 1771523043.5197556,
+    "hash": "6c5ef7be9b651640638dfe201c0e53fb"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX128x/SX1280.cpp": {
+    "mtime": 1771523043.5192711,
+    "hash": "c5d96de4dcdbf56200cac285ea7f564c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX128x/SX1282.cpp": {
+    "mtime": 1771523043.5194132,
+    "hash": "04ad69a5f856670dcc840ef19e870850"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX128x/SX1280.h": {
+    "mtime": 1771523043.5193133,
+    "hash": "1c0607e01b58a1ffe641e942f2c56558"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX128x/SX1281.h": {
+    "mtime": 1771523043.5193763,
+    "hash": "22bad14e4156a35d6b32b6e122b3f755"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX128x/SX1281.cpp": {
+    "mtime": 1771523043.5193434,
+    "hash": "67833a53afe70306257866b1169cdf07"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX128x/SX1282.h": {
+    "mtime": 1771523043.5194495,
+    "hash": "c2422ecd1c690e7769f65b42911ec1b5"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR1121.cpp": {
+    "mtime": 1771523043.5153904,
+    "hash": "d0b2ec12fb91fb710c2a51e5e8f1ae0a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR1110.h": {
+    "mtime": 1771523043.5152571,
+    "hash": "1e3948f6c07abc833cd3920f65485a62"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR11x0_gnss.cpp": {
+    "mtime": 1771523043.5162027,
+    "hash": "91ea4110d4be8624e165c836e9a551c5"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR11x0_registers.h": {
+    "mtime": 1771523043.5162518,
+    "hash": "eb2ceb24463552a56cbc097126d83e32"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR11x0.h": {
+    "mtime": 1771523043.5157626,
+    "hash": "a0334b69ff6d5bb7bbb16ef14ca54858"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR11x0_types.h": {
+    "mtime": 1771523043.516302,
+    "hash": "db826b65218a1e89a2acb91b4399b6db"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR1110.cpp": {
+    "mtime": 1771523043.5152056,
+    "hash": "0891e88f9c889ac292876880b2690565"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR11x0_crypto.cpp": {
+    "mtime": 1771523043.5160766,
+    "hash": "f61a04ec16ea45ed30af35a2cd834200"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR1120.h": {
+    "mtime": 1771523043.5153563,
+    "hash": "930b88d17d3531e0fd5a79f57cd4de94"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR1120.cpp": {
+    "mtime": 1771523043.5153046,
+    "hash": "1f3fecaf34482ee8f0a645c88c124111"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR11x0_commands.cpp": {
+    "mtime": 1771523043.515867,
+    "hash": "0140d97f9d3a92b7207310b99b7c12c5"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR11x0_firmware.h": {
+    "mtime": 1771523043.5161128,
+    "hash": "5c5156da257877f342a6569057aad919"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR11x0_wifi.cpp": {
+    "mtime": 1771523043.516363,
+    "hash": "bf0b019f0be89254d61fcc8805d4321b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR11x0.cpp": {
+    "mtime": 1771523043.515598,
+    "hash": "8bc3b24ecf5f45cf15c664f157dc6eb7"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR11x0_commands.h": {
+    "mtime": 1771523043.5160143,
+    "hash": "5c823f5bdee6876923ee0ed7872de6ea"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/LR1121.h": {
+    "mtime": 1771523043.5154314,
+    "hash": "d20107d6749e873809c673be4c4d689f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1120_transceiver_0201.h": {
+    "mtime": 1771523043.5534234,
+    "hash": "72176b0adb0af909005125991665b98a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1120_transceiver_0101.h": {
+    "mtime": 1771523043.5464234,
+    "hash": "80863a2bbc471011114c2f291cb34003"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1110_transceiver_0307.h": {
+    "mtime": 1771523043.5354235,
+    "hash": "638a2630f5b1725fcb78a34ef10467d0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1110_transceiver_0303.h": {
+    "mtime": 1771523043.5224235,
+    "hash": "8cacf188a636055e04a3e5103a841d8c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1121_transceiver_0103.h": {
+    "mtime": 1771523043.5561848,
+    "hash": "a58e986a26952b89e6d8d78e57266c55"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1120_transceiver_0102.h": {
+    "mtime": 1771523043.55104,
+    "hash": "69f44326508a4441e880ae08933958a8"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1110_transceiver_0306.h": {
+    "mtime": 1771523043.5324235,
+    "hash": "56150331281ef14906654c4a3e4bab69"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1110_transceiver_0308.h": {
+    "mtime": 1771523043.5394235,
+    "hash": "127cd51c707f6f657b9fda65a9818aab"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1110_transceiver_0304.h": {
+    "mtime": 1771523043.5254235,
+    "hash": "2beadbfa3ca69a9779a685fdad96e897"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1110_transceiver_0305.h": {
+    "mtime": 1771523043.5294235,
+    "hash": "eab7680619963985013da3b3b05b84c3"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1110_transceiver_0401.h": {
+    "mtime": 1771523043.5424235,
+    "hash": "59052681cf5abc5453918b4e1bd49560"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LR11x0/firmware/lr1121_transceiver_0102.h": {
+    "mtime": 1771523043.5551858,
+    "hash": "0de206adff785c784cedf6ee7222094c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/CC1101/CC1101.h": {
+    "mtime": 1771523043.5149944,
+    "hash": "9c0edec7c1390341a3cdbfdf4b045149"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/CC1101/CC1101.cpp": {
+    "mtime": 1771523043.514834,
+    "hash": "6b9b3999ded9d8e5ee785c292784a6e8"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/RF69/RF69.cpp": {
+    "mtime": 1771523043.5165005,
+    "hash": "fedefe19b3e34b193fa441fa05878867"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/RF69/RF69.h": {
+    "mtime": 1771523043.5166616,
+    "hash": "9bab5ca947481347192a96c7a0e856e9"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX123x/SX1233.h": {
+    "mtime": 1771523043.516965,
+    "hash": "c64d3b82d5e17b50a5af0539d35c3f29"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX123x/SX1233.cpp": {
+    "mtime": 1771523043.516928,
+    "hash": "b11c41996b96fc2b6c2f2ddcb80675aa"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX123x/SX1231.cpp": {
+    "mtime": 1771523043.5168355,
+    "hash": "3a5f37317fd31326c280afc5cfabdca2"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/SX123x/SX1231.h": {
+    "mtime": 1771523043.5168812,
+    "hash": "33f541f29d2dd07e7207d7ec3f844c57"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/nRF24/nRF24.h": {
+    "mtime": 1771523043.5204768,
+    "hash": "07942f3ad03915a586331df8dea21e2d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/nRF24/nRF24.cpp": {
+    "mtime": 1771523043.520378,
+    "hash": "ddafe8876b053ba11830b7e93ab91293"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/Si443x/Si4430.h": {
+    "mtime": 1771523043.519868,
+    "hash": "5e491fb628aec304e16f298b6d97033e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/Si443x/Si4430.cpp": {
+    "mtime": 1771523043.5198293,
+    "hash": "26da8dc5db947c86de9fbcefa5da239e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/Si443x/Si4432.cpp": {
+    "mtime": 1771523043.519973,
+    "hash": "9e0591b0d8e8d76974437bab8b319249"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/Si443x/Si4432.h": {
+    "mtime": 1771523043.5200121,
+    "hash": "c955942d0fff8de81ecb7c9cd3d05d3d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/Si443x/Si4431.cpp": {
+    "mtime": 1771523043.5199015,
+    "hash": "341d3510933bf5d9e0ee858cfb3c19a8"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/Si443x/Si443x.h": {
+    "mtime": 1771523043.5202675,
+    "hash": "5ccf3ee29f960356c5d11b0b83911099"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/Si443x/Si443x.cpp": {
+    "mtime": 1771523043.5201006,
+    "hash": "d18c5b3bffac78188b46e963810cba96"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/Si443x/Si4431.h": {
+    "mtime": 1771523043.5199382,
+    "hash": "d9ff0a7e496511bf29e8f8d976a1b938"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LLCC68/LLCC68.cpp": {
+    "mtime": 1771523043.5150898,
+    "hash": "191f526bead5c1ea62281baa9b42d9ae"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/modules/LLCC68/LLCC68.h": {
+    "mtime": 1771523043.5151432,
+    "hash": "e9937795b5235a082b7773840c12ec9b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/hal/RPiPico/PicoHal.cpp": {
+    "mtime": 1771523043.5573294,
+    "hash": "16bcb122449f6d2afc936b5424b6ec2d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/hal/RPiPico/PicoHal.h": {
+    "mtime": 1771523043.5573907,
+    "hash": "f2e45c88f3f5fbfe35132065477f05a0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/hal/Arduino/ArduinoHal.h": {
+    "mtime": 1771523043.5571675,
+    "hash": "f8e1186e17ee91e3c9b0b861a29efc90"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/hal/Arduino/ArduinoHal.cpp": {
+    "mtime": 1771523043.5571034,
+    "hash": "4593fcae22dad994c229f01ccbd2af8a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/hal/RPi/PiHal.h": {
+    "mtime": 1771523043.5572553,
+    "hash": "d40d29f4e3be7f3b8ce4d97e75ec2c03"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/utils/CRC.cpp": {
+    "mtime": 1771523043.5119326,
+    "hash": "3c3f76ba8b78405dba139e500988826f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/utils/Utils.h": {
+    "mtime": 1771523043.5122905,
+    "hash": "01d0d7f09aeb9e5f84d2dc2717925290"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/utils/CRC.h": {
+    "mtime": 1771523043.5119746,
+    "hash": "ca63d7bb4279776984024550737cf0b6"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/utils/Cryptography.cpp": {
+    "mtime": 1771523043.5120287,
+    "hash": "96202abed201baa66b00da234d9727b2"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/utils/FEC.h": {
+    "mtime": 1771523043.512198,
+    "hash": "b0d2a1b36abb81fa8b200f8ecc9441bb"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/utils/FEC.cpp": {
+    "mtime": 1771523043.5121417,
+    "hash": "15afc972e3e9491b702a4b83899493cc"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/utils/Cryptography.h": {
+    "mtime": 1771523043.512084,
+    "hash": "c5c712935ec044d5d242640b0e203e2e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/utils/Utils.cpp": {
+    "mtime": 1771523043.512248,
+    "hash": "2cef3ce1583f1976b2dd7a4dc14bb1ea"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/FSK4/FSK4.h": {
+    "mtime": 1771523043.513006,
+    "hash": "94ced104911473acac622680d2c0a002"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/FSK4/FSK4.cpp": {
+    "mtime": 1771523043.512965,
+    "hash": "46f22596792c18e487d068d008df9726"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/Print/Print.cpp": {
+    "mtime": 1771523043.5144062,
+    "hash": "277dbc747a1c35e9f052c56b995daae7"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/Print/Print.h": {
+    "mtime": 1771523043.5144458,
+    "hash": "f67c31d032a3591b0d6fffdc71858e69"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/Print/ITA2String.cpp": {
+    "mtime": 1771523043.5143123,
+    "hash": "a1e1bd77b95d398737d875ffacf6f894"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/Print/ITA2String.h": {
+    "mtime": 1771523043.5143554,
+    "hash": "4ee275ad40bfa44914f2afd898f71665"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/AFSK/AFSK.cpp": {
+    "mtime": 1771523043.5123625,
+    "hash": "92955ab3d64b3f2990d5dabe70423520"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/AFSK/AFSK.h": {
+    "mtime": 1771523043.512408,
+    "hash": "4525534a78ee90c3707c993d3592745a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/Morse/Morse.h": {
+    "mtime": 1771523043.5139034,
+    "hash": "e76ae8c91af014f7c349d6ebd64cadda"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/Morse/Morse.cpp": {
+    "mtime": 1771523043.5138483,
+    "hash": "b06486540450588106896c105a77e7ea"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/Pager/Pager.cpp": {
+    "mtime": 1771523043.5140016,
+    "hash": "4c5f3affc20209065a83bdb8274d7f33"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/Pager/Pager.h": {
+    "mtime": 1771523043.5140631,
+    "hash": "fce03411ebce076ab53d7d855b06d432"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/SSTV/SSTV.h": {
+    "mtime": 1771523043.5146825,
+    "hash": "691585861b942dd579445998b2228af3"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/SSTV/SSTV.cpp": {
+    "mtime": 1771523043.5146267,
+    "hash": "e2f912680026e0f288a9ab20d139f1f4"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/Hellschreiber/Hellschreiber.cpp": {
+    "mtime": 1771523043.5130613,
+    "hash": "8994de8252e70c118f228053245f03e9"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/Hellschreiber/Hellschreiber.h": {
+    "mtime": 1771523043.5131087,
+    "hash": "48984813b263034cd1330ac6b19cecee"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/APRS/APRS.h": {
+    "mtime": 1771523043.5125432,
+    "hash": "813146b79b5c681401897f8e6ecaf25f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/APRS/APRS.cpp": {
+    "mtime": 1771523043.5124862,
+    "hash": "8d9434048f974a700f0b7b3d3eeefd31"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/BellModem/BellModem.cpp": {
+    "mtime": 1771523043.5127656,
+    "hash": "70b9b829b7858bc1ed8811faff50eff6"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/BellModem/BellModem.h": {
+    "mtime": 1771523043.512809,
+    "hash": "a2dda9caac15c1b2210dde2b76e54c66"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/ExternalRadio/ExternalRadio.cpp": {
+    "mtime": 1771523043.5128663,
+    "hash": "872bb3f4df24dfd0c998cde334ad2d5d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/ExternalRadio/ExternalRadio.h": {
+    "mtime": 1771523043.5129073,
+    "hash": "c474f950b570d9e6655791f1a544e8e9"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/LoRaWAN/LoRaWAN.cpp": {
+    "mtime": 1771523043.513301,
+    "hash": "4a54e64e8493ba6a50913715d5e55882"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/LoRaWAN/LoRaWAN.h": {
+    "mtime": 1771523043.513696,
+    "hash": "11c853a31c926ab7482da55e398fb92a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/LoRaWAN/LoRaWANBands.cpp": {
+    "mtime": 1771523043.513773,
+    "hash": "5ab0889abe30757c9b684504dadb2628"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/RTTY/RTTY.cpp": {
+    "mtime": 1771523043.5145068,
+    "hash": "19f7c5af5686dbbce85cba3873806587"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/RTTY/RTTY.h": {
+    "mtime": 1771523043.514549,
+    "hash": "3083beeaa2a85ebedfd2f1daa9c4da08"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/AX25/AX25.cpp": {
+    "mtime": 1771523043.5126328,
+    "hash": "dbaf0ed7e0e7dba9edcf506a36f4cbf4"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/AX25/AX25.h": {
+    "mtime": 1771523043.5126996,
+    "hash": "2282801b20710defabf820f4fb724ae9"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/PhysicalLayer/PhysicalLayer.cpp": {
+    "mtime": 1771523043.5141473,
+    "hash": "f7871ab22528170ffa3cdfa1e39f5504"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/src/protocols/PhysicalLayer/PhysicalLayer.h": {
+    "mtime": 1771523043.514245,
+    "hash": "c9ebe0d56f83e7927b9a554faba6d40c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/AFSK/AFSK_Imperial_March/melody.h": {
+    "mtime": 1771523043.5703835,
+    "hash": "73234375c0b2d3d96d699c445437017d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/Raspberry/main.cpp": {
+    "mtime": 1771523043.5645323,
+    "hash": "da58dfacd79881ce42003fa55544d781"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/ESP-IDF/main/EspHal.h": {
+    "mtime": 1771523043.5649843,
+    "hash": "aac4bbb76f85d2df1423697a927a48ea"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/ESP-IDF/main/main.cpp": {
+    "mtime": 1771523043.5650666,
+    "hash": "794691e76c805a9481c987948554e8de"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/Tock/main.cpp": {
+    "mtime": 1771523043.564764,
+    "hash": "30b15a21b3a6035a5cf8b3a1ae511b13"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/Pico/main.cpp": {
+    "mtime": 1771523043.5642774,
+    "hash": "28afff3bd53de8843f11b7ecbbb60302"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/LoRaWAN/LoRaWAN_Reference/config.h": {
+    "mtime": 1771523043.565861,
+    "hash": "35449957ab1b1b1152dfb4dd6c567801"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/LoRaWAN/LoRaWAN_Class_C/config.h": {
+    "mtime": 1771523043.5655906,
+    "hash": "f84ce1148921a073dc707cc3c2e8c3ca"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/LoRaWAN/LoRaWAN_ABP/configABP.h": {
+    "mtime": 1771523043.5654607,
+    "hash": "5a64409d5286870efa4911fe6bd83404"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/LoRaWAN/LoRaWAN_TS_Packages/lorawan.h": {
+    "mtime": 1771523043.5663147,
+    "hash": "f828f99c9d8ee531231a405f8c41e314"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/LoRaWAN/LoRaWAN_TS_Packages/LoRaWAN_TS009.h": {
+    "mtime": 1771523043.5661652,
+    "hash": "b763d48d997b8921278daf34597517f7"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/LoRaWAN/LoRaWAN_TS_Packages/config.h": {
+    "mtime": 1771523043.5662699,
+    "hash": "211eead7727f167e78e5755412174ebe"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/LoRaWAN/LoRaWAN_Starter/config.h": {
+    "mtime": 1771523043.5659773,
+    "hash": "473ebe02237cef9ef3565f46f162134a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/LoRaWAN/LoRaWAN_Multicast/config.h": {
+    "mtime": 1771523043.565721,
+    "hash": "0f2467578bcb58cf863fef29368133d2"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/include/led_strip_spi.h": {
+    "mtime": 1771947277.7628715,
+    "hash": "772e62c40b05b28a3829144b37191e41"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/include/led_strip_types.h": {
+    "mtime": 1771947277.762916,
+    "hash": "d1de0ee5c5486c68b8f01bc4b82ca224"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/include/led_strip.h": {
+    "mtime": 1771947277.7627876,
+    "hash": "2bb8d6621b612ee9b403bd5031473b97"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/include/led_strip_rmt.h": {
+    "mtime": 1771947277.7628336,
+    "hash": "5772cce7f5b99d44946c441fbf4dd17f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/interface/led_strip_interface.h": {
+    "mtime": 1771947277.7629812,
+    "hash": "db4dd197021e2f38d57bbb47d5d75fb2"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/src/led_strip_rmt_encoder.h": {
+    "mtime": 1771947277.7632103,
+    "hash": "dd2f2551e4125e8255d0572eef0bc241"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/src/led_strip_rmt_encoder.c": {
+    "mtime": 1771947277.763161,
+    "hash": "e6684821729a170a97da8f4282d6743c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/src/led_strip_rmt_dev.c": {
+    "mtime": 1771947277.7631028,
+    "hash": "e3d2eacc36b8a6f8ae9e94e4e266d2e7"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/src/led_strip_api.c": {
+    "mtime": 1771947277.7630439,
+    "hash": "0589cad37fad701c1e3c238d97c0d6d9"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/src/led_strip_spi_dev.c": {
+    "mtime": 1771947277.7632754,
+    "hash": "a651fb08e2fb8153767065066dd289f7"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/examples/led_strip_spi_ws2812/main/led_strip_spi_ws2812_main.c": {
+    "mtime": 1771947277.763605,
+    "hash": "ca4ba8071a4668c4fd43b38f53a1f58b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/examples/led_strip_rmt_ws2812/main/led_strip_rmt_ws2812_main.c": {
+    "mtime": 1771947277.763731,
+    "hash": "8f2228df86f2758a9e41a8b56ee684e7"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/README.md": {
+    "mtime": 1775602772.8339405,
+    "hash": "3fe46bcc333019f61f582cc320cee5cc"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/CMakeLists.txt": {
+    "mtime": 1771514613.533019,
+    "hash": "830f31c5f5c8347f157acd7d5cc7947e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/CLAUDE.md": {
+    "mtime": 1776876024.133617,
+    "hash": "94b55b947292612aadb82a1db125ea28"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/BUILDING.md": {
+    "mtime": 1776878198.2558596,
+    "hash": "7a45bb009a719340d1d0edb3f56b6b15"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/GRAPHIFY.MD": {
+    "mtime": 1777984627.559755,
+    "hash": "7dc20cd938d3ead9cad0178486d46fc0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/idf_component.yml": {
+    "mtime": 1775602772.8432636,
+    "hash": "7bd8dd7b2318c19c49f79164fee63d1d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/CMakeLists.txt": {
+    "mtime": 1777050903.356915,
+    "hash": "14e48f66450bdd10cf38c7a4634fdb79"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/index.html": {
+    "mtime": 1775602772.8470204,
+    "hash": "a3d90b1d5ef124be284d0f96e584fb36"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/tasks.html": {
+    "mtime": 1775602772.848383,
+    "hash": "e2647e8455235e1a04c95b7d7c8c3b8e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/sensors.html": {
+    "mtime": 1775602772.848383,
+    "hash": "242efe2ea0e7d52425c9114a56c92c51"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/system.html": {
+    "mtime": 1771512054.7235913,
+    "hash": "bfa119ee7e742d128a9e842967be70a2"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/config.html": {
+    "mtime": 1775746275.3066711,
+    "hash": "88c88b45874335063a9be0a9dcb9920f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/files.html": {
+    "mtime": 1771512054.7230785,
+    "hash": "758adfafdccade898cab917b2a0597c8"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/lorawan.html": {
+    "mtime": 1771514851.4847448,
+    "hash": "3d9116f1f052852b4bcafb134faa231d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/tabs/ota.html": {
+    "mtime": 1775739378.662288,
+    "hash": "cb56ede9b68fe46e044fa1803a7e3804"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/idf_component.yml": {
+    "mtime": 1764879051.911316,
+    "hash": "fad2096c886e81cc433bb00c3b2b480b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/README.md": {
+    "mtime": 1764879051.9111578,
+    "hash": "eba9ea573687c93471570e2cd33714f0"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/image-building-requirements.txt": {
+    "mtime": 1764879051.9113877,
+    "hash": "8b7042fddce86e53ae66371dcd064ae3"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/CMakeLists.txt": {
+    "mtime": 1764879051.9106297,
+    "hash": "53272cb344c902db1c4822a6de7f4a42"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/example/README.md": {
+    "mtime": 1764879051.9121358,
+    "hash": "e97b7bc42965d8984f11d8d170e25ba1"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/example/CMakeLists.txt": {
+    "mtime": 1764879051.9119625,
+    "hash": "f0efc13466061dd87a316075ad5a51f5"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/example/flash_data/example.txt": {
+    "mtime": 1764879051.9303715,
+    "hash": "00bdedaa72e96fab1dd31fb53b00a750"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/example/main/CMakeLists.txt": {
+    "mtime": 1764879051.9305336,
+    "hash": "3a5f61146875e09729b164b65a75bde9"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/test/CMakeLists.txt": {
+    "mtime": 1764879051.9139276,
+    "hash": "1cd10b432544f011cd0a4d6bcdbd9220"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/README.md": {
+    "mtime": 1764879051.9171233,
+    "hash": "a8651a1a37d14ce74ac87157218c7c5f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/SPEC.md": {
+    "mtime": 1764879051.9174626,
+    "hash": "a01a63cb533773a72b0863692a3fa9a6"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/LICENSE.md": {
+    "mtime": 1764879051.9167185,
+    "hash": "74ca5028bac28833a36ec76919166721"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/src/littlefs/DESIGN.md": {
+    "mtime": 1764879051.9163768,
+    "hash": "673a416add5175d769e52eb2d8194427"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/testdir/test1.txt": {
+    "mtime": 1764879051.9153519,
+    "hash": "5a105e8b9d40e1329780d62ea2265d8a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/testdir/test2.txt": {
+    "mtime": 1764879051.9154181,
+    "hash": "ad0234829205b9033196ba818f7a872b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/testdir/pangram.txt": {
+    "mtime": 1764879051.9152777,
+    "hash": "9e107d9d372bb6826bd81d3542a419d6"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/joltwallet__littlefs/testdir/test_folder/lorem_ipsum.txt": {
+    "mtime": 1764879051.9155605,
+    "hash": "495347bbce33c4733bee7ef6b10b55b3"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/CONTRIBUTING.md": {
+    "mtime": 1771523043.5101948,
+    "hash": "37245556a68edbd2f927225ef013aeea"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/keywords.txt": {
+    "mtime": 1771523043.5107865,
+    "hash": "8a511e32a56dd1e79fe74d6e8e91e29f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/idf_component.yml": {
+    "mtime": 1771523043.5107186,
+    "hash": "a9940db55676d48deb2152101c577e9b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/CODE_OF_CONDUCT.md": {
+    "mtime": 1771523043.5101302,
+    "hash": "ded716b06732808607bb20e71f48fe58"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/README.md": {
+    "mtime": 1771523043.5106363,
+    "hash": "793df3ed7426dd592b386d17938ec55e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/CMakeLists.txt": {
+    "mtime": 1771523043.5100846,
+    "hash": "0bdfc29c07b49b76c8f8f48edde00b05"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/SECURITY.md": {
+    "mtime": 1771523043.510676,
+    "hash": "b2f6485ea39c5c6df6331a6380b24f03"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/license.txt": {
+    "mtime": 1771523043.5109015,
+    "hash": "ffcaa8d74eb94763c74e626d0ae1680c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/test/unit/CMakeLists.txt": {
+    "mtime": 1771523043.5583842,
+    "hash": "1ba2b1a3224aa9f516c39743822779ca"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/test/SX126x/CMakeLists.txt": {
+    "mtime": 1771523043.5580144,
+    "hash": "4f557a0d7354e9945163872aac66ca31"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/Raspberry/CMakeLists.txt": {
+    "mtime": 1771523043.5644195,
+    "hash": "759ab1d9991abdb385fcadc6666fb3c9"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/ESP-IDF/README.md": {
+    "mtime": 1771523043.5640507,
+    "hash": "d75013fe06062dac0719edf5b55085f1"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/ESP-IDF/CMakeLists.txt": {
+    "mtime": 1771523043.564012,
+    "hash": "4fab6961a6a06c583a107d9e44a9492e"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/ESP-IDF/main/idf_component.yml": {
+    "mtime": 1771523043.565025,
+    "hash": "40c3e6bdfc98df16aa3227a0a4eaa5fc"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/ESP-IDF/main/CMakeLists.txt": {
+    "mtime": 1771523043.5649152,
+    "hash": "43b420de1dbab14a399835cbf33582ac"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/Tock/README.md": {
+    "mtime": 1771523043.564679,
+    "hash": "2804626340a99fa3d7c649c9c38e9b40"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/Tock/CMakeLists.txt": {
+    "mtime": 1771523043.564636,
+    "hash": "4e6d289e7dae77b86c706c83606641e1"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/NonArduino/Pico/CMakeLists.txt": {
+    "mtime": 1771523043.564168,
+    "hash": "99e44493bfb55810cecfb04581d09bee"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/LoRaWAN/README.md": {
+    "mtime": 1771523043.55889,
+    "hash": "e1cdda255c487fdfd206ad9f89092046"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/examples/LoRaWAN/LoRaWAN_Starter/notes.md": {
+    "mtime": 1771523043.5660815,
+    "hash": "0c9d472a2cbf3e2aca2dfdce96f877f9"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/idf_component.yml": {
+    "mtime": 1771947277.762584,
+    "hash": "e625fa8a15f4e007eb9d45d007cf36da"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/README.md": {
+    "mtime": 1771947277.7625318,
+    "hash": "5e72bc69d49edd184023bd09dc77751b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/CMakeLists.txt": {
+    "mtime": 1771947277.7611783,
+    "hash": "0932daf1743fd39ffc5d031d17e4fb25"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/docs/src/api.md": {
+    "mtime": 1771947277.763814,
+    "hash": "4190538d91a101cd6f9f1fb728fefafc"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/docs/src/index.md": {
+    "mtime": 1771947277.763856,
+    "hash": "e355ee01b689a1e4ac30902d3a563f04"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/docs/src/SUMMARY.md": {
+    "mtime": 1771947277.7637792,
+    "hash": "7a6160ba3b707265686c07963cd36ff6"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/examples/led_strip_spi_ws2812/README.md": {
+    "mtime": 1771947277.7634795,
+    "hash": "e26fa6f19dad1a935fadd3b506fadc0b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/examples/led_strip_spi_ws2812/CMakeLists.txt": {
+    "mtime": 1771947277.7634425,
+    "hash": "a9beea779ae8f8340d7f8ee9a1d1efe2"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/examples/led_strip_spi_ws2812/main/idf_component.yml": {
+    "mtime": 1771947277.763558,
+    "hash": "53de4822c6b8a93d07579c7396fe7052"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/examples/led_strip_spi_ws2812/main/CMakeLists.txt": {
+    "mtime": 1771947277.7635274,
+    "hash": "4fb798183a5b6b8dfad42bbaa519c6e1"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/examples/led_strip_rmt_ws2812/README.md": {
+    "mtime": 1771947277.7633955,
+    "hash": "57448c6c9647afda336711ea7dae4771"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/examples/led_strip_rmt_ws2812/CMakeLists.txt": {
+    "mtime": 1771947277.7633529,
+    "hash": "1e4ef8d326d5a0c5116c1a6c1e7be810"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/examples/led_strip_rmt_ws2812/main/idf_component.yml": {
+    "mtime": 1771947277.763681,
+    "hash": "872635cc13539df467f73a8db6c44170"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/espressif__led_strip/examples/led_strip_rmt_ws2812/main/CMakeLists.txt": {
+    "mtime": 1771947277.7636504,
+    "hash": "f0a883c052cbcb571b653cced5ca4764"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/task_sys_evt.md": {
+    "mtime": 1771512054.7076213,
+    "hash": "26e9bedffd7844638b4a051410984edf"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/task_Tmr_Svc.md": {
+    "mtime": 1771512054.7067964,
+    "hash": "8c117bcdefd34d88309804e2d4d80425"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/task_ipc0_ipc1.md": {
+    "mtime": 1771512054.7072752,
+    "hash": "1ee9c7f37d8d1c960763c5bbf249cc6b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/HW550-MAX6675-WIRING.md": {
+    "mtime": 1775602772.834179,
+    "hash": "f1aaf211923195dce28ff355343d4646"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/task_tiT.md": {
+    "mtime": 1771512054.7079043,
+    "hash": "1cfd132231a6fcedc9313f97ab6c2607"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/plans/2026-04-07-auto-updater-variant-fix.md": {
+    "mtime": 1775672542.703651,
+    "hash": "f0e7c0827ef95a81a4180ef5433057ae"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/plans/2026-04-06-sidebar-lazy-polling.md": {
+    "mtime": 1775602772.8391154,
+    "hash": "7a6da2ffa46daacc2cfbbb019d8ae834"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/plans/2026-04-24-fuota-lorawan.md": {
+    "mtime": 1777047295.0361843,
+    "hash": "18c75a24f7acebe973f73f8a54b07f88"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/plans/2026-04-07-github-auto-update.md": {
+    "mtime": 1775602772.8396125,
+    "hash": "5d80c5d3f205bfd942f3015327846d5f"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/plans/2026-04-07-alarm-button.md": {
+    "mtime": 1775602772.8396125,
+    "hash": "939215eb2e1081926860ff56b3da1848"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/plans/2026-04-07-kconfig-variant-migration.md": {
+    "mtime": 1775602772.8403463,
+    "hash": "252404445f705df64ba03cab943f1536"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/plans/2026-04-07-github-cicd-release.md": {
+    "mtime": 1775602772.8396125,
+    "hash": "a5b1e87aa8ff19bcf15fe12a466bffc9"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/plans/2026-04-07-clock-sync.md": {
+    "mtime": 1775602772.8396125,
+    "hash": "886949a909d8bbb1fc6855357a3a6501"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/plans/2026-04-22-multi-hardware-variants.md": {
+    "mtime": 1776870524.1021578,
+    "hash": "bdb2e2e13e475a3ad6a943a3bf2a2786"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/plans/2026-04-09-ota-auto-update-log-display.md": {
+    "mtime": 1775737458.66745,
+    "hash": "97f3c5af64964950f6afe7c248f0aa1b"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/specs/2026-04-06-sidebar-lazy-polling-design.md": {
+    "mtime": 1775602772.8403463,
+    "hash": "819975082eb4ef748bbfd3b9345e3531"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/specs/2026-04-22-multi-hardware-variants-design.md": {
+    "mtime": 1776870232.2050533,
+    "hash": "b38dc3276cc3f71be7994b2d40b13a69"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/specs/2026-04-07-kconfig-variant-migration-design.md": {
+    "mtime": 1775602772.8412917,
+    "hash": "9c39a884cadf406fcd4d4dbb2abb1ccf"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/specs/2026-04-07-github-cicd-release-design.md": {
+    "mtime": 1775602772.8412917,
+    "hash": "8d975300d6ba2b700a8c9f6e8d977a27"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/specs/2026-04-09-ota-auto-update-log-display-design.md": {
+    "mtime": 1775734816.5570233,
+    "hash": "f38239f6f965e2ec9b10eb7eb58a888d"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/specs/2026-04-07-clock-sync-design.md": {
+    "mtime": 1775602772.8412917,
+    "hash": "f95ea7df2ecbaf91e5f52856b5bb616a"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/specs/2026-04-07-alarm-button-design.md": {
+    "mtime": 1775602772.8412917,
+    "hash": "de0c0aaec2da6d58147d29458b21c8d1"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/superpowers/specs/2026-04-07-github-auto-update-design.md": {
+    "mtime": 1775602772.8412917,
+    "hash": "922f13e1b32fcbb8bde736f00d16076c"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/plans/2026-02-24-status-led-design.md": {
+    "mtime": 1775602772.8386757,
+    "hash": "191760b32ea231610619ad5889537810"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/Schematic_SPECIAL-LINE-LA-T-H-JVTECH-v1.2_2026-01-13.pdf": {
+    "mtime": 1771513080.367828,
+    "hash": "1cf7b67bf4924f99f5bd0f3123dbfe25"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/docs/MANUAL MIJ v1.0 - GERAL.pdf": {
+    "mtime": 1775602772.8386757,
+    "hash": "b7e113a7b2503c6f1597e32babbe8dfa"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/main/www/favicon.png": {
+    "mtime": 1771512054.7212074,
+    "hash": "9d27517ce3a1ef733d73a576325a8a74"
+  },
+  "/home/felipe/work/isi-latecme-quality-enddevice-2/managed_components/jgromes__radiolib/extras/SSTV_Image_Converter/radiolib.png": {
+    "mtime": 1771523043.557593,
+    "hash": "b3df45436c7afdaf3922aa17381e26cd"
+  }
+}

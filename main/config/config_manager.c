@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "esp_log.h"
 #include "esp_littlefs.h"
+#include "esp_app_desc.h"
 #include "cJSON.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -64,6 +65,9 @@ typedef struct {
     char web_password[64];
     bool web_auth_enabled;
 
+    // Factory provisioning
+    bool factory_provisioned;
+
     // Alarm thresholds
     bool  alarm_temp_enabled;
     float alarm_temp_low;
@@ -82,6 +86,12 @@ typedef struct {
     char  auto_update_branch[32];
     char  auto_update_firmware_tag[32];
     char  auto_update_www_tag[32];
+
+    // FUOTA (LoRaWAN firmware-update-over-the-air)
+    struct {
+        bool enabled;
+        char firmware_version[32];  // semver "1.2.3" fits; room for longer variants + null
+    } fuota;
 } config_t;
 
 static config_t s_config;
@@ -177,6 +187,9 @@ void config_reset_defaults(void)
     strcpy(s_config.web_password, "admin");
     s_config.web_auth_enabled = true;
 
+    // Factory provisioning defaults
+    s_config.factory_provisioned = false;
+
     // Alarm thresholds (all disabled by default)
     s_config.alarm_temp_enabled = false;
     s_config.alarm_temp_low     = 0.0f;
@@ -195,6 +208,10 @@ void config_reset_defaults(void)
     strcpy(s_config.auto_update_branch, "main");
     s_config.auto_update_firmware_tag[0] = '\0';
     s_config.auto_update_www_tag[0] = '\0';
+
+    // FUOTA defaults
+    s_config.fuota.enabled = true;
+    s_config.fuota.firmware_version[0] = '\0';
 
     ESP_LOGI(TAG, "Configuration reset to defaults");
 }
@@ -278,6 +295,9 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddBoolToObject(web, "auth_enabled", s_config.web_auth_enabled);
     cJSON_AddItemToObject(root, "web", web);
 
+    // Factory provisioning
+    cJSON_AddBoolToObject(root, "factory_provisioned", s_config.factory_provisioned);
+
     // Auto-update section
     cJSON *update = cJSON_CreateObject();
     cJSON_AddBoolToObject(update, "enabled", s_config.auto_update_enabled);
@@ -285,6 +305,12 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddStringToObject(update, "firmware_tag", s_config.auto_update_firmware_tag);
     cJSON_AddStringToObject(update, "www_tag", s_config.auto_update_www_tag);
     cJSON_AddItemToObject(root, "auto_update", update);
+
+    // FUOTA section
+    cJSON *fuota = cJSON_CreateObject();
+    cJSON_AddBoolToObject(fuota, "enabled", s_config.fuota.enabled);
+    cJSON_AddStringToObject(fuota, "firmware_version", s_config.fuota.firmware_version);
+    cJSON_AddItemToObject(root, "fuota", fuota);
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);
@@ -514,6 +540,14 @@ esp_err_t config_load(void)
         }
     }
 
+    // Factory provisioning
+    {
+        cJSON *item = cJSON_GetObjectItem(root, "factory_provisioned");
+        if (item && cJSON_IsBool(item)) {
+            s_config.factory_provisioned = cJSON_IsTrue(item);
+        }
+    }
+
     // Auto-update section
     cJSON *au = cJSON_GetObjectItem(root, "auto_update");
     if (au) {
@@ -532,6 +566,20 @@ esp_err_t config_load(void)
         if ((item = cJSON_GetObjectItem(au, "www_tag")) && cJSON_IsString(item)) {
             strncpy(s_config.auto_update_www_tag, item->valuestring,
                     sizeof(s_config.auto_update_www_tag) - 1);
+        }
+    }
+
+    // FUOTA section
+    cJSON *fuota_obj = cJSON_GetObjectItem(root, "fuota");
+    if (fuota_obj) {
+        cJSON *item;
+        if ((item = cJSON_GetObjectItem(fuota_obj, "enabled")) && cJSON_IsBool(item)) {
+            s_config.fuota.enabled = cJSON_IsTrue(item);
+        }
+        if ((item = cJSON_GetObjectItem(fuota_obj, "firmware_version")) && cJSON_IsString(item)) {
+            strncpy(s_config.fuota.firmware_version, item->valuestring,
+                    sizeof(s_config.fuota.firmware_version) - 1);
+            s_config.fuota.firmware_version[sizeof(s_config.fuota.firmware_version) - 1] = '\0';
         }
     }
 
@@ -594,6 +642,21 @@ esp_err_t config_init(void)
     }
 
     ret = config_load();
+
+    // First-boot migration: populate fuota.firmware_version from the running
+    // app's descriptor if it's still empty. Don't save here — the next regular
+    // config_save() will persist it (matches the migration style used elsewhere).
+    if (s_config.fuota.firmware_version[0] == '\0') {
+        const esp_app_desc_t *app = esp_app_get_description();
+        if (app && app->version[0]) {
+            strncpy(s_config.fuota.firmware_version, app->version,
+                    sizeof(s_config.fuota.firmware_version) - 1);
+            s_config.fuota.firmware_version[sizeof(s_config.fuota.firmware_version) - 1] = '\0';
+            ESP_LOGI(TAG, "FUOTA firmware_version initialized to '%s'",
+                     s_config.fuota.firmware_version);
+        }
+    }
+
     s_initialized = true;
     return ret;
 }
@@ -750,6 +813,13 @@ void config_set_web_password(const char *password) {
 void config_set_web_auth_enabled(bool enabled) { s_config.web_auth_enabled = enabled; }
 
 // ============================================================================
+// Getters/Setters - Factory Provisioning
+// ============================================================================
+
+bool config_get_factory_provisioned(void) { return s_config.factory_provisioned; }
+void config_set_factory_provisioned(bool v) { s_config.factory_provisioned = v; }
+
+// ============================================================================
 // Getters/Setters - Alarm Thresholds
 // ============================================================================
 
@@ -838,4 +908,31 @@ void config_set_auto_update_www_tag(const char *tag) {
     strncpy(s_config.auto_update_www_tag, tag, sizeof(s_config.auto_update_www_tag) - 1);
     s_config.auto_update_www_tag[sizeof(s_config.auto_update_www_tag) - 1] = '\0';
     if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+}
+
+// ============================================================================
+// Getters/Setters - FUOTA
+// ============================================================================
+
+bool config_get_fuota_enabled(void) {
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool v = s_config.fuota.enabled;
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    return v;
+}
+
+// Returns direct pointer to internal buffer (no mutex).
+// Callers must copy the value immediately.
+const char *config_get_firmware_version(void) {
+    return s_config.fuota.firmware_version;
+}
+
+esp_err_t config_set_firmware_version(const char *version) {
+    if (!version) return ESP_ERR_INVALID_ARG;
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    strncpy(s_config.fuota.firmware_version, version,
+            sizeof(s_config.fuota.firmware_version) - 1);
+    s_config.fuota.firmware_version[sizeof(s_config.fuota.firmware_version) - 1] = '\0';
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    return config_save();
 }

@@ -32,6 +32,8 @@ typedef enum {
     OLED_PAGE_MAX
 } oled_page_t;
 
+#if CONFIG_OLED_ENABLED
+
 /**
  * @brief Initialize OLED display
  */
@@ -92,6 +94,24 @@ void oled_display_show_factory_reset(uint8_t percent);
  * @param info Active alarm details from alarm_manager_get_active_info()
  */
 void oled_display_show_alarm(const alarm_info_t *info);
+
+#else // CONFIG_OLED_ENABLED
+
+// Stub implementations when OLED is disabled
+static inline esp_err_t oled_display_init(void *i2c_bus) { return ESP_OK; }
+static inline void oled_display_clear(void) { }
+static inline void oled_display_text(uint8_t x, uint8_t y, const char *text) { }
+static inline void oled_display_update(void) { }
+static inline void oled_display_show_sensors(float temp, float hum, float tc_temp) { }
+static inline void oled_display_show_system(const char *ip_addr, uint32_t uptime_s,
+                                            bool lora_joined, uint32_t dev_addr,
+                                            uint32_t uplink_count, int16_t rssi, float snr) { }
+static inline void oled_display_next_page(void) { }
+static inline oled_page_t oled_display_get_page(void) { return OLED_PAGE_SENSORS; }
+static inline void oled_display_show_factory_reset(uint8_t percent) { }
+static inline void oled_display_show_alarm(const alarm_info_t *info) { }
+
+#endif // CONFIG_OLED_ENABLED
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,6 @@
+CONFIG_WIFI_ENABLED=n
+CONFIG_ESP_WIFI_SOFTAP_SUPPORT=n
+CONFIG_ESP_WIFI_ENABLED=n
+# FUOTA depends on WIFI_ENABLED (Kconfig `depends on` enforces this,
+# but set explicitly here for clarity)
+CONFIG_FUOTA_ENABLED=n

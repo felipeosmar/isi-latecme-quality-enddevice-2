@@ -15,7 +15,9 @@
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#if CONFIG_WIFI_ENABLED
 #include "clock_sync.h"
+#endif
 #include "config_manager.h"
 #include "esp_timer.h"
 
@@ -441,6 +443,7 @@ void oled_display_show_system(const char *ip_addr, uint32_t uptime_s,
 
     oled_display_clear();
 
+#if CONFIG_WIFI_ENABLED
     if (clock_sync_is_synced()) {
         time_t now = time(NULL);
         struct tm ti;
@@ -451,6 +454,9 @@ void oled_display_show_system(const char *ip_addr, uint32_t uptime_s,
     } else {
         oled_display_text(0, 0, "--/-- --:--:-- UTC");
     }
+#else
+    oled_display_text(0, 0, "--/-- --:--:-- UTC");
+#endif
 
     // IP
     snprintf(line, sizeof(line), "IP:%s", ip_addr ? ip_addr : "N/A");
