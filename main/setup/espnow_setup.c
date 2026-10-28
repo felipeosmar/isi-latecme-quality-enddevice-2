@@ -355,11 +355,13 @@ static void handle_set(cJSON *req, const uint8_t *src)
 
     if (config_save() != ESP_OK) {
         s_state = SETUP_ST_SAVE_ERROR;
+        s_identify_until = 0;
         send_ack(src, own_mac_str, false, "config_save failed", seq);
         return;
     }
 
     s_state = SETUP_ST_CONFIG_OK;
+    s_identify_until = 0;   /* a SET/COMMIT result must not hide behind Identificando */
     send_ack(src, own_mac_str, true, NULL, seq);
 
     /* Corrections changed: re-read (after the ACK, since a MAX6675 conversion
@@ -406,6 +408,7 @@ static void handle_commit(cJSON *req, const uint8_t *src)
     config_set_factory_provisioned(true);
     if (config_save() != ESP_OK) {
         s_state = SETUP_ST_SAVE_ERROR;
+        s_identify_until = 0;
         send_ack(src, own_mac_str, false, "save failed", seq);
         return;
     }
@@ -413,6 +416,7 @@ static void handle_commit(cJSON *req, const uint8_t *src)
     send_ack(src, own_mac_str, true, NULL, seq);
 
     s_state = SETUP_ST_REBOOTING;
+    s_identify_until = 0;   /* a SET/COMMIT result must not hide behind Identificando */
     setup_display_refresh();
 
     /* Let the ACK flush over the air before rebooting. */
