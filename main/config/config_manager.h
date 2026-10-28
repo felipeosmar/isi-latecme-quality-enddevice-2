@@ -186,6 +186,14 @@ void config_set_auto_update_branch(const char *branch);
 void config_set_auto_update_firmware_tag(const char *tag);
 void config_set_auto_update_www_tag(const char *tag);
 
+// ============================================================================
+// FUOTA (LoRaWAN firmware-update-over-the-air)
+// ============================================================================
+
+bool config_get_fuota_enabled(void);
+const char *config_get_firmware_version(void);
+esp_err_t config_set_firmware_version(const char *version);
+
 #ifdef __cplusplus
 }
 #endif

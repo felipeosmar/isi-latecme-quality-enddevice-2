@@ -46,6 +46,10 @@
 #include "oled_display.h"
 #endif
 
+#if CONFIG_FUOTA_ENABLED
+#include "fuota_manager.h"
+#endif
+
 static const char *TAG = "MAIN";
 
 #if CONFIG_WIFI_ENABLED
@@ -473,6 +477,14 @@ void app_main(void)
     // Auto-updater task - Core 0, Priority 3, Stack 8KB
     if (auto_updater_init() != ESP_OK) {
         ESP_LOGW(TAG, "Failed to start auto-updater");
+    }
+#endif
+
+#if CONFIG_FUOTA_ENABLED
+    if (fuota_init() == ESP_OK) {
+        xTaskCreatePinnedToCore(fuota_task, "fuota", 8192, NULL, 4, NULL, 0);
+    } else {
+        ESP_LOGW(TAG, "FUOTA init failed");
     }
 #endif
 
