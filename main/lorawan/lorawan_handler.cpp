@@ -53,6 +53,8 @@ static SemaphoreHandle_t lorawan_mutex = nullptr;
 
 static lorawan_stats_t stats = {};
 static bool initialized = false;
+// Link state: written only by lorawan_task, read from any task
+static volatile lorawan_link_state_t link_state = LORAWAN_LINK_IDLE;
 
 // ============================================================================
 // NVS Session Persistence
@@ -421,6 +423,17 @@ extern "C" bool lorawan_is_joined(void)
     return stats.joined;
 }
 
+extern "C" lorawan_link_state_t lorawan_get_link_state(uint8_t *join_attempt)
+{
+    // Deliberately lock-free: lorawan_join() holds the mutex for the whole
+    // join, and callers (display) must not block. join_attempts is a single
+    // byte, so the read cannot tear.
+    if (join_attempt) {
+        *join_attempt = stats.join_attempts;
+    }
+    return link_state;
+}
+
 extern "C" esp_err_t lorawan_get_stats(lorawan_stats_t *out)
 {
     if (!out) {
@@ -496,6 +509,7 @@ extern "C" void lorawan_task(void *param)
 
     // Initialize the radio hardware
     if (lorawan_init() != ESP_OK) {
+        link_state = LORAWAN_LINK_RADIO_ERROR;
         ESP_LOGE(TAG, "Failed to initialize LoRaWAN, task exiting");
         vTaskDelete(NULL);
         return;
@@ -504,6 +518,7 @@ extern "C" void lorawan_task(void *param)
     // Check if credentials are configured
     const char *dev_eui = config_get_dev_eui();
     if (strlen(dev_eui) != 16) {
+        link_state = LORAWAN_LINK_NO_CREDENTIALS;
         ESP_LOGW(TAG, "LoRaWAN credentials not configured. Waiting for configuration via web UI...");
 
         // Wait until credentials are configured
@@ -520,9 +535,15 @@ extern "C" void lorawan_task(void *param)
     const uint32_t max_backoff_ms = 300000; // Max 5 minutes
 
     while (!lorawan_is_joined()) {
+        link_state = LORAWAN_LINK_JOINING;
         esp_err_t ret = lorawan_join();
         if (ret == ESP_OK) {
+            link_state = LORAWAN_LINK_JOINED;
             break;
+        }
+        if (ret == ESP_ERR_INVALID_ARG) {
+            // Bad length or non-hex credentials
+            link_state = LORAWAN_LINK_NO_CREDENTIALS;
         }
 
         ESP_LOGW(TAG, "Join failed, retrying in %lu ms...", (unsigned long)backoff_ms);
@@ -542,7 +563,13 @@ extern "C" void lorawan_task(void *param)
         if (!lorawan_is_joined()) {
             // Try to re-join
             ESP_LOGW(TAG, "Not joined, attempting re-join...");
-            lorawan_join();
+            link_state = LORAWAN_LINK_JOINING;
+            esp_err_t rj = lorawan_join();
+            if (rj == ESP_OK) {
+                link_state = LORAWAN_LINK_JOINED;
+            } else if (rj == ESP_ERR_INVALID_ARG) {
+                link_state = LORAWAN_LINK_NO_CREDENTIALS;
+            }
             continue;
         }
 
