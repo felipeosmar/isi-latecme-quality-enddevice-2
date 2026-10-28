@@ -94,16 +94,19 @@ void oled_display_show_factory_reset(uint8_t percent);
  *
  * Line 1 (2x font): "SETUP"
  * Line 2: own STA MAC address
- * Lines 3+: one row per sensor with the reading next to its applied offset
+ * Line 3: setup state (inverted)
+ * Lines 4+: one row per sensor with the reading next to its applied offset
  *
  * @param mac_str   MAC address as "AA:BB:CC:DD:EE:FF"
  * @param data      Latest readings (corrections already applied); NULL shows "--"
  * @param temp_corr I2C temperature correction offset (degrees C)
  * @param hum_corr  I2C humidity correction offset (%)
  * @param tc_corr   Thermocouple correction offset (degrees C)
+ * @param state     Setup state line, drawn inverted on page 3; NULL leaves it blank
  */
 void oled_display_show_setup(const char *mac_str, const sensor_data_t *data,
-                             float temp_corr, float hum_corr, float tc_corr);
+                             float temp_corr, float hum_corr, float tc_corr,
+                             const char *state);
 
 /**
  * @brief Show alarm page with 1Hz blinking header.
@@ -146,7 +149,7 @@ static inline void oled_display_show_factory_reset(uint8_t percent) { }
 static inline void oled_display_show_setup(const char *mac_str,
                                            const sensor_data_t *data,
                                            float temp_corr, float hum_corr,
-                                           float tc_corr) { }
+                                           float tc_corr, const char *state) { }
 static inline void oled_display_show_alarm(const alarm_info_t *info) { }
 static inline bool oled_display_is_ready(void) { return false; }
 static inline void oled_display_show_boot(const char *header, const char *const *lines, size_t n_lines) { }

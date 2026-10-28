@@ -38,6 +38,7 @@
 #include "buzzer.h"
 #include "factory_key.h"
 #include "oled_display.h"
+#include "boot_status.h"
 #include "espnow_setup.h"
 
 #define ESPNOW_CHANNEL      1
@@ -73,6 +74,23 @@ typedef struct {
 static const char *TAG = "SETUP";
 static const uint8_t BCAST[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 static QueueHandle_t s_rx_queue;
+
+/* State shown on the setup screen's inverted line. DISCOVER/READ only move
+ * WAITING -> CONNECTED; CONFIG_OK / SAVE_ERROR change only on a new SET or
+ * COMMIT addressed to this device, so the dongle's verification READ does not
+ * erase them. */
+typedef enum {
+    SETUP_ST_WAITING = 0,   // "Aguardando dongle"
+    SETUP_ST_CONNECTED,     // "Dongle conectado"
+    SETUP_ST_CONFIG_OK,     // "Config OK, falta CMT"
+    SETUP_ST_SAVE_ERROR,    // "ERRO ao salvar cfg"
+    SETUP_ST_REBOOTING,     // "Gravado! Reiniciando"
+} setup_state_t;
+static setup_state_t s_state;
+static TickType_t s_identify_until;   // "Identificando" overrides the text while now < this
+#define IDENTIFY_SHOW_MS     3000
+
+static void setup_display_refresh(void);
 
 /* ---------------------------------------------------------------------- */
 /* Helpers                                                                 */
@@ -217,6 +235,10 @@ static void handle_discover(const uint8_t *src)
     cJSON_AddBoolToObject(root, "prov", config_get_factory_provisioned());
 
     send_line(src, root);
+
+    if (s_state == SETUP_ST_WAITING) {
+        s_state = SETUP_ST_CONNECTED;
+    }
 }
 
 static void handle_read(const uint8_t *src)
@@ -248,6 +270,10 @@ static void handle_read(const uint8_t *src)
     cJSON_AddBoolToObject(root, "tcvalid", d.thermocouple_valid);
 
     send_line(src, root);
+
+    if (s_state == SETUP_ST_WAITING) {
+        s_state = SETUP_ST_CONNECTED;
+    }
 }
 
 /**
@@ -328,10 +354,12 @@ static void handle_set(cJSON *req, const uint8_t *src)
     cJSON_Delete(payload);
 
     if (config_save() != ESP_OK) {
+        s_state = SETUP_ST_SAVE_ERROR;
         send_ack(src, own_mac_str, false, "config_save failed", seq);
         return;
     }
 
+    s_state = SETUP_ST_CONFIG_OK;
     send_ack(src, own_mac_str, true, NULL, seq);
 
     /* Corrections changed: re-read (after the ACK, since a MAX6675 conversion
@@ -355,6 +383,7 @@ static void handle_identify(cJSON *req, const uint8_t *src)
         return;
     }
 
+    s_identify_until = xTaskGetTickCount() + pdMS_TO_TICKS(IDENTIFY_SHOW_MS);
     buzzer_beep(300);
     send_ack(src, own_mac_str, true, NULL, seq);
 }
@@ -376,11 +405,15 @@ static void handle_commit(cJSON *req, const uint8_t *src)
 
     config_set_factory_provisioned(true);
     if (config_save() != ESP_OK) {
+        s_state = SETUP_ST_SAVE_ERROR;
         send_ack(src, own_mac_str, false, "save failed", seq);
         return;
     }
 
     send_ack(src, own_mac_str, true, NULL, seq);
+
+    s_state = SETUP_ST_REBOOTING;
+    setup_display_refresh();
 
     /* Let the ACK flush over the air before rebooting. */
     vTaskDelay(pdMS_TO_TICKS(200));
@@ -397,6 +430,25 @@ static void handle_commit(cJSON *req, const uint8_t *src)
  * Called after every sensor read (so the values stay live) and after every
  * handled frame, so a SET that changes the corrections shows up right away.
  */
+static const char *setup_state_text(void)
+{
+    /* Signed difference so the comparison survives tick-count wraparound. */
+    if (s_identify_until != 0) {
+        if ((int32_t)(s_identify_until - xTaskGetTickCount()) > 0) {
+            return "Identificando";
+        }
+        s_identify_until = 0;
+    }
+    switch (s_state) {
+    case SETUP_ST_CONNECTED:  return "Dongle conectado";
+    case SETUP_ST_CONFIG_OK:  return "Config OK, falta CMT";
+    case SETUP_ST_SAVE_ERROR: return "ERRO ao salvar cfg";
+    case SETUP_ST_REBOOTING:  return "Gravado! Reiniciando";
+    case SETUP_ST_WAITING:
+    default:                  return "Aguardando dongle";
+    }
+}
+
 static void setup_display_refresh(void)
 {
     char mac_str[18];
@@ -408,7 +460,8 @@ static void setup_display_refresh(void)
     oled_display_show_setup(mac_str, &d,
                             config_get_temp_correction(),
                             config_get_hum_correction(),
-                            config_get_thermocouple_correction());
+                            config_get_thermocouple_correction(),
+                            setup_state_text());
 }
 
 /* ---------------------------------------------------------------------- */
@@ -503,46 +556,63 @@ static void on_recv(const esp_now_recv_info_t *info, const uint8_t *data, int le
     }
 }
 
-static void add_broadcast_peer(void)
+static esp_err_t add_broadcast_peer(void)
 {
     esp_now_peer_info_t peer = {0};
     memcpy(peer.peer_addr, BCAST, 6);
     peer.channel = ESPNOW_CHANNEL;
     peer.ifidx = WIFI_IF_STA;
     peer.encrypt = false;
-    ESP_ERROR_CHECK(esp_now_add_peer(&peer));
+    return esp_now_add_peer(&peer);
 }
 
-static void wifi_espnow_init(void)
+/* Evaluate @p expr; on error, record @p step_name and return the error. */
+#define INIT_STEP(step_name, expr) do {                                     \
+        esp_err_t _rc = (expr);                                             \
+        if (_rc != ESP_OK) {                                                \
+            ESP_LOGE(TAG, "%s: %s failed: %s", step_name, #expr,            \
+                     esp_err_to_name(_rc));                                 \
+            *failed_step = (step_name);                                     \
+            return _rc;                                                     \
+        }                                                                   \
+    } while (0)
+
+/**
+ * @brief Bring up NVS, WiFi STA on ESPNOW_CHANNEL, the rx queue, and ESP-NOW.
+ * @param failed_step On error, set to a short name of the failing stage
+ *                    ("nvs", "wifi", "espnow", "queue", "peer").
+ */
+static esp_err_t wifi_espnow_init(const char **failed_step)
 {
     /* A dirty/aged NVS partition must not panic-loop the setup path: erase and
      * retry once, mirroring the pattern in main/wifi/wifi_manager.c. */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_LOGW(TAG, "NVS needs erase");
-        ESP_ERROR_CHECK(nvs_flash_erase());
+        INIT_STEP("nvs", nvs_flash_erase());
         ret = nvs_flash_init();
     }
-    ESP_ERROR_CHECK(ret);
+    INIT_STEP("nvs", ret);
 
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    INIT_STEP("wifi", esp_netif_init());
+    INIT_STEP("wifi", esp_event_loop_create_default());
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_start());
-    ESP_ERROR_CHECK(esp_wifi_set_channel(ESPNOW_CHANNEL, WIFI_SECOND_CHAN_NONE));
+    INIT_STEP("wifi", esp_wifi_init(&cfg));
+    INIT_STEP("wifi", esp_wifi_set_storage(WIFI_STORAGE_RAM));
+    INIT_STEP("wifi", esp_wifi_set_mode(WIFI_MODE_STA));
+    INIT_STEP("wifi", esp_wifi_start());
+    INIT_STEP("wifi", esp_wifi_set_channel(ESPNOW_CHANNEL, WIFI_SECOND_CHAN_NONE));
 
     /* Queue must exist before the recv callback can fire. */
     s_rx_queue = xQueueCreate(RX_QUEUE_DEPTH, sizeof(setup_rx_msg_t));
-    ESP_ERROR_CHECK(s_rx_queue ? ESP_OK : ESP_ERR_NO_MEM);
+    INIT_STEP("queue", s_rx_queue ? ESP_OK : ESP_ERR_NO_MEM);
 
-    ESP_ERROR_CHECK(esp_now_init());
-    ESP_ERROR_CHECK(esp_now_register_recv_cb(on_recv));
+    INIT_STEP("espnow", esp_now_init());
+    INIT_STEP("espnow", esp_now_register_recv_cb(on_recv));
 
-    add_broadcast_peer();
+    INIT_STEP("peer", add_broadcast_peer());
+    return ESP_OK;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -551,7 +621,22 @@ static void wifi_espnow_init(void)
 
 void espnow_setup_run(void)
 {
-    wifi_espnow_init();
+    int step = boot_status_begin("ESP-NOW", NULL);
+    const char *failed_step = "?";
+    esp_err_t err = wifi_espnow_init(&failed_step);
+    if (err != ESP_OK) {
+        /* Stay on the boot list with the reason instead of panicking into a
+         * reboot loop; boot_status truncates the detail to fit the screen. */
+        char detail[48];
+        snprintf(detail, sizeof(detail), "%s %s", failed_step, esp_err_to_name(err));
+        boot_status_end(step, BOOT_STEP_ERROR, detail);
+        ESP_LOGE(TAG, "ESP-NOW init failed (%s), setup mode halted", detail);
+        for (;;) {
+            vTaskDelay(portMAX_DELAY);
+        }
+    }
+    boot_status_end(step, BOOT_STEP_OK, NULL);
+    boot_status_finish();
 
     /* Make sure the sensor manager is up and has at least one reading
      * available before any DISCOVER/READ request comes in. */
@@ -563,14 +648,9 @@ void espnow_setup_run(void)
     ESP_LOGI(TAG, "setup mode ready, ch=%d mac=%02X:%02X:%02X:%02X:%02X:%02X",
              ESPNOW_CHANNEL, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-#if CONFIG_OLED_ENABLED
-    /* The display task never runs in setup mode, so bring the OLED up here.
-     * sensor_manager_init() already owns the shared I2C bus. */
-    void *i2c_bus = sensor_manager_get_i2c_bus();
-    if (!i2c_bus || oled_display_init(i2c_bus) != ESP_OK) {
-        ESP_LOGW(TAG, "OLED unavailable, setup screen disabled");
-    }
-#endif
+    /* The OLED was already brought up early in app_main. */
+    s_state = SETUP_ST_WAITING;
+    s_identify_until = 0;
     setup_display_refresh();
 
     /* Statically size the drain buffer; it is large (setup_rx_msg_t holds a

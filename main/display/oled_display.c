@@ -55,7 +55,9 @@ static void oled_display_show_system_impl(const char *ip_addr, uint32_t uptime_s
                                bool lora_joined, uint32_t dev_addr,
                                uint32_t uplink_count, int16_t rssi, float snr);
 static void oled_display_show_setup_impl(const char *mac_str, const sensor_data_t *data,
-                             float temp_corr, float hum_corr, float tc_corr);
+                             float temp_corr, float hum_corr, float tc_corr,
+                             const char *state);
+static void invert_page(uint8_t page);
 static void oled_display_show_alarm_impl(const alarm_info_t *info);
 static oled_page_t oled_display_get_page_impl(void);
 static void oled_display_next_page_impl(void);
@@ -609,7 +611,8 @@ static void draw_setup_row(uint8_t x, uint8_t page, const char *label,
 #define SETUP_TABLE_HEADER "     Lido    Ofs"
 
 static void oled_display_show_setup_impl(const char *mac_str, const sensor_data_t *data,
-                             float temp_corr, float hum_corr, float tc_corr)
+                             float temp_corr, float hum_corr, float tc_corr,
+                             const char *state)
 {
     if (!oled_initialized) return;
     oled_send_cmd(SSD1306_CMD_SET_NORMAL);
@@ -621,6 +624,14 @@ static void oled_display_show_setup_impl(const char *mac_str, const sensor_data_
     // Page 2: MAC address
     const char *mac = (mac_str && mac_str[0]) ? mac_str : "--:--:--:--:--:--";
     oled_display_text(center_x(strlen(mac)), 2, mac);
+
+    // Page 3: setup state, inverted, padded to the full 21-column width
+    if (state) {
+        char line[22];
+        snprintf(line, sizeof(line), " %-20.20s", state);
+        oled_display_text(0, 3, line);
+        invert_page(3);
+    }
 
     // Pages 4+: sensor table, all rows sharing one x so columns align
     const uint8_t tx = center_x(strlen(SETUP_TABLE_HEADER));
@@ -756,10 +767,11 @@ void oled_display_show_alarm(const alarm_info_t *info)
 }
 
 void oled_display_show_setup(const char *mac_str, const sensor_data_t *data,
-                             float temp_corr, float hum_corr, float tc_corr)
+                             float temp_corr, float hum_corr, float tc_corr,
+                             const char *state)
 {
     OLED_LOCK();
-    oled_display_show_setup_impl(mac_str, data, temp_corr, hum_corr, tc_corr);
+    oled_display_show_setup_impl(mac_str, data, temp_corr, hum_corr, tc_corr, state);
     OLED_UNLOCK();
 }
 
