@@ -15,6 +15,7 @@
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #if CONFIG_WIFI_ENABLED
 #include "clock_sync.h"
 #endif
@@ -46,6 +47,25 @@ static uint8_t framebuffer[OLED_WIDTH * OLED_HEIGHT / 8] = {0};
 static oled_page_t current_page = OLED_PAGE_SENSORS;
 static bool oled_initialized = false;
 static int64_t s_system_page_entered_us = 0;
+
+// Recursive mutex: a public show_*() may call text()/update() internally.
+// NULL until oled_display_init() runs (OLED absent) - locking is then skipped.
+static SemaphoreHandle_t s_oled_mutex = NULL;
+static void oled_display_show_system_impl(const char *ip_addr, uint32_t uptime_s,
+                               bool lora_joined, uint32_t dev_addr,
+                               uint32_t uplink_count, int16_t rssi, float snr);
+static void oled_display_show_setup_impl(const char *mac_str, const sensor_data_t *data,
+                             float temp_corr, float hum_corr, float tc_corr);
+static void oled_display_show_alarm_impl(const alarm_info_t *info);
+static oled_page_t oled_display_get_page_impl(void);
+static void oled_display_next_page_impl(void);
+static void oled_display_show_factory_reset_impl(uint8_t percent);
+static void oled_display_show_sensors_impl(float temp, float hum, float tc_temp);
+static void oled_display_update_impl(void);
+static void oled_display_text_impl(uint8_t x, uint8_t page, const char *text);
+static void oled_display_clear_impl(void);
+#define OLED_LOCK()   do { if (s_oled_mutex) xSemaphoreTakeRecursive(s_oled_mutex, portMAX_DELAY); } while (0)
+#define OLED_UNLOCK() do { if (s_oled_mutex) xSemaphoreGiveRecursive(s_oled_mutex); } while (0)
 
 #define SYSTEM_PAGE_TIMEOUT_US  (5 * 1000 * 1000)  // 5 seconds
 
@@ -161,8 +181,25 @@ static void oled_send_cmds(const uint8_t *cmds, size_t len)
     }
 }
 
+static esp_err_t oled_display_init_locked(void *i2c_bus_handle);
+
 esp_err_t oled_display_init(void *i2c_bus_handle)
 {
+    if (!s_oled_mutex) {
+        s_oled_mutex = xSemaphoreCreateRecursiveMutex();
+    }
+    OLED_LOCK();
+    esp_err_t res = oled_display_init_locked(i2c_bus_handle);
+    OLED_UNLOCK();
+    return res;
+}
+
+static esp_err_t oled_display_init_locked(void *i2c_bus_handle)
+{
+    if (oled_initialized) {
+        return ESP_OK;  // already initialized: do not touch the bus again
+    }
+
     if (!i2c_bus_handle) {
         ESP_LOGE(TAG, "I2C bus handle is NULL");
         return ESP_ERR_INVALID_ARG;
@@ -218,7 +255,7 @@ esp_err_t oled_display_init(void *i2c_bus_handle)
     return ESP_OK;
 }
 
-void oled_display_clear(void)
+static void oled_display_clear_impl(void)
 {
     memset(framebuffer, 0, sizeof(framebuffer));
 }
@@ -234,7 +271,7 @@ static void draw_char(uint8_t x, uint8_t page, char c)
     }
 }
 
-void oled_display_text(uint8_t x, uint8_t page, const char *text)
+static void oled_display_text_impl(uint8_t x, uint8_t page, const char *text)
 {
     if (!text || page >= 8) return;
 
@@ -292,7 +329,7 @@ static void oled_display_text_2x(uint8_t x, uint8_t page, const char *text)
     }
 }
 
-void oled_display_update(void)
+static void oled_display_update_impl(void)
 {
     if (!oled_dev || !oled_initialized) return;
 
@@ -365,7 +402,7 @@ static uint8_t sensor_subpage = 0;
 static uint8_t sensor_subpage_ticks = 0;
 #define SENSOR_SUBPAGE_INTERVAL 6  // calls before switching (500ms loop × 6 = 3s)
 
-void oled_display_show_sensors(float temp, float hum, float tc_temp)
+static void oled_display_show_sensors_impl(float temp, float hum, float tc_temp)
 {
     if (!oled_initialized) return;
     oled_send_cmd(SSD1306_CMD_SET_NORMAL);  // ensure not inverted from alarm page
@@ -432,7 +469,7 @@ void oled_display_show_sensors(float temp, float hum, float tc_temp)
     oled_display_update();
 }
 
-void oled_display_show_system(const char *ip_addr, uint32_t uptime_s,
+static void oled_display_show_system_impl(const char *ip_addr, uint32_t uptime_s,
                                bool lora_joined, uint32_t dev_addr,
                                uint32_t uplink_count, int16_t rssi, float snr)
 {
@@ -492,7 +529,7 @@ void oled_display_show_system(const char *ip_addr, uint32_t uptime_s,
     oled_display_update();
 }
 
-void oled_display_show_factory_reset(uint8_t percent)
+static void oled_display_show_factory_reset_impl(uint8_t percent)
 {
     if (!oled_initialized) return;
     oled_send_cmd(SSD1306_CMD_SET_NORMAL);
@@ -555,7 +592,7 @@ static void draw_setup_row(uint8_t x, uint8_t page, const char *label,
 // Right-aligned over the value/offset columns of draw_setup_row()
 #define SETUP_TABLE_HEADER "     Lido    Ofs"
 
-void oled_display_show_setup(const char *mac_str, const sensor_data_t *data,
+static void oled_display_show_setup_impl(const char *mac_str, const sensor_data_t *data,
                              float temp_corr, float hum_corr, float tc_corr)
 {
     if (!oled_initialized) return;
@@ -588,7 +625,7 @@ void oled_display_show_setup(const char *mac_str, const sensor_data_t *data,
     oled_display_update();
 }
 
-void oled_display_next_page(void)
+static void oled_display_next_page_impl(void)
 {
     current_page = (oled_page_t)((current_page + 1) % OLED_PAGE_MAX);
     if (current_page == OLED_PAGE_SYSTEM) {
@@ -596,7 +633,7 @@ void oled_display_next_page(void)
     }
 }
 
-oled_page_t oled_display_get_page(void)
+static oled_page_t oled_display_get_page_impl(void)
 {
     if (current_page == OLED_PAGE_SYSTEM &&
         (esp_timer_get_time() - s_system_page_entered_us) >= SYSTEM_PAGE_TIMEOUT_US) {
@@ -605,7 +642,7 @@ oled_page_t oled_display_get_page(void)
     return current_page;
 }
 
-void oled_display_show_alarm(const alarm_info_t *info)
+static void oled_display_show_alarm_impl(const alarm_info_t *info)
 {
     if (!oled_initialized || !info) return;
 
@@ -642,4 +679,118 @@ void oled_display_show_alarm(const alarm_info_t *info)
     oled_display_text(0, 6, "Btn p/silenciar");
 
     oled_display_update();
+}
+
+void oled_display_clear(void)
+{
+    OLED_LOCK();
+    oled_display_clear_impl();
+    OLED_UNLOCK();
+}
+
+void oled_display_text(uint8_t x, uint8_t page, const char *text)
+{
+    OLED_LOCK();
+    oled_display_text_impl(x, page, text);
+    OLED_UNLOCK();
+}
+
+void oled_display_update(void)
+{
+    OLED_LOCK();
+    oled_display_update_impl();
+    OLED_UNLOCK();
+}
+
+void oled_display_show_sensors(float temp, float hum, float tc_temp)
+{
+    OLED_LOCK();
+    oled_display_show_sensors_impl(temp, hum, tc_temp);
+    OLED_UNLOCK();
+}
+
+void oled_display_show_factory_reset(uint8_t percent)
+{
+    OLED_LOCK();
+    oled_display_show_factory_reset_impl(percent);
+    OLED_UNLOCK();
+}
+
+void oled_display_next_page(void)
+{
+    OLED_LOCK();
+    oled_display_next_page_impl();
+    OLED_UNLOCK();
+}
+
+oled_page_t oled_display_get_page(void)
+{
+    OLED_LOCK();
+    oled_page_t r = oled_display_get_page_impl();
+    OLED_UNLOCK();
+    return r;
+}
+
+void oled_display_show_alarm(const alarm_info_t *info)
+{
+    OLED_LOCK();
+    oled_display_show_alarm_impl(info);
+    OLED_UNLOCK();
+}
+
+void oled_display_show_setup(const char *mac_str, const sensor_data_t *data,
+                             float temp_corr, float hum_corr, float tc_corr)
+{
+    OLED_LOCK();
+    oled_display_show_setup_impl(mac_str, data, temp_corr, hum_corr, tc_corr);
+    OLED_UNLOCK();
+}
+
+void oled_display_show_system(const char *ip_addr, uint32_t uptime_s,
+                               bool lora_joined, uint32_t dev_addr,
+                               uint32_t uplink_count, int16_t rssi, float snr)
+{
+    OLED_LOCK();
+    oled_display_show_system_impl(ip_addr, uptime_s, lora_joined, dev_addr, uplink_count, rssi, snr);
+    OLED_UNLOCK();
+}
+
+bool oled_display_is_ready(void)
+{
+    return oled_initialized;
+}
+
+/**
+ * @brief Invert one framebuffer page (XOR 0xFF over its 128 columns)
+ */
+static void invert_page(uint8_t page)
+{
+    if (page >= 8) return;
+    for (int x = 0; x < OLED_WIDTH; x++) {
+        framebuffer[page * OLED_WIDTH + x] ^= 0xFF;
+    }
+}
+
+void oled_display_show_boot(const char *header, const char *const *lines, size_t n_lines)
+{
+    if (!oled_initialized) return;
+    OLED_LOCK();
+    oled_send_cmd(SSD1306_CMD_SET_NORMAL);  // ensure not inverted from alarm page
+    oled_display_clear();
+
+    // Page 0: inverted header
+    if (header) {
+        oled_display_text(0, 0, header);
+    }
+    invert_page(0);
+
+    // Pages 1-7: up to 7 status lines, NULL entries skipped
+    for (size_t i = 0; i < n_lines && i < 7; i++) {
+        if (lines && lines[i]) {
+            oled_display_text(0, (uint8_t)(i + 1), lines[i]);
+        }
+    }
+
+    oled_display_update();
+    OLED_UNLOCK();
 }

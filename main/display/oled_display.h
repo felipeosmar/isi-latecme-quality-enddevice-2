@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include "esp_err.h"
 #include "alarm_manager.h"
 #include "sensor_manager.h"
@@ -112,6 +113,20 @@ void oled_display_show_setup(const char *mac_str, const sensor_data_t *data,
  */
 void oled_display_show_alarm(const alarm_info_t *info);
 
+/**
+ * @brief True once the OLED was probed and initialized
+ */
+bool oled_display_is_ready(void);
+
+/**
+ * @brief Show the boot list screen.
+ *
+ * @param header  Text drawn in inverted video on page 0
+ * @param lines   Status lines for pages 1-7; NULL entries are skipped
+ * @param n_lines Number of entries in @p lines (only the first 7 are drawn)
+ */
+void oled_display_show_boot(const char *header, const char *const *lines, size_t n_lines);
+
 #else // CONFIG_OLED_ENABLED
 
 // Stub implementations when OLED is disabled
@@ -131,6 +146,8 @@ static inline void oled_display_show_setup(const char *mac_str,
                                            float temp_corr, float hum_corr,
                                            float tc_corr) { }
 static inline void oled_display_show_alarm(const alarm_info_t *info) { }
+static inline bool oled_display_is_ready(void) { return false; }
+static inline void oled_display_show_boot(const char *header, const char *const *lines, size_t n_lines) { }
 
 #endif // CONFIG_OLED_ENABLED
 
