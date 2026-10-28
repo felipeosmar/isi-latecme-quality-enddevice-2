@@ -48,19 +48,31 @@
 
 static const char *TAG = "MAIN";
 
+#if CONFIG_WIFI_ENABLED
+// Set when WiFi could not be brought up (init failed, or AP fallback failed).
+// The display task uses it to report the problem after boot.
+static bool s_wifi_failed = false;
+
 /**
  * @brief Initialize WiFi based on configuration
+ *
+ * Each phase is shown as a boot step. Failures are flagged in s_wifi_failed
+ * instead of aborting the boot.
  */
-#if CONFIG_WIFI_ENABLED
-static esp_err_t init_wifi(void)
+static void init_wifi(void)
 {
     esp_err_t ret;
 
-    // Initialize WiFi manager
+    int step;
+
+    // Initialize WiFi manager (the "WiFi" step is only listed on failure)
     ret = wifi_manager_init(NULL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize WiFi manager: %s", esp_err_to_name(ret));
-        return ret;
+        step = boot_status_begin("WiFi", NULL);
+        boot_status_end(step, BOOT_STEP_ERROR, NULL);
+        s_wifi_failed = true;
+        return;
     }
 
     // Check if we have saved WiFi credentials
@@ -71,15 +83,18 @@ static esp_err_t init_wifi(void)
     if (!ap_mode && strlen(ssid) > 0) {
         // Try to connect to saved network
         ESP_LOGI(TAG, "Connecting to saved network: %s", ssid);
+        step = boot_status_begin("WiFi STA", ssid);
         ret = wifi_manager_connect(ssid, password);
 
         if (ret == ESP_OK) {
+            boot_status_end(step, BOOT_STEP_OK, NULL);
             // 2 rising tones on WiFi connection
             buzzer_tone(2200, 80);
             vTaskDelay(pdMS_TO_TICKS(60));
             buzzer_tone(3000, 100);
         } else {
             ESP_LOGW(TAG, "Failed to connect, starting AP mode");
+            boot_status_end(step, BOOT_STEP_ERROR, NULL);
             ap_mode = true;
         }
     } else {
@@ -91,10 +106,16 @@ static esp_err_t init_wifi(void)
         const char *ap_ssid = config_get_ap_ssid();
         const char *ap_pass = config_get_ap_password();
         ESP_LOGI(TAG, "Starting AP mode: %s", ap_ssid);
+        step = boot_status_begin("WiFi AP", ap_ssid);
         ret = wifi_manager_start_ap(ap_ssid, ap_pass);
+        if (ret == ESP_OK) {
+            boot_status_end(step, BOOT_STEP_OK, NULL);
+        } else {
+            ESP_LOGE(TAG, "Failed to start AP mode: %s", esp_err_to_name(ret));
+            boot_status_end(step, BOOT_STEP_ERROR, NULL);
+            s_wifi_failed = true;
+        }
     }
-
-    return ret;
 }
 #endif
 
@@ -106,17 +127,13 @@ static void display_task(void *param)
 {
     ESP_LOGI(TAG, "Display task started");
 
-    vTaskDelay(pdMS_TO_TICKS(5000));
-
-    void *i2c_bus = sensor_manager_get_i2c_bus();
-    if (!i2c_bus) {
-        ESP_LOGW(TAG, "I2C bus not available, display task exiting");
-        vTaskDelete(NULL);
-        return;
+    // The boot step list owns the screen until app_main finishes booting
+    while (!boot_status_is_finished()) {
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 
-    if (oled_display_init(i2c_bus) != ESP_OK) {
-        ESP_LOGW(TAG, "OLED not found, display task exiting");
+    if (!oled_display_is_ready()) {
+        ESP_LOGW(TAG, "OLED not available, display task exiting");
         vTaskDelete(NULL);
         return;
     }
@@ -256,17 +273,50 @@ void app_main(void)
     buzzer_init();
     boot_status_init();
 
-    // Initialize configuration manager (includes LittleFS)
+    int step;
+
+#if CONFIG_OLED_ENABLED
+    // Bring up the I2C bus and OLED first so every later step is visible
+    step = boot_status_begin("Display", NULL);
+    esp_err_t disp_ret = sensor_manager_bus_init();
+    if (disp_ret == ESP_OK) {
+        disp_ret = oled_display_init(sensor_manager_get_i2c_bus());
+    }
+    boot_status_end(step, disp_ret == ESP_OK ? BOOT_STEP_OK : BOOT_STEP_ERROR, NULL);
+#endif
+
+    // Initialize configuration manager (includes LittleFS). On failure the
+    // in-memory defaults loaded by config_init() are used and boot continues.
     ESP_LOGI(TAG, "Initializing configuration...");
-    if (config_init() != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize configuration!");
-        return;
+    step = boot_status_begin("Config", NULL);
+    bool config_ok = (config_init() == ESP_OK);
+    if (config_ok) {
+        boot_status_end(step, BOOT_STEP_OK, NULL);
+    } else {
+        ESP_LOGE(TAG, "Failed to initialize configuration, using defaults");
+        boot_status_end(step, BOOT_STEP_ERROR, "usando padroes");
+    }
+
+    // Detect sensors and take a first reading
+    step = boot_status_begin("Sensor", NULL);
+    if (sensor_manager_init() == ESP_OK) {
+        sensor_manager_read();
+        sensor_data_t data;
+        sensor_manager_get_data(&data);
+        char detail[24];
+        snprintf(detail, sizeof(detail), "%s%s", data.sensor_name,
+                 data.thermocouple_valid ? " +TC" : "");
+        boot_status_end(step, BOOT_STEP_OK, detail);
+    } else {
+        ESP_LOGE(TAG, "Failed to initialize sensor manager");
+        boot_status_end(step, BOOT_STEP_ERROR, NULL);
     }
 
 #if CONFIG_WIFI_ENABLED
     // Boot decision: enter factory setup mode when unprovisioned or the
     // button (GPIO25) is held at boot. This MUST run before WiFi/web-server/
     // LoRaWAN init so the radio is clean for ESP-NOW factory provisioning.
+    // Skipped when config failed to load: the provisioned flag is unknown.
     {
         gpio_config_t btn_cfg = {
             .pin_bit_mask = (1ULL << BUTTON_GPIO),
@@ -277,16 +327,16 @@ void app_main(void)
         };
         gpio_config(&btn_cfg);
         bool button_held = (gpio_get_level(BUTTON_GPIO) == 0);
+        bool provisioned = config_get_factory_provisioned();
 
-        if (!config_get_factory_provisioned() || button_held) {
+        if (config_ok && (!provisioned || button_held)) {
             ESP_LOGW(TAG, "Entering FACTORY SETUP mode (prov=%d btn=%d)",
-                     config_get_factory_provisioned(), button_held);
+                     provisioned, button_held);
+            step = boot_status_begin("Modo SETUP", NULL);
+            boot_status_end(step, BOOT_STEP_OK,
+                            button_held ? "botao" : "nao provisionado");
 
-            if (sensor_manager_init() == ESP_OK) {
-                sensor_manager_read();
-            }
-
-            espnow_setup_run();
+            espnow_setup_run();  // never returns
         }
     }
 #endif
@@ -305,36 +355,36 @@ void app_main(void)
     }
 
 #if CONFIG_WIFI_ENABLED
-    // Initialize WiFi
+    // Initialize WiFi (failures are shown as boot steps, boot continues)
     ESP_LOGI(TAG, "Initializing WiFi...");
-    if (init_wifi() != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize WiFi!");
-        return;
-    }
+    init_wifi();
 
-    // Wait for WiFi to be ready
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    if (!s_wifi_failed) {
+        // Wait for WiFi to be ready
+        vTaskDelay(pdMS_TO_TICKS(1000));
 
-    // Start web server
-    ESP_LOGI(TAG, "Starting web server...");
-    web_server_config_t web_cfg = {
-        .port = 80,
-        .username = config_get_web_username(),
-        .password = config_get_web_password(),
-        .auth_enabled = config_get_web_auth_enabled(),
-    };
+        // Start web server
+        ESP_LOGI(TAG, "Starting web server...");
+        step = boot_status_begin("Web", NULL);
+        web_server_config_t web_cfg = {
+            .port = 80,
+            .username = config_get_web_username(),
+            .password = config_get_web_password(),
+            .auth_enabled = config_get_web_auth_enabled(),
+        };
 
-    if (web_server_init(&web_cfg) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start web server!");
-        return;
-    }
-
-    // Print access information
-    char ip[16];
-    if (wifi_manager_get_ip(ip) == ESP_OK) {
-        ESP_LOGI(TAG, "==========================================");
-        ESP_LOGI(TAG, "  Web Interface: http://%s", ip);
-        ESP_LOGI(TAG, "==========================================");
+        if (web_server_init(&web_cfg) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to start web server!");
+            boot_status_end(step, BOOT_STEP_ERROR, NULL);
+        } else {
+            char ip[16] = "";
+            if (wifi_manager_get_ip(ip) == ESP_OK) {
+                ESP_LOGI(TAG, "==========================================");
+                ESP_LOGI(TAG, "  Web Interface: http://%s", ip);
+                ESP_LOGI(TAG, "==========================================");
+            }
+            boot_status_end(step, BOOT_STEP_OK, ip);
+        }
     }
 #endif
 
@@ -361,6 +411,7 @@ void app_main(void)
 
     // Spawn FreeRTOS tasks
     ESP_LOGI(TAG, "Starting FreeRTOS tasks...");
+    step = boot_status_begin("Tasks", NULL);
 
     // Sensor task - Core 0, Priority 5, Stack 4096
     xTaskCreatePinnedToCore(sensor_task, "sensor", 6144, NULL, 5, NULL, 0);
@@ -385,6 +436,13 @@ void app_main(void)
         ESP_LOGW(TAG, "Failed to start auto-updater");
     }
 #endif
+
+    boot_status_end(step, BOOT_STEP_OK, NULL);
+
+    // Keep the final step list on screen briefly, then hand the OLED over
+    // to the display task
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    boot_status_finish();
 
     ESP_LOGI(TAG, "System ready!");
 }
