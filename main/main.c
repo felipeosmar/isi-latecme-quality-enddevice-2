@@ -119,6 +119,41 @@ static void init_wifi(void)
 }
 #endif
 
+#if CONFIG_OLED_ENABLED
+/** @brief Short WiFi status for the sensor screen (empty when WiFi is not built in) */
+static void format_wifi_status(char *out, size_t n)
+{
+#if CONFIG_WIFI_ENABLED
+    wifi_status_t st = wifi_manager_get_status();
+    if (s_wifi_failed || st == WIFI_STATUS_ERROR) {
+        snprintf(out, n, "WiFi:FALHA");
+    } else if (st == WIFI_STATUS_CONNECTED) {
+        snprintf(out, n, "WiFi:STA");
+    } else if (st == WIFI_STATUS_AP_MODE) {
+        snprintf(out, n, "WiFi:AP");
+    } else {
+        snprintf(out, n, "WiFi:...");
+    }
+#else
+    out[0] = '\0';
+#endif
+}
+
+/** @brief Short LoRaWAN link status for the sensor screen */
+static void format_lora_status(char *out, size_t n)
+{
+    uint8_t attempt = 0;
+    switch (lorawan_get_link_state(&attempt)) {
+        case LORAWAN_LINK_RADIO_ERROR:    snprintf(out, n, "LoRa:ERRO"); break;
+        case LORAWAN_LINK_NO_CREDENTIALS: snprintf(out, n, "LoRa:semcred"); break;
+        case LORAWAN_LINK_JOINING:        snprintf(out, n, "LoRa:join%u", (unsigned)attempt); break;
+        case LORAWAN_LINK_JOINED:         snprintf(out, n, "LoRa:OK"); break;
+        case LORAWAN_LINK_IDLE:
+        default:                          snprintf(out, n, "LoRa:..."); break;
+    }
+}
+#endif
+
 /**
  * @brief Display update task - cycles OLED display pages
  */
@@ -153,7 +188,10 @@ static void display_task(void *param)
                     float tc = data.thermocouple_valid ? data.thermocouple_temp : NAN;
                     float t  = data.temp_hum_valid ? data.temperature : NAN;
                     float h  = data.temp_hum_valid ? data.humidity : NAN;
-                    oled_display_show_sensors(t, h, tc);
+                    char wifi_st[17], lora_st[17];
+                    format_wifi_status(wifi_st, sizeof(wifi_st));
+                    format_lora_status(lora_st, sizeof(lora_st));
+                    oled_display_show_sensors(t, h, tc, wifi_st, lora_st);
                     break;
                 }
                 case OLED_PAGE_SYSTEM: {

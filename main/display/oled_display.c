@@ -60,7 +60,8 @@ static void oled_display_show_alarm_impl(const alarm_info_t *info);
 static oled_page_t oled_display_get_page_impl(void);
 static void oled_display_next_page_impl(void);
 static void oled_display_show_factory_reset_impl(uint8_t percent);
-static void oled_display_show_sensors_impl(float temp, float hum, float tc_temp);
+static void oled_display_show_sensors_impl(float temp, float hum, float tc_temp,
+                                           const char *status_top, const char *status_bottom);
 static void oled_display_update_impl(void);
 static void oled_display_text_impl(uint8_t x, uint8_t page, const char *text);
 static void oled_display_clear_impl(void);
@@ -402,7 +403,18 @@ static uint8_t sensor_subpage = 0;
 static uint8_t sensor_subpage_ticks = 0;
 #define SENSOR_SUBPAGE_INTERVAL 6  // calls before switching (500ms loop × 6 = 3s)
 
-static void oled_display_show_sensors_impl(float temp, float hum, float tc_temp)
+// Draw a status string right-aligned on a text page (max 16 chars so it never
+// reaches the 4-char label + 1 space on the left). NULL or empty draws nothing.
+static void oled_draw_status_right(uint8_t page, const char *status)
+{
+    if (!status || !status[0]) return;
+    char buf[17];
+    snprintf(buf, sizeof(buf), "%s", status);
+    oled_display_text((uint8_t)(OLED_WIDTH - strlen(buf) * 6), page, buf);
+}
+
+static void oled_display_show_sensors_impl(float temp, float hum, float tc_temp,
+                                           const char *status_top, const char *status_bottom)
 {
     if (!oled_initialized) return;
     oled_send_cmd(SSD1306_CMD_SET_NORMAL);  // ensure not inverted from alarm page
@@ -415,6 +427,7 @@ static void oled_display_show_sensors_impl(float temp, float hum, float tc_temp)
 #ifdef CONFIG_THERMOCOUPLE_ENABLED
     // Thermocouple variant: TC (Int.) on top, Ext. alternating T/H on bottom
     oled_display_text(0, 0, "Int.");
+    oled_draw_status_right(0, status_top);
     if (!isnan(tc_temp)) {
         snprintf(line, sizeof(line), "%.1fC", tc_temp);
     } else {
@@ -424,6 +437,7 @@ static void oled_display_show_sensors_impl(float temp, float hum, float tc_temp)
     oled_display_text_3x(x, 1, line);
 
     oled_display_text(0, 4, "Ext.");
+    oled_draw_status_right(4, status_bottom);
     if (sensor_subpage == 0) {
         if (!isnan(temp)) {
             snprintf(line, sizeof(line), "%.1fC", temp);
@@ -448,6 +462,7 @@ static void oled_display_show_sensors_impl(float temp, float hum, float tc_temp)
 #else
     // Standard variant: temperature on top, humidity on bottom — no alternating
     oled_display_text(0, 0, "Temp");
+    oled_draw_status_right(0, status_top);
     if (!isnan(temp)) {
         snprintf(line, sizeof(line), "%.1fC", temp);
     } else {
@@ -457,6 +472,7 @@ static void oled_display_show_sensors_impl(float temp, float hum, float tc_temp)
     oled_display_text_3x(x, 1, line);
 
     oled_display_text(0, 4, "Hum");
+    oled_draw_status_right(4, status_bottom);
     if (!isnan(hum)) {
         snprintf(line, sizeof(line), "%.1f%%", hum);
     } else {
@@ -702,10 +718,11 @@ void oled_display_update(void)
     OLED_UNLOCK();
 }
 
-void oled_display_show_sensors(float temp, float hum, float tc_temp)
+void oled_display_show_sensors(float temp, float hum, float tc_temp,
+                               const char *status_top, const char *status_bottom)
 {
     OLED_LOCK();
-    oled_display_show_sensors_impl(temp, hum, tc_temp);
+    oled_display_show_sensors_impl(temp, hum, tc_temp, status_top, status_bottom);
     OLED_UNLOCK();
 }
 

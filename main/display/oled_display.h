@@ -62,7 +62,8 @@ void oled_display_update(void);
  * Left half: T and H from I2C sensor
  * Right half: T from thermocouple
  */
-void oled_display_show_sensors(float temp, float hum, float tc_temp);
+void oled_display_show_sensors(float temp, float hum, float tc_temp,
+                               const char *status_top, const char *status_bottom);
 
 /**
  * @brief Show system info + LoRaWAN status page
@@ -134,7 +135,8 @@ static inline esp_err_t oled_display_init(void *i2c_bus) { return ESP_OK; }
 static inline void oled_display_clear(void) { }
 static inline void oled_display_text(uint8_t x, uint8_t y, const char *text) { }
 static inline void oled_display_update(void) { }
-static inline void oled_display_show_sensors(float temp, float hum, float tc_temp) { }
+static inline void oled_display_show_sensors(float temp, float hum, float tc_temp,
+                                             const char *status_top, const char *status_bottom) { }
 static inline void oled_display_show_system(const char *ip_addr, uint32_t uptime_s,
                                             bool lora_joined, uint32_t dev_addr,
                                             uint32_t uplink_count, int16_t rssi, float snr) { }
