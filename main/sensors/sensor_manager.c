@@ -96,19 +96,12 @@ static void detect_sensor(void)
     strncpy(sensor_data.sensor_name, "None", sizeof(sensor_data.sensor_name));
 }
 
-esp_err_t sensor_manager_init(void)
+esp_err_t sensor_manager_bus_init(void)
 {
-    if (initialized) {
+    if (i2c_bus != NULL) {
         return ESP_OK;
     }
 
-    data_mutex = xSemaphoreCreateMutex();
-    if (!data_mutex) {
-        ESP_LOGE(TAG, "Failed to create mutex");
-        return ESP_ERR_NO_MEM;
-    }
-
-    // Initialize I2C master bus
     i2c_master_bus_config_t bus_cfg = {
         .i2c_port = I2C_NUM_0,
         .sda_io_num = I2C_SDA_GPIO,
@@ -123,10 +116,31 @@ esp_err_t sensor_manager_init(void)
     esp_err_t ret = i2c_new_master_bus(&bus_cfg, &i2c_bus);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create I2C master bus: %s", esp_err_to_name(ret));
+        i2c_bus = NULL;
         return ret;
     }
 
     ESP_LOGI(TAG, "I2C bus initialized (SDA=%d, SCL=%d)", I2C_SDA_GPIO, I2C_SCL_GPIO);
+    return ESP_OK;
+}
+
+esp_err_t sensor_manager_init(void)
+{
+    if (initialized) {
+        return ESP_OK;
+    }
+
+    data_mutex = xSemaphoreCreateMutex();
+    if (!data_mutex) {
+        ESP_LOGE(TAG, "Failed to create mutex");
+        return ESP_ERR_NO_MEM;
+    }
+
+    // Create the I2C bus (no-op if already created early in boot)
+    esp_err_t ret = sensor_manager_bus_init();
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
     // Auto-detect I2C sensor
     detect_sensor();
