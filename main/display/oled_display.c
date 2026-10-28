@@ -525,6 +525,69 @@ void oled_display_show_factory_reset(uint8_t percent)
     oled_display_update();
 }
 
+/**
+ * @brief Horizontal offset that centers @p len chars of the 6px-wide font
+ */
+static uint8_t center_x(size_t len)
+{
+    uint8_t w = (uint8_t)(len * 6);
+    return (w >= OLED_WIDTH) ? 0 : (uint8_t)((OLED_WIDTH - w) / 2);
+}
+
+/**
+ * @brief Draw one setup-screen table row: label, reading, applied offset.
+ *
+ * Column widths match SETUP_TABLE_HEADER so the numbers line up. An invalid
+ * reading shows "--" instead of a stale value, but the offset is always shown.
+ */
+static void draw_setup_row(uint8_t x, uint8_t page, const char *label,
+                           bool valid, float value, float corr)
+{
+    char line[24];
+    if (valid) {
+        snprintf(line, sizeof(line), "%-2s %6.1f %+6.1f", label, value, corr);
+    } else {
+        snprintf(line, sizeof(line), "%-2s %6s %+6.1f", label, "--", corr);
+    }
+    oled_display_text(x, page, line);
+}
+
+// Right-aligned over the value/offset columns of draw_setup_row()
+#define SETUP_TABLE_HEADER "     Lido    Ofs"
+
+void oled_display_show_setup(const char *mac_str, const sensor_data_t *data,
+                             float temp_corr, float hum_corr, float tc_corr)
+{
+    if (!oled_initialized) return;
+    oled_send_cmd(SSD1306_CMD_SET_NORMAL);
+    oled_display_clear();
+
+    // Pages 0-1: header at 2x (12px per char)
+    oled_display_text_2x((OLED_WIDTH - 5 * 12) / 2, 0, "SETUP");
+
+    // Page 2: MAC address
+    const char *mac = (mac_str && mac_str[0]) ? mac_str : "--:--:--:--:--:--";
+    oled_display_text(center_x(strlen(mac)), 2, mac);
+
+    // Pages 4+: sensor table, all rows sharing one x so columns align
+    const uint8_t tx = center_x(strlen(SETUP_TABLE_HEADER));
+    bool th_valid = (data != NULL) && data->temp_hum_valid;
+
+    oled_display_text(tx, 4, SETUP_TABLE_HEADER);
+    draw_setup_row(tx, 5, "T", th_valid, data ? data->temperature : 0.0f,
+                   temp_corr);
+    draw_setup_row(tx, 6, "H", th_valid, data ? data->humidity : 0.0f,
+                   hum_corr);
+#if CONFIG_THERMOCOUPLE_ENABLED
+    draw_setup_row(tx, 7, "TC", (data != NULL) && data->thermocouple_valid,
+                   data ? data->thermocouple_temp : 0.0f, tc_corr);
+#else
+    (void)tc_corr;
+#endif
+
+    oled_display_update();
+}
+
 void oled_display_next_page(void)
 {
     current_page = (oled_page_t)((current_page + 1) % OLED_PAGE_MAX);

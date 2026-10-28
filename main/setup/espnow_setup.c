@@ -37,6 +37,7 @@
 #include "sensor_manager.h"
 #include "buzzer.h"
 #include "factory_key.h"
+#include "oled_display.h"
 #include "espnow_setup.h"
 
 #define ESPNOW_CHANNEL      1
@@ -332,6 +333,11 @@ static void handle_set(cJSON *req, const uint8_t *src)
     }
 
     send_ack(src, own_mac_str, true, NULL, seq);
+
+    /* Corrections changed: re-read (after the ACK, since a MAX6675 conversion
+     * costs a few hundred ms) so the setup screen and the next READING show
+     * values corrected with the new offsets instead of the old ones. */
+    sensor_manager_read();
 }
 
 /**
@@ -379,6 +385,30 @@ static void handle_commit(cJSON *req, const uint8_t *src)
     /* Let the ACK flush over the air before rebooting. */
     vTaskDelay(pdMS_TO_TICKS(200));
     esp_restart();
+}
+
+/* ---------------------------------------------------------------------- */
+/* Setup-mode OLED screen                                                  */
+/* ---------------------------------------------------------------------- */
+
+/**
+ * @brief Draw the setup screen: "SETUP", own MAC, readings + applied offsets.
+ *
+ * Called after every sensor read (so the values stay live) and after every
+ * handled frame, so a SET that changes the corrections shows up right away.
+ */
+static void setup_display_refresh(void)
+{
+    char mac_str[18];
+    get_own_mac_str(mac_str);
+
+    sensor_data_t d = {0};
+    sensor_manager_get_data(&d);
+
+    oled_display_show_setup(mac_str, &d,
+                            config_get_temp_correction(),
+                            config_get_hum_correction(),
+                            config_get_thermocouple_correction());
 }
 
 /* ---------------------------------------------------------------------- */
@@ -533,6 +563,16 @@ void espnow_setup_run(void)
     ESP_LOGI(TAG, "setup mode ready, ch=%d mac=%02X:%02X:%02X:%02X:%02X:%02X",
              ESPNOW_CHANNEL, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
+#if CONFIG_OLED_ENABLED
+    /* The display task never runs in setup mode, so bring the OLED up here.
+     * sensor_manager_init() already owns the shared I2C bus. */
+    void *i2c_bus = sensor_manager_get_i2c_bus();
+    if (!i2c_bus || oled_display_init(i2c_bus) != ESP_OK) {
+        ESP_LOGW(TAG, "OLED unavailable, setup screen disabled");
+    }
+#endif
+    setup_display_refresh();
+
     /* Statically size the drain buffer; it is large (setup_rx_msg_t holds a
      * MAX_FRAME_LEN payload) so keep it off this task's stack. */
     static setup_rx_msg_t rx;
@@ -544,11 +584,14 @@ void espnow_setup_run(void)
          * task). Block up to read_period so sensor data stays fresh when idle. */
         if (xQueueReceive(s_rx_queue, &rx, read_period) == pdTRUE) {
             handle_frame(rx.data, rx.len, rx.src);
+            /* A SET may have changed the offsets and re-read the sensors. */
+            setup_display_refresh();
         }
 
         if (xTaskGetTickCount() - last_read >= read_period) {
             sensor_manager_read();
             last_read = xTaskGetTickCount();
+            setup_display_refresh();
         }
     }
 }

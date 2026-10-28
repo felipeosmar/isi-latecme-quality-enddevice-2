@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "alarm_manager.h"
+#include "sensor_manager.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -87,6 +88,22 @@ oled_page_t oled_display_get_page(void);
 void oled_display_show_factory_reset(uint8_t percent);
 
 /**
+ * @brief Show the factory setup-mode screen.
+ *
+ * Line 1 (2x font): "SETUP"
+ * Line 2: own STA MAC address
+ * Lines 3+: one row per sensor with the reading next to its applied offset
+ *
+ * @param mac_str   MAC address as "AA:BB:CC:DD:EE:FF"
+ * @param data      Latest readings (corrections already applied); NULL shows "--"
+ * @param temp_corr I2C temperature correction offset (degrees C)
+ * @param hum_corr  I2C humidity correction offset (%)
+ * @param tc_corr   Thermocouple correction offset (degrees C)
+ */
+void oled_display_show_setup(const char *mac_str, const sensor_data_t *data,
+                             float temp_corr, float hum_corr, float tc_corr);
+
+/**
  * @brief Show alarm page with 1Hz blinking header.
  *        Toggles display inversion each call (call at 500ms interval for 1Hz blink).
  *        Resets inversion to normal automatically when alarm clears.
@@ -109,6 +126,10 @@ static inline void oled_display_show_system(const char *ip_addr, uint32_t uptime
 static inline void oled_display_next_page(void) { }
 static inline oled_page_t oled_display_get_page(void) { return OLED_PAGE_SENSORS; }
 static inline void oled_display_show_factory_reset(uint8_t percent) { }
+static inline void oled_display_show_setup(const char *mac_str,
+                                           const sensor_data_t *data,
+                                           float temp_corr, float hum_corr,
+                                           float tc_corr) { }
 static inline void oled_display_show_alarm(const alarm_info_t *info) { }
 
 #endif // CONFIG_OLED_ENABLED
