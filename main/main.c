@@ -32,6 +32,7 @@
 #include "status_led.h"
 #include "alarm_manager.h"
 #include "button_handler.h"
+#include "boot_status.h"
 
 #if CONFIG_WIFI_ENABLED
 #include "wifi_manager.h"
@@ -235,6 +236,7 @@ void app_main(void)
 
     // Allow important startup messages
     esp_log_level_set("MAIN", ESP_LOG_INFO);
+    esp_log_level_set("BOOT", ESP_LOG_INFO);
     esp_log_level_set("LORAWAN", ESP_LOG_INFO);
     esp_log_level_set("SENSOR_MGR", ESP_LOG_INFO);
     esp_log_level_set("MAX6675", ESP_LOG_INFO);
@@ -252,6 +254,7 @@ void app_main(void)
 
     // Initialize buzzer hardware (no sound yet)
     buzzer_init();
+    boot_status_init();
 
     // Initialize configuration manager (includes LittleFS)
     ESP_LOGI(TAG, "Initializing configuration...");

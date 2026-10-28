@@ -13,6 +13,7 @@ set(srcs
     "logs/log_buffer.c"
     "alarm/alarm_manager.c"
     "interface/button_handler.c"
+    "display/boot_status.c"
 )
 
 if(CONFIG_THERMOCOUPLE_ENABLED)
