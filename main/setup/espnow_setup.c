@@ -632,7 +632,11 @@ void espnow_setup_run(void)
         /* Stay on the boot list with the reason instead of panicking into a
          * reboot loop; boot_status truncates the detail to fit the screen. */
         char detail[48];
-        snprintf(detail, sizeof(detail), "%s %s", failed_step, esp_err_to_name(err));
+        const char *n = esp_err_to_name(err);
+        if (strncmp(n, "ESP_ERR_", 8) == 0) {
+            n += 8;  /* keep the reason inside the truncated detail */
+        }
+        snprintf(detail, sizeof(detail), "%s %s", failed_step, n);
         boot_status_end(step, BOOT_STEP_ERROR, detail);
         ESP_LOGE(TAG, "ESP-NOW init failed (%s), setup mode halted", detail);
         for (;;) {
@@ -640,6 +644,8 @@ void espnow_setup_run(void)
         }
     }
     boot_status_end(step, BOOT_STEP_OK, NULL);
+    /* Keep the setup-entry reason on the boot list long enough to read. */
+    vTaskDelay(pdMS_TO_TICKS(500));
     boot_status_finish();
 
     /* Make sure the sensor manager is up and has at least one reading

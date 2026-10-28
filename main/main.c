@@ -342,7 +342,8 @@ void app_main(void)
         sensor_data_t data;
         sensor_manager_get_data(&data);
         char detail[24];
-        snprintf(detail, sizeof(detail), "%s%s", data.sensor_name,
+        const char *sname = strcmp(data.sensor_name, "None") == 0 ? "nenhum" : data.sensor_name;
+        snprintf(detail, sizeof(detail), "%s%s", sname,
                  data.thermocouple_valid ? " +TC" : "");
         boot_status_end(step, BOOT_STEP_OK, detail);
     } else {

@@ -431,7 +431,14 @@ extern "C" lorawan_link_state_t lorawan_get_link_state(uint8_t *join_attempt)
     if (join_attempt) {
         *join_attempt = stats.join_attempts;
     }
-    return link_state;
+    // lorawan_send()/lorawan_force_rejoin() clear stats.joined from other
+    // tasks while link_state is only updated by lorawan_task, so report a
+    // dead session as JOINING instead of a stale JOINED.
+    lorawan_link_state_t s = link_state;
+    if (s == LORAWAN_LINK_JOINED && !stats.joined) {
+        s = LORAWAN_LINK_JOINING;
+    }
+    return s;
 }
 
 extern "C" esp_err_t lorawan_get_stats(lorawan_stats_t *out)
