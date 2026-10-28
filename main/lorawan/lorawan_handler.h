@@ -34,6 +34,17 @@ typedef struct {
 } lorawan_stats_t;
 
 /**
+ * @brief High-level LoRaWAN link state (for display/status use)
+ */
+typedef enum {
+    LORAWAN_LINK_IDLE = 0,          /**< task not started yet */
+    LORAWAN_LINK_RADIO_ERROR,       /**< lorawan_init() failed */
+    LORAWAN_LINK_NO_CREDENTIALS,    /**< missing or invalid DevEUI/JoinEUI/AppKey */
+    LORAWAN_LINK_JOINING,
+    LORAWAN_LINK_JOINED,
+} lorawan_link_state_t;
+
+/**
  * @brief Callback type for LoRaWAN Application Package downlinks (TSxxx)
  *
  * Called from within lorawan_send() when a downlink is received on the
@@ -105,6 +116,17 @@ bool lorawan_is_joined(void);
  * @return ESP_OK on success
  */
 esp_err_t lorawan_get_stats(lorawan_stats_t *stats);
+
+/**
+ * @brief Get the current link state
+ *
+ * Non-blocking (does not take the LoRaWAN mutex, which may be held for the
+ * duration of a join).
+ *
+ * @param join_attempt Optional out: current join attempt count (stats.join_attempts); may be NULL
+ * @return Current link state
+ */
+lorawan_link_state_t lorawan_get_link_state(uint8_t *join_attempt);
 
 /**
  * @brief Force a re-join
