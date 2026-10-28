@@ -31,9 +31,19 @@ typedef struct {
 } sensor_data_t;
 
 /**
+ * @brief Create the shared I2C master bus
+ *
+ * Idempotent; reads no config and needs no other init. Call early so the
+ * OLED can use the bus before sensor_manager_init().
+ *
+ * @return ESP_OK on success or if the bus already exists
+ */
+esp_err_t sensor_manager_bus_init(void);
+
+/**
  * @brief Initialize sensor manager
  *
- * Sets up I2C bus and auto-detects connected sensors.
+ * Sets up I2C bus (via sensor_manager_bus_init) and auto-detects connected sensors.
  *
  * @return ESP_OK on success
  */
