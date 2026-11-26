@@ -982,9 +982,9 @@ bool config_get_alarm_limits_origin_local(void)
 // ============================================================================
 
 bool config_get_auto_update_enabled(void) {
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool locked = !s_config_mutex || xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) == pdTRUE;
     bool v = s_config.auto_update_enabled;
-    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    if (locked && s_config_mutex) xSemaphoreGive(s_config_mutex);
     return v;
 }
 
@@ -1003,33 +1003,33 @@ const char *config_get_auto_update_www_tag(void) {
 }
 
 void config_set_auto_update_enabled(bool enabled) {
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool locked = !s_config_mutex || xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) == pdTRUE;
     s_config.auto_update_enabled = enabled;
-    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    if (locked && s_config_mutex) xSemaphoreGive(s_config_mutex);
 }
 
 void config_set_auto_update_branch(const char *branch) {
     if (!branch) return;
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool locked = !s_config_mutex || xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) == pdTRUE;
     strncpy(s_config.auto_update_branch, branch, sizeof(s_config.auto_update_branch) - 1);
     s_config.auto_update_branch[sizeof(s_config.auto_update_branch) - 1] = '\0';
-    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    if (locked && s_config_mutex) xSemaphoreGive(s_config_mutex);
 }
 
 void config_set_auto_update_firmware_tag(const char *tag) {
     if (!tag) return;
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool locked = !s_config_mutex || xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) == pdTRUE;
     strncpy(s_config.auto_update_firmware_tag, tag, sizeof(s_config.auto_update_firmware_tag) - 1);
     s_config.auto_update_firmware_tag[sizeof(s_config.auto_update_firmware_tag) - 1] = '\0';
-    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    if (locked && s_config_mutex) xSemaphoreGive(s_config_mutex);
 }
 
 void config_set_auto_update_www_tag(const char *tag) {
     if (!tag) return;
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool locked = !s_config_mutex || xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) == pdTRUE;
     strncpy(s_config.auto_update_www_tag, tag, sizeof(s_config.auto_update_www_tag) - 1);
     s_config.auto_update_www_tag[sizeof(s_config.auto_update_www_tag) - 1] = '\0';
-    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    if (locked && s_config_mutex) xSemaphoreGive(s_config_mutex);
 }
 
 // ============================================================================
@@ -1037,9 +1037,9 @@ void config_set_auto_update_www_tag(const char *tag) {
 // ============================================================================
 
 bool config_get_fuota_enabled(void) {
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool locked = !s_config_mutex || xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) == pdTRUE;
     bool v = s_config.fuota.enabled;
-    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    if (locked && s_config_mutex) xSemaphoreGive(s_config_mutex);
     return v;
 }
 
@@ -1051,10 +1051,10 @@ const char *config_get_firmware_version(void) {
 
 esp_err_t config_set_firmware_version(const char *version) {
     if (!version) return ESP_ERR_INVALID_ARG;
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool locked = !s_config_mutex || xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) == pdTRUE;
     strncpy(s_config.fuota.firmware_version, version,
             sizeof(s_config.fuota.firmware_version) - 1);
     s_config.fuota.firmware_version[sizeof(s_config.fuota.firmware_version) - 1] = '\0';
-    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    if (locked && s_config_mutex) xSemaphoreGive(s_config_mutex);
     return config_save();
 }
