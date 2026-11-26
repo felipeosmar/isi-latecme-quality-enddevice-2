@@ -69,5 +69,5 @@ static void alarm_sync_task(void *param)
 
 void alarm_sync_task_start(void)
 {
-    xTaskCreatePinnedToCore(alarm_sync_task, "alarm_sync", 4096, NULL, 3, NULL, 0);
+    xTaskCreatePinnedToCore(alarm_sync_task, "alarm_sync", 6144, NULL, 3, NULL, 0);
 }
