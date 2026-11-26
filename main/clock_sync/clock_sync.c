@@ -97,6 +97,8 @@ esp_err_t clock_sync_request(void)
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "AppTimeReq send failed: %s", esp_err_to_name(ret));
     }
+    ESP_LOGI(TAG, "clock_sync stack high water mark: %u bytes",
+             (unsigned)uxTaskGetStackHighWaterMark(NULL));
     return ret;
 }
 

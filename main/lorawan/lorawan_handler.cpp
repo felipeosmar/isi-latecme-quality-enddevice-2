@@ -10,6 +10,7 @@
 #include "lorawan_handler.h"
 #include "EspHal.h"
 #include "config_manager.h"
+#include "alarm_sync.h"
 
 #include <RadioLib.h>
 #include <cstring>
@@ -17,6 +18,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/queue.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "nvs.h"
@@ -46,6 +48,14 @@ static EspHal *hal = nullptr;
 static SX1276 *radio = nullptr;
 static LoRaWANNode *node = nullptr;
 static SemaphoreHandle_t lorawan_mutex = nullptr;
+
+// fPort 11 downlinks: lorawan_send only copies bytes here; alarm_sync_task
+// parses/validates/saves outside the LoRaWAN mutex.
+typedef struct {
+    uint8_t len;                           // real downlink length, clamped to 255
+    uint8_t data[ALARM_SYNC_LIMITS_LEN];   // first min(len, 18) bytes
+} limits_msg_t;
+static QueueHandle_t s_limits_queue = nullptr;
 
 // ============================================================================
 // State
@@ -206,6 +216,14 @@ extern "C" esp_err_t lorawan_init(void)
     if (!lorawan_mutex) {
         ESP_LOGE(TAG, "Failed to create mutex");
         return ESP_ERR_NO_MEM;
+    }
+
+    if (!s_limits_queue) {
+        s_limits_queue = xQueueCreate(2, sizeof(limits_msg_t));
+        if (!s_limits_queue) {
+            ESP_LOGE(TAG, "Failed to create limits queue");
+            return ESP_ERR_NO_MEM;
+        }
     }
 
     // Create HAL with SPI pins
@@ -374,11 +392,9 @@ extern "C" esp_err_t lorawan_send(const uint8_t *data, size_t len, uint8_t port,
     uint8_t downlink_data[256] = {0};
     size_t downlink_len = sizeof(downlink_data);
 
-    if (confirmed) {
-        state = node->sendReceive((uint8_t *)data, len, port, downlink_data, &downlink_len, true);
-    } else {
-        state = node->sendReceive((uint8_t *)data, len, port, downlink_data, &downlink_len);
-    }
+    LoRaWANEvent_t eventDown = {};
+    state = node->sendReceive((uint8_t *)data, len, port, downlink_data, &downlink_len,
+                              confirmed, NULL, &eventDown);
 
     // state >= 0: uplink sent OK
     //   state == 0 (RADIOLIB_ERR_NONE): no downlink received
@@ -394,6 +410,19 @@ extern "C" esp_err_t lorawan_send(const uint8_t *data, size_t len, uint8_t port,
             stats.downlink_count++;
             ESP_LOGI(TAG, "Uplink #%lu sent, downlink received in RX%d (%zu bytes)",
                      (unsigned long)stats.uplink_count, state, downlink_len);
+
+            // Platform alarm limits (fPort 11): copy only, no parse/save here.
+            // App packages (202/200/201) are consumed inside RadioLib and are
+            // untouched; other fPorts stay discarded.
+            if (eventDown.fPort == ALARM_SYNC_FPORT_LIMITS && s_limits_queue) {
+                limits_msg_t msg = {};
+                msg.len = (uint8_t)(downlink_len > 255 ? 255 : downlink_len);
+                size_t n = downlink_len < ALARM_SYNC_LIMITS_LEN ? downlink_len : ALARM_SYNC_LIMITS_LEN;
+                memcpy(msg.data, downlink_data, n);
+                if (xQueueSend(s_limits_queue, &msg, 0) != pdTRUE) {
+                    ESP_LOGW(TAG, "fPort 11 limits queue full, downlink dropped");
+                }
+            }
         } else {
             ESP_LOGI(TAG, "Uplink #%lu sent (no downlink, code %d)",
                      (unsigned long)stats.uplink_count, state);
@@ -587,4 +616,9 @@ extern "C" void lorawan_task(void *param)
         // If no external sender is configured, we send a heartbeat.
         // The main.c will wire sensor_task -> cayenne_lpp -> lorawan_send().
     }
+}
+
+extern "C" QueueHandle_t lorawan_limits_queue(void)
+{
+    return s_limits_queue;
 }

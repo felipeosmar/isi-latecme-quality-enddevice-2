@@ -33,6 +33,7 @@
 #include "alarm_manager.h"
 #include "alarm_events.h"
 #include "alarm_sync.h"
+#include "alarm_sync_task.h"
 #include "button_handler.h"
 #include "boot_status.h"
 
@@ -482,6 +483,7 @@ void app_main(void)
     esp_log_level_set("MAIN", ESP_LOG_INFO);
     esp_log_level_set("BOOT", ESP_LOG_INFO);
     esp_log_level_set("LORAWAN", ESP_LOG_INFO);
+    esp_log_level_set("alarm_sync", ESP_LOG_INFO);
     esp_log_level_set("SENSOR_MGR", ESP_LOG_INFO);
     esp_log_level_set("MAX6675", ESP_LOG_INFO);
 #if CONFIG_OLED_ENABLED
@@ -652,6 +654,9 @@ void app_main(void)
 
     // Uplink task - Core 0, Priority 4, Stack 4096
     xTaskCreatePinnedToCore(uplink_task, "uplink", 4096, NULL, 4, NULL, 0);
+
+    // Alarm limits sync task (fPort 11 downlinks) - Core 0, Priority 3, Stack 4096
+    alarm_sync_task_start();
 
 #if CONFIG_OLED_ENABLED
     // Display task - Core 0, Priority 3, Stack 4096

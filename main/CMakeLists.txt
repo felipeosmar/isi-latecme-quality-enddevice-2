@@ -14,6 +14,7 @@ set(srcs
     "alarm/alarm_manager.c"
     "alarm/alarm_sync.c"
     "alarm/alarm_events.c"
+    "alarm/alarm_sync_task.c"
     "interface/button_handler.c"
     "display/boot_status.c"
 )
