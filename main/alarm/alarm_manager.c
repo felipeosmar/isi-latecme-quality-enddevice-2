@@ -131,33 +131,38 @@ void alarm_manager_evaluate(const sensor_data_t *data)
 {
     if (!s_initialized || !data) return;
 
+    // Single locked read: avoids seeing a new low with an old high.
+    // Taken before s_mutex so the two locks are never nested.
+    alarm_channel_cfg_t cfg[3];
+    config_get_alarm_block(cfg);
+
     xSemaphoreTake(s_mutex, portMAX_DELAY);
 
     // Channel 0: I2C temperature
-    if (data->temp_hum_valid && config_get_alarm_temp_enabled()) {
+    if (data->temp_hum_valid && cfg[0].enabled) {
         evaluate_channel(&s_channels[0], data->temperature,
-                         config_get_alarm_temp_low(), config_get_alarm_temp_high(),
+                         cfg[0].low, cfg[0].high,
                          "TEMP ALTA", "TEMP BAIXA");
-    } else if (!config_get_alarm_temp_enabled()) {
+    } else if (!cfg[0].enabled) {
         s_channels[0].state = ALARM_STATE_IDLE;
     }
     // if enabled but data invalid: leave state unchanged
 
     // Channel 1: I2C humidity
-    if (data->temp_hum_valid && config_get_alarm_hum_enabled()) {
+    if (data->temp_hum_valid && cfg[1].enabled) {
         evaluate_channel(&s_channels[1], data->humidity,
-                         config_get_alarm_hum_low(), config_get_alarm_hum_high(),
+                         cfg[1].low, cfg[1].high,
                          "UMID ALTA", "UMID BAIXA");
-    } else if (!config_get_alarm_hum_enabled()) {
+    } else if (!cfg[1].enabled) {
         s_channels[1].state = ALARM_STATE_IDLE;
     }
 
     // Channel 2: thermocouple
-    if (data->thermocouple_valid && config_get_alarm_tc_enabled()) {
+    if (data->thermocouple_valid && cfg[2].enabled) {
         evaluate_channel(&s_channels[2], data->thermocouple_temp,
-                         config_get_alarm_tc_low(), config_get_alarm_tc_high(),
+                         cfg[2].low, cfg[2].high,
                          "TERM ALTA", "TERM BAIXA");
-    } else if (!config_get_alarm_tc_enabled()) {
+    } else if (!cfg[2].enabled) {
         s_channels[2].state = ALARM_STATE_IDLE;
     }
 

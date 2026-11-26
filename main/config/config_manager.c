@@ -80,6 +80,8 @@ typedef struct {
     float alarm_tc_low;
     float alarm_tc_high;
 #endif
+    uint16_t alarm_limits_version;       // last platform-applied version (0 = never)
+    bool     alarm_limits_origin_local;  // true if last change was local (web/API)
 
     // Auto-update
     bool  auto_update_enabled;
@@ -202,6 +204,8 @@ void config_reset_defaults(void)
     s_config.alarm_tc_low       = 0.0f;
     s_config.alarm_tc_high      = 0.0f;
 #endif
+    s_config.alarm_limits_version      = 0;
+    s_config.alarm_limits_origin_local = false;
 
     // Auto-update defaults
     s_config.auto_update_enabled = true;
@@ -271,6 +275,8 @@ static esp_err_t _config_save_internal(void)
     cJSON_AddNumberToObject(alarms, "tc_low",     s_config.alarm_tc_low);
     cJSON_AddNumberToObject(alarms, "tc_high",    s_config.alarm_tc_high);
 #endif
+    cJSON_AddNumberToObject(alarms, "limits_version", s_config.alarm_limits_version);
+    cJSON_AddBoolToObject(alarms, "limits_origin_local", s_config.alarm_limits_origin_local);
     cJSON_AddItemToObject(sensors, "alarms", alarms);
     cJSON_AddItemToObject(root, "sensors", sensors);
 
@@ -486,6 +492,14 @@ esp_err_t config_load(void)
                 s_config.alarm_tc_low = (float)item->valuedouble;
             if ((item = cJSON_GetObjectItem(alarms, "tc_high")) && cJSON_IsNumber(item))
                 s_config.alarm_tc_high = (float)item->valuedouble;
+            if ((item = cJSON_GetObjectItem(alarms, "limits_version")) && cJSON_IsNumber(item)) {
+                int v = (int)item->valuedouble;
+                if (v < 0) v = 0;
+                if (v > 32767) v = 32767;
+                s_config.alarm_limits_version = (uint16_t)v;
+            }
+            if ((item = cJSON_GetObjectItem(alarms, "limits_origin_local")) && cJSON_IsBool(item))
+                s_config.alarm_limits_origin_local = cJSON_IsTrue(item);
 #endif
         }
     }
@@ -854,6 +868,88 @@ void config_set_alarm_tc_enabled(bool e)  { (void)e; }
 void config_set_alarm_tc_low(float v)     { (void)v; }
 void config_set_alarm_tc_high(float v)    { (void)v; }
 #endif
+
+void config_get_alarm_block(alarm_channel_cfg_t out[3])
+{
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    out[0].enabled = s_config.alarm_temp_enabled;
+    out[0].low     = s_config.alarm_temp_low;
+    out[0].high    = s_config.alarm_temp_high;
+    out[1].enabled = s_config.alarm_hum_enabled;
+    out[1].low     = s_config.alarm_hum_low;
+    out[1].high    = s_config.alarm_hum_high;
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
+    out[2].enabled = s_config.alarm_tc_enabled;
+    out[2].low     = s_config.alarm_tc_low;
+    out[2].high    = s_config.alarm_tc_high;
+#else
+    out[2].enabled = false;
+    out[2].low     = 0.0f;
+    out[2].high    = 0.0f;
+#endif
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+}
+
+esp_err_t config_apply_alarm_limits(const alarm_sync_limits_t *l, bool origin_local)
+{
+    if (!l) return ESP_ERR_INVALID_ARG;
+    if (s_config_mutex && xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire config mutex for alarm limits");
+        return ESP_ERR_TIMEOUT;
+    }
+
+    if (!l->ch[0].keep) {
+        s_config.alarm_temp_enabled = l->ch[0].enabled;
+        s_config.alarm_temp_low     = l->ch[0].low_d / 10.0f;
+        s_config.alarm_temp_high    = l->ch[0].high_d / 10.0f;
+    }
+    if (!l->ch[1].keep) {
+        s_config.alarm_hum_enabled = l->ch[1].enabled;
+        s_config.alarm_hum_low     = l->ch[1].low_d / 10.0f;
+        s_config.alarm_hum_high    = l->ch[1].high_d / 10.0f;
+    }
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
+    if (!l->ch[2].keep) {
+        s_config.alarm_tc_enabled = l->ch[2].enabled;
+        s_config.alarm_tc_low     = l->ch[2].low_d / 10.0f;
+        s_config.alarm_tc_high    = l->ch[2].high_d / 10.0f;
+    }
+#endif
+
+    if (origin_local) {
+        s_config.alarm_limits_origin_local = true;
+    } else {
+        s_config.alarm_limits_version      = l->version;
+        s_config.alarm_limits_origin_local = false;
+    }
+
+    esp_err_t ret = _config_save_internal();
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    return ret;
+}
+
+uint16_t config_get_alarm_limits_version(void)
+{
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    uint16_t v = s_config.alarm_limits_version;
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    return v;
+}
+
+bool config_get_alarm_limits_origin_local(void)
+{
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool b = s_config.alarm_limits_origin_local;
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    return b;
+}
+
+void config_mark_alarm_limits_local(void)
+{
+    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    s_config.alarm_limits_origin_local = true;
+    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+}
 
 // ============================================================================
 // Auto-Update Configuration
