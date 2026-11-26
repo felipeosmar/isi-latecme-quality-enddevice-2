@@ -44,7 +44,9 @@ Hex contínuo: `01000701009600fa02000000000000000000`
 
 Termopar em SKU sem `CONFIG_THERMOCOUPLE_ENABLED`: o canal 2 é tratado como "manter" e o estado dele vai sempre 0.
 
-O caminho da fPort 11 dentro de `lorawan_send` só copia os bytes para uma fila. O parse, a validação e o `config_save` rodam na tarefa `alarm_sync` (pilha 4096, prioridade 3, core 0). Nunca se chama `lorawan_send` dentro do callback de downlink.
+O caminho da fPort 11 dentro de `lorawan_send` só copia os bytes para uma fila. O parse, a validação e o `config_save` rodam na tarefa `alarm_sync` (pilha 6144, prioridade 3, core 0). Nunca se chama `lorawan_send` dentro do callback de downlink.
+
+O parser binário da fPort 11 ignora os bits 2 a 7 das flags, enquanto o parser de fragmentos rejeita flags maiores que 3.
 
 ## 3. Uplink fPort 3 (evento)
 
@@ -150,7 +152,7 @@ Cada tarefa registra a folga mínima de pilha nos logs. Critério: folga >= 512 
 | Tarefa | Pilha | Log |
 |---|---|---|
 | `uplink` | 4096 | `Alarm event fPort 3: ... stack free min <N> B` (ler a 2ª linha ou posterior, depois de um downlink ter passado por `lorawan_send`) |
-| `alarm_sync` | 4096 | `alarm_sync stack high water mark: <N> bytes` |
+| `alarm_sync` | 6144 | `alarm_sync stack high water mark: <N> bytes` |
 | `clock_sync` | 4096 | `clock_sync stack high water mark: <N> bytes` |
 
 ## 10. Teste de host (codec)
@@ -170,7 +172,7 @@ Dispositivo de teste já cadastrado na plataforma de desenvolvimento ou na de pr
 |---|---|---|
 | 1 | `make -C test/host` -> `OK` | **OK** (saída: `OK`) |
 | 2 | Gravar `jvtech_4mb_standard` no dispositivo de teste | Pendente (bancada) |
-| 3 | No ChirpStack, enfileirar na fPort 11 o hex `01000701009600fa02000000000000000000`. Conferir: log `alarm_sync: applied v7`; `GET /api/sensors/config` com `alarm_temp_low=15`, `alarm_temp_high=25`, `alarm_limits_version=7`; uplink na fPort 3 com `0100 07...` | Pendente (bancada) |
+| 3 | No ChirpStack, enfileirar na fPort 11 o hex `01000701009600fa02000000000000000000`. Conferir: log `alarm_sync: applied v7`; `GET /api/sensors/config` com `alarm_temp_low=15`, `alarm_temp_high=25`, `alarm_limits_version=7`; uplink na fPort 3 com `01 0007 ...` | Pendente (bancada) |
 | 4 | Enfileirar payload com `low >= high` -> evento com `erro=2`, config inalterada | Pendente (bancada) |
 | 5 | Esquentar o sensor acima do limite -> evento com estado 1. Apertar o botão -> evento com estado 2 e `botao=1` | Pendente (bancada) |
 | 6 | Abrir `http://<ip>/limites.html#v=8&c0=1,100,300&c1=2,0,0&c2=2,0,0`, gravar com a senha: evento com versão 8 sem o bit 15. Gravar pela aba normal de configuração: evento com bit 15 | Pendente (bancada) |
@@ -189,3 +191,7 @@ Passo 10, ESP-IDF v5.5.3, `./build.sh build <sku>`:
 | `jvtech_2mb_headless` | Build complete | 0x66740 | 0xe98c0 (70%) |
 
 Observação: no `jvtech_2mb_standard` a folga da partição é de apenas 6%.
+
+## 12. Pré-requisito de liberação
+
+Antes de promover esta funcionalidade para `main` (os dispositivos fazem auto-update a partir dele), o codec CayenneLPP do ChirpStack deve ignorar qualquer fPort diferente da porta de leituras. Caso contrário, os eventos da fPort 3 (enviados no boot e a cada 15 min) serão decodificados como leituras.
