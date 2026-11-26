@@ -13,6 +13,7 @@ set(srcs
     "logs/log_buffer.c"
     "alarm/alarm_manager.c"
     "alarm/alarm_sync.c"
+    "alarm/alarm_events.c"
     "interface/button_handler.c"
     "display/boot_status.c"
 )

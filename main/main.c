@@ -31,6 +31,7 @@
 #include "buzzer.h"
 #include "status_led.h"
 #include "alarm_manager.h"
+#include "alarm_events.h"
 #include "button_handler.h"
 #include "boot_status.h"
 
@@ -441,6 +442,9 @@ void app_main(void)
     // Initialize clock sync module
     clock_sync_init();
 #endif
+
+    // Event signaling for platform uplinks (starts pending: first event after join)
+    alarm_events_init();
 
     // Initialize alarm manager
     if (alarm_manager_init() != ESP_OK) {
