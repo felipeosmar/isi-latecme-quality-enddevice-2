@@ -492,6 +492,7 @@ esp_err_t config_load(void)
                 s_config.alarm_tc_low = (float)item->valuedouble;
             if ((item = cJSON_GetObjectItem(alarms, "tc_high")) && cJSON_IsNumber(item))
                 s_config.alarm_tc_high = (float)item->valuedouble;
+#endif
             if ((item = cJSON_GetObjectItem(alarms, "limits_version")) && cJSON_IsNumber(item)) {
                 int v = (int)item->valuedouble;
                 if (v < 0) v = 0;
@@ -500,7 +501,6 @@ esp_err_t config_load(void)
             }
             if ((item = cJSON_GetObjectItem(alarms, "limits_origin_local")) && cJSON_IsBool(item))
                 s_config.alarm_limits_origin_local = cJSON_IsTrue(item);
-#endif
         }
     }
 
