@@ -11,6 +11,7 @@
  */
 
 #include "alarm_manager.h"
+#include "alarm_events.h"
 #include "config_manager.h"
 #include "buzzer.h"
 
@@ -131,33 +132,42 @@ void alarm_manager_evaluate(const sensor_data_t *data)
 {
     if (!s_initialized || !data) return;
 
+    // Single locked read: avoids seeing a new low with an old high.
+    // Taken before s_mutex so the two locks are never nested.
+    alarm_channel_cfg_t cfg[3];
+    config_get_alarm_block(cfg);
+
     xSemaphoreTake(s_mutex, portMAX_DELAY);
 
+    alarm_state_t before[3] = {
+        s_channels[0].state, s_channels[1].state, s_channels[2].state,
+    };
+
     // Channel 0: I2C temperature
-    if (data->temp_hum_valid && config_get_alarm_temp_enabled()) {
+    if (data->temp_hum_valid && cfg[0].enabled) {
         evaluate_channel(&s_channels[0], data->temperature,
-                         config_get_alarm_temp_low(), config_get_alarm_temp_high(),
+                         cfg[0].low, cfg[0].high,
                          "TEMP ALTA", "TEMP BAIXA");
-    } else if (!config_get_alarm_temp_enabled()) {
+    } else if (!cfg[0].enabled) {
         s_channels[0].state = ALARM_STATE_IDLE;
     }
     // if enabled but data invalid: leave state unchanged
 
     // Channel 1: I2C humidity
-    if (data->temp_hum_valid && config_get_alarm_hum_enabled()) {
+    if (data->temp_hum_valid && cfg[1].enabled) {
         evaluate_channel(&s_channels[1], data->humidity,
-                         config_get_alarm_hum_low(), config_get_alarm_hum_high(),
+                         cfg[1].low, cfg[1].high,
                          "UMID ALTA", "UMID BAIXA");
-    } else if (!config_get_alarm_hum_enabled()) {
+    } else if (!cfg[1].enabled) {
         s_channels[1].state = ALARM_STATE_IDLE;
     }
 
     // Channel 2: thermocouple
-    if (data->thermocouple_valid && config_get_alarm_tc_enabled()) {
+    if (data->thermocouple_valid && cfg[2].enabled) {
         evaluate_channel(&s_channels[2], data->thermocouple_temp,
-                         config_get_alarm_tc_low(), config_get_alarm_tc_high(),
+                         cfg[2].low, cfg[2].high,
                          "TERM ALTA", "TERM BAIXA");
-    } else if (!config_get_alarm_tc_enabled()) {
+    } else if (!cfg[2].enabled) {
         s_channels[2].state = ALARM_STATE_IDLE;
     }
 
@@ -181,7 +191,15 @@ void alarm_manager_evaluate(const sensor_data_t *data)
         ESP_LOGI(TAG, "Siren stopped (all channels cleared)");
     }
 
+    // Includes transitions forced to IDLE by a disabled channel
+    bool changed = false;
+    for (int i = 0; i < 3; i++) {
+        if (s_channels[i].state != before[i]) changed = true;
+    }
+
     xSemaphoreGive(s_mutex);
+
+    if (changed) alarm_events_notify();
 }
 
 void alarm_manager_acknowledge(void)
@@ -190,9 +208,11 @@ void alarm_manager_acknowledge(void)
 
     xSemaphoreTake(s_mutex, portMAX_DELAY);
 
+    bool silenced = false;
     for (int i = 0; i < 3; i++) {
         if (s_channels[i].state == ALARM_STATE_ACTIVE) {
             s_channels[i].state = ALARM_STATE_ACKNOWLEDGED;
+            silenced = true;
             ESP_LOGI(TAG, "Channel %d acknowledged", i);
         }
     }
@@ -205,6 +225,9 @@ void alarm_manager_acknowledge(void)
     }
 
     xSemaphoreGive(s_mutex);
+
+    // One press counts once, however many channels it silenced
+    if (silenced) alarm_events_button();
 }
 
 bool alarm_manager_is_active(void)
@@ -217,6 +240,16 @@ bool alarm_manager_is_active(void)
                    s_channels[2].state == ALARM_STATE_ACTIVE);
     xSemaphoreGive(s_mutex);
     return active;
+}
+
+uint8_t alarm_manager_get_channel_state(int ch)
+{
+    if (!s_initialized || ch < 0 || ch > 2) return 0;
+
+    xSemaphoreTake(s_mutex, portMAX_DELAY);
+    uint8_t state = (uint8_t)s_channels[ch].state;
+    xSemaphoreGive(s_mutex);
+    return state;
 }
 
 bool alarm_manager_get_active_info(alarm_info_t *info)

@@ -53,6 +53,7 @@ ESP32 LoRaWAN sensor node: reads I2C sensors + MAX6675 thermocouple, encodes as 
 | lorawan | 1 | 6 | 8KB | OTAA join, radio session (C++ RadioLib) |
 | uplink | 0 | 4 | 4KB | Build CayenneLPP payload, send via LoRaWAN |
 | display | 0 | 3 | 4KB | OLED page cycling (sensors/system) |
+| alarm_sync | 0 | 3 | 6KB | Apply platform alarm limits (fPort 11 queue → config save) |
 
 ### Init Sequence (main.c → app_main)
 

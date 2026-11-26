@@ -9,13 +9,22 @@
 #ifndef LORAWAN_HANDLER_H
 #define LORAWAN_HANDLER_H
 
+#include <stdint.h>
+#include <stdbool.h>
+#include "esp_err.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "alarm_sync.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "esp_err.h"
+/** Item of the fPort 11 queue: len = real downlink length (clamped to 255). */
+typedef struct {
+    uint8_t len;
+    uint8_t data[ALARM_SYNC_LIMITS_LEN];
+} lorawan_limits_msg_t;
 
 /**
  * @brief LoRaWAN statistics
@@ -101,6 +110,14 @@ esp_err_t lorawan_join(void);
  * @return ESP_OK if sent successfully
  */
 esp_err_t lorawan_send(const uint8_t *data, size_t len, uint8_t port, bool confirmed);
+
+/**
+ * @brief Queue of fPort 11 (alarm limits) downlinks
+ *
+ * Items are `{ uint8_t len; uint8_t data[18]; }` (len = real downlink length,
+ * clamped to 255). May be NULL before lorawan_init().
+ */
+QueueHandle_t lorawan_limits_queue(void);
 
 /**
  * @brief Check if device is joined to the network

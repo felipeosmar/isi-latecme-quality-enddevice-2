@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "alarm_sync.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -133,6 +134,19 @@ void config_set_alarm_hum_high(float val);
 void config_set_alarm_tc_enabled(bool enabled);
 void config_set_alarm_tc_low(float val);
 void config_set_alarm_tc_high(float val);
+
+typedef struct { bool enabled; float low; float high; } alarm_channel_cfg_t;
+
+/** Read all 3 alarm channels atomically (under config mutex). Channel 2 is
+ *  enabled=false, 0/0 when the thermocouple is not compiled in. */
+void config_get_alarm_block(alarm_channel_cfg_t out[3]);
+
+/** Apply platform/local limits atomically and save. Channels with keep are
+ *  untouched. origin_local=true leaves the version unchanged. Does NOT validate. */
+esp_err_t config_apply_alarm_limits(const alarm_sync_limits_t *l, bool origin_local);
+
+uint16_t config_get_alarm_limits_version(void);
+bool     config_get_alarm_limits_origin_local(void);
 
 // ============================================================================
 // Interface Configuration

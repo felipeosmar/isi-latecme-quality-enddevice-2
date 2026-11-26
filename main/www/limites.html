@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Limites de alarme</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:0;padding:16px;background:#f4f6f8;color:#1b2430}
+main{max-width:480px;margin:0 auto;background:#fff;border-radius:8px;padding:20px;box-shadow:0 1px 4px #0002}
+h1{font-size:1.2rem;margin:0 0 4px}
+p{margin:8px 0}
+table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #dde3ea;font-size:.95rem}
+button{width:100%;padding:12px;font-size:1rem;border:0;border-radius:6px;background:#0b6bcb;color:#fff;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+#msg{font-weight:600}
+.ok{color:#17803d}.err{color:#b3261e}
+</style>
+</head>
+<body>
+<main>
+<h1>Limites de alarme</h1>
+<p>Limites enviados pela plataforma para este dispositivo.</p>
+<div id="body" hidden>
+<table>
+<thead><tr><th>Canal</th><th>Situação</th><th>Mínimo</th><th>Máximo</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+<button id="save" type="button">Gravar no dispositivo</button>
+</div>
+<p id="msg" role="status"></p>
+</main>
+<script>
+(function(){
+var NAMES=["Temperatura","Umidade","Termopar"],KEYS=["temp","hum","tc"];
+function num(s,lo,hi){
+  var m=/^(-?)(\d+)/.exec(s);
+  if(!m)return null;
+  var v=parseInt(m[2],10);
+  if(v>100000)return null;
+  if(m[1])v=-v;
+  if(v<lo||v>hi)return null;
+  return {v:v,rest:s.slice(m[0].length)};
+}
+function lit(s,t){return s.indexOf(t)===0?s.slice(t.length):null}
+function parse(frag){
+  var s=frag;
+  if(s.charAt(0)==="#")s=s.slice(1);
+  s=lit(s,"v=");
+  if(s===null)return null;
+  var r=num(s,1,32767);
+  if(!r)return null;
+  var out={version:r.v,ch:[]};
+  s=r.rest;
+  for(var i=0;i<3;i++){
+    s=lit(s,"&c"+i+"=");
+    if(s===null)return null;
+    var f=num(s,0,3);if(!f)return null;
+    s=lit(f.rest,",");if(s===null)return null;
+    var lo=num(s,-32768,32767);if(!lo)return null;
+    s=lit(lo.rest,",");if(s===null)return null;
+    var hi=num(s,-32768,32767);if(!hi)return null;
+    s=hi.rest;
+    out.ch.push({on:(f.v&1)!==0,keep:(f.v&2)!==0,low:lo.v,high:hi.v});
+  }
+  return s===""?out:null;
+}
+window.parseLimitsFragment=parse;
+var msg=document.getElementById("msg");
+function say(t,cls){msg.textContent=t;msg.className=cls||""}
+function cell(tr,t){var td=document.createElement("td");td.textContent=t;tr.appendChild(td)}
+var data=parse(location.hash);
+if(!data){say("Link incompleto. Abra de novo pela plataforma.","err");return}
+var rows=document.getElementById("rows");
+data.ch.forEach(function(c,i){
+  var tr=document.createElement("tr");
+  cell(tr,NAMES[i]);
+  cell(tr,c.keep?"Manter o do dispositivo":(c.on?"Ativo":"Desligado"));
+  var show=!c.keep&&c.on;
+  cell(tr,show?(c.low/10).toFixed(1):"-");
+  cell(tr,show?(c.high/10).toFixed(1):"-");
+  rows.appendChild(tr);
+});
+document.getElementById("body").hidden=false;
+var btn=document.getElementById("save");
+btn.addEventListener("click",function(){
+  var b={limits_version:data.version};
+  data.ch.forEach(function(c,i){
+    if(c.keep)return;
+    b["alarm_"+KEYS[i]+"_enabled"]=c.on;
+    b["alarm_"+KEYS[i]+"_low"]=c.low/10;
+    b["alarm_"+KEYS[i]+"_high"]=c.high/10;
+  });
+  btn.disabled=true;
+  say("Gravando...");
+  fetch("/api/sensors/config",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify(b)})
+  .then(function(r){
+    return r.text().then(function(t){
+      var j=null;try{j=JSON.parse(t)}catch(e){}
+      if(r.ok&&j&&j.success){say("Limites gravados. A plataforma confirma no próximo evento. Pode fechar esta aba.","ok")}
+      else if(j&&j.message){say(j.message,"err");btn.disabled=false}
+      else{say("Resposta inesperada do dispositivo (HTTP "+r.status+").","err");btn.disabled=false}
+    });
+  })
+  .catch(function(){say("Falha de comunicação com o dispositivo. Tente novamente.","err");btn.disabled=false});
+});
+})();
+</script>
+</body>
+</html>

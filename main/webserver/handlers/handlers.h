@@ -58,6 +58,7 @@ esp_err_t serve_file(httpd_req_t *req, const char *filepath, const char *content
 esp_err_t index_handler(httpd_req_t *req);
 esp_err_t css_handler(httpd_req_t *req);
 esp_err_t js_handler(httpd_req_t *req);
+esp_err_t limites_html_handler(httpd_req_t *req);
 esp_err_t tabs_html_handler(httpd_req_t *req);
 esp_err_t tabs_js_handler(httpd_req_t *req);
 esp_err_t favicon_handler(httpd_req_t *req);

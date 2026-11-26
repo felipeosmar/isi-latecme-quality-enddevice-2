@@ -11,6 +11,7 @@
 #define ALARM_MANAGER_H
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "esp_err.h"
 #include "sensor_manager.h"
 
@@ -50,6 +51,13 @@ void alarm_manager_acknowledge(void);
  * @brief Returns true if any channel is in ACTIVE state (not ACKNOWLEDGED).
  */
 bool alarm_manager_is_active(void);
+
+/**
+ * @brief Current state of one channel, for the platform event uplink.
+ * @param ch 0 = temperature, 1 = humidity, 2 = thermocouple
+ * @return 0 = IDLE, 1 = ACTIVE, 2 = ACKNOWLEDGED (0 if ch out of range or not initialized)
+ */
+uint8_t alarm_manager_get_channel_state(int ch);
 
 /**
  * @brief Fill *info with the highest-priority active alarm details.
