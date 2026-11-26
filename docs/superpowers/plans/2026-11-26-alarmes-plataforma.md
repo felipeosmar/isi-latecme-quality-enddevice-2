@@ -103,7 +103,7 @@
 
 **Interfaces:**
 - Produces:
-  - `void alarm_events_init(void);`, chamado em `main.c` antes de as tasks de sensor e de uplink subirem.
+  - `void alarm_events_init(void);`, chamado em `main.c` antes de as tasks de sensor e de uplink subirem. Já nasce com `EVT_PENDING` ligado: o primeiro evento sai logo depois do join, e a plataforma recebe IP e versão após reinício ou atualização.
   - `void alarm_events_notify(void);`, que liga o bit `EVT_PENDING` num `EventGroupHandle_t`.
   - `void alarm_events_button(void);`, que soma 1 no contador de botão (satura em 255, protegido por `portMUX`/critical) e chama `notify`.
   - `void alarm_events_set_error(uint8_t code);`, que guarda o último código e chama `notify`.
@@ -160,7 +160,7 @@
     - Se OK: `config_apply_alarm_limits(&l, false)`. Falha no save → erro 4.
     - O resultado sempre vai para `alarm_events_set_error(err)`: 0 também conta, porque gera o evento de confirmação com a versão nova.
 
-- [ ] **Step 1: Implementar.** A task sobe em `main.c` junto da `uplink_task`, nos dois SKUs, porque LoRaWAN existe em todos.
+- [ ] **Step 1: Implementar.** A task sobe em `main.c` junto da `uplink_task`, nos dois SKUs, porque LoRaWAN existe em todos. Depois de cada downlink aplicado e de cada `send_alarm_event`, registrar `ESP_LOGI` com `uxTaskGetStackHighWaterMark(NULL)` da task corrente (`alarm_sync`, `uplink`; a `clock_sync` registra o seu após o envio da fPort 202), para o passo 8 da Task 8.
 - [ ] **Step 2: Compilar os 4 SKUs.**
 - [ ] **Step 3: Commit.** `feat(lorawan): apply platform alarm limits from fPort 11 downlink`
 
