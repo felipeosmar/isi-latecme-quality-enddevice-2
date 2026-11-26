@@ -88,11 +88,13 @@ esp_err_t web_server_init(const web_server_config_t *config)
     httpd_uri_t index_uri = { .uri = "/", .method = HTTP_GET, .handler = index_handler };
     httpd_uri_t css_uri = { .uri = "/style.css", .method = HTTP_GET, .handler = css_handler };
     httpd_uri_t js_uri = { .uri = "/core.js", .method = HTTP_GET, .handler = js_handler };
+    httpd_uri_t limites_uri = { .uri = "/limites.html", .method = HTTP_GET, .handler = limites_html_handler };
     httpd_uri_t favicon_uri = { .uri = "/favicon.ico", .method = HTTP_GET, .handler = favicon_handler };
 
     httpd_register_uri_handler(s_server, &index_uri);
     httpd_register_uri_handler(s_server, &css_uri);
     httpd_register_uri_handler(s_server, &js_uri);
+    httpd_register_uri_handler(s_server, &limites_uri);
     httpd_register_uri_handler(s_server, &favicon_uri);
 
     // Tabs HTML

@@ -46,6 +46,11 @@ esp_err_t js_handler(httpd_req_t *req)
     return serve_file(req, "/www/core.js", "application/javascript");
 }
 
+esp_err_t limites_html_handler(httpd_req_t *req)
+{
+    return serve_file(req, "/www/limites.html", "text/html");
+}
+
 esp_err_t tabs_html_handler(httpd_req_t *req)
 {
     // Extract filename from URI (e.g., "/tabs/sensors.html" -> "sensors.html")
