@@ -10,8 +10,22 @@
 
 #include "handlers.h"
 #include "lorawan_handler.h"
+#include "alarm_sync.h"
 
 static const char *TAG = "API_LORAWAN";
+
+// 400 with JSON body {"success":false,"message":...}
+static esp_err_t send_json_400(httpd_req_t *req, const char *message)
+{
+    char body[96];
+    snprintf(body, sizeof(body), "{\"success\":false,\"message\":\"%s\"}", message);
+    httpd_resp_set_status(req, HTTPD_400);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
+    httpd_resp_send(req, body, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
 
 // GET /api/lorawan/status
 esp_err_t api_lorawan_status_handler(httpd_req_t *req)
@@ -104,6 +118,20 @@ esp_err_t api_lorawan_config_post_handler(httpd_req_t *req)
     }
 
     cJSON *item;
+
+    // Validate the uplink port before applying anything (no partial writes)
+    if ((item = cJSON_GetObjectItem(json, "port")) && cJSON_IsNumber(item)) {
+        double p = item->valuedouble;
+        if (p < 1 || p > 223 || p != (double)(int)p) {
+            cJSON_Delete(json);
+            return send_json_400(req, "Porta invalida");
+        }
+        if (alarm_sync_port_reserved((uint8_t)p)) {
+            cJSON_Delete(json);
+            return send_json_400(req, "Porta reservada");
+        }
+    }
+
     if ((item = cJSON_GetObjectItem(json, "dev_eui")) && cJSON_IsString(item)) {
         config_set_dev_eui(item->valuestring);
     }

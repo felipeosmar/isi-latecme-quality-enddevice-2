@@ -419,7 +419,12 @@ esp_err_t config_load(void)
             strncpy(s_config.app_key, item->valuestring, sizeof(s_config.app_key) - 1);
         }
         if ((item = cJSON_GetObjectItem(lorawan, "port")) && cJSON_IsNumber(item)) {
-            s_config.lorawan_port = (uint8_t)item->valueint;
+            int port = item->valueint;
+            if (port < 1 || port > 223 || alarm_sync_port_reserved((uint8_t)port)) {
+                ESP_LOGW(TAG, "lorawan.port %d is invalid or reserved, using 1", port);
+                port = 1;
+            }
+            s_config.lorawan_port = (uint8_t)port;
         }
         if ((item = cJSON_GetObjectItem(lorawan, "uplink_interval")) && cJSON_IsNumber(item)) {
             s_config.uplink_interval = (uint32_t)item->valueint;

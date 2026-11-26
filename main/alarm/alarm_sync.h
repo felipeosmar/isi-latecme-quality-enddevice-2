@@ -29,8 +29,18 @@ extern "C" {
 #define ALARM_SYNC_LIMITS_LEN   18
 #define ALARM_SYNC_EVENT_LEN    10
 
+/**
+ * FPorts reserved by the platform/firmware, never valid as the reading uplink
+ * port: 3 (alarm event), 11 (alarm limits), 200-202 (FUOTA / clock sync).
+ */
+static inline bool alarm_sync_port_reserved(uint8_t port)
+{
+    return port == ALARM_SYNC_FPORT_EVENT || port == ALARM_SYNC_FPORT_LIMITS ||
+           (port >= 200 && port <= 202);
+}
+
 typedef enum {
-    ALARM_SYNC_OK         = 0,
+    ALARM_SYNC_OK        = 0,
     ALARM_SYNC_ERR_FORMAT = 1,
     ALARM_SYNC_ERR_ORDER  = 2,
     ALARM_SYNC_ERR_RANGE  = 3,

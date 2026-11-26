@@ -32,6 +32,7 @@
 #include "status_led.h"
 #include "alarm_manager.h"
 #include "alarm_events.h"
+#include "alarm_sync.h"
 #include "button_handler.h"
 #include "boot_status.h"
 
@@ -222,8 +223,153 @@ static void display_task(void *param)
 }
 #endif
 
+// Platform alarm event (fPort 3) scheduling
+#define EVENT_HEARTBEAT_TICKS  pdMS_TO_TICKS(15 * 60 * 1000)  // 15 min since last event sent
+#define EVENT_RETRY_TICKS      pdMS_TO_TICKS(30 * 1000)       // after no join / failed send
+#define EVENT_COALESCE_TICKS   pdMS_TO_TICKS(1500)            // merge bursts into one event
+#define UPLINK_MAX_DELAY_TICKS ((TickType_t)0x3FFFFFFF)       // keep signed tick math valid
+
+/** Wrap-safe: true if 'now' is at or past 'deadline'. */
+static inline bool tick_reached(TickType_t now, TickType_t deadline)
+{
+    return (int32_t)(now - deadline) >= 0;
+}
+
+/** Wrap-safe ticks remaining until 'deadline' (0 if already reached). */
+static inline TickType_t ticks_until(TickType_t now, TickType_t deadline)
+{
+    return tick_reached(now, deadline) ? 0 : (TickType_t)(deadline - now);
+}
+
 /**
- * @brief Uplink task - builds CayenneLPP payload and sends via LoRaWAN
+ * @brief Absolute tick of the next periodic reading uplink.
+ *
+ * With WiFi and a synced clock the uplink is aligned to the next wall-clock
+ * boundary of the interval (e.g. hourly at :00:00); otherwise it is one
+ * interval from now.
+ */
+static TickType_t next_periodic_deadline(void)
+{
+    uint32_t interval_s = config_get_uplink_interval();
+    if (interval_s < 10) interval_s = 10;
+    uint32_t delay_s = interval_s;
+
+#if CONFIG_WIFI_ENABLED
+    if (clock_sync_is_synced()) {
+        time_t now = time(NULL);
+        time_t next = ((now / (time_t)interval_s) + 1) * (time_t)interval_s;
+        // next - now is always in (0, interval_s] by the floor-division formula
+        delay_s = (uint32_t)(next - now);
+    }
+#endif
+
+    uint64_t delay_ticks = (uint64_t)delay_s * configTICK_RATE_HZ;
+    if (delay_ticks > UPLINK_MAX_DELAY_TICKS) delay_ticks = UPLINK_MAX_DELAY_TICKS;
+    return xTaskGetTickCount() + (TickType_t)delay_ticks;
+}
+
+#if CONFIG_WIFI_ENABLED
+/** Parse a dotted IPv4 string into 4 bytes. Returns false on malformed input. */
+static bool parse_ipv4(const char *s, uint8_t out[4])
+{
+    for (int i = 0; i < 4; i++) {
+        unsigned v = 0;
+        int digits = 0;
+        while (*s >= '0' && *s <= '9' && digits < 3) {
+            v = v * 10 + (unsigned)(*s++ - '0');
+            digits++;
+        }
+        if (digits == 0 || v > 255) return false;
+        out[i] = (uint8_t)v;
+        if (i < 3 && *s++ != '.') return false;
+    }
+    return *s == '\0';
+}
+#endif
+
+/**
+ * @brief Send the platform alarm event (fPort 3) with a snapshot of the final state.
+ *
+ * Takes the pending signal, builds the 10-byte event and sends it unconfirmed.
+ * ESP_OK commits the sent button count / error code; any failure requeues.
+ */
+static esp_err_t send_alarm_event(void)
+{
+    alarm_sync_event_t ev = {0};
+    alarm_events_take(&ev.button, &ev.error);
+
+    ev.version      = config_get_alarm_limits_version();
+    ev.origin_local = config_get_alarm_limits_origin_local();
+    ev.state[0]     = alarm_manager_get_channel_state(0);
+    ev.state[1]     = alarm_manager_get_channel_state(1);
+#if CONFIG_THERMOCOUPLE_ENABLED
+    ev.state[2]     = alarm_manager_get_channel_state(2);
+#else
+    ev.state[2]     = 0;
+#endif
+
+#if CONFIG_WIFI_ENABLED
+    if (wifi_manager_is_connected()) {
+        char ip_str[16] = {0};
+        if (wifi_manager_get_ip(ip_str) != ESP_OK || !parse_ipv4(ip_str, ev.ip)) {
+            memset(ev.ip, 0, sizeof(ev.ip));
+        }
+    }
+#endif
+
+    uint8_t buf[ALARM_SYNC_EVENT_LEN];
+    alarm_sync_build_event(&ev, buf);
+    esp_err_t ret = lorawan_send(buf, ALARM_SYNC_EVENT_LEN, ALARM_SYNC_FPORT_EVENT, false);
+
+    if (ret == ESP_OK) {
+        alarm_events_commit(ev.button, ev.error);
+    } else {
+        alarm_events_requeue();
+    }
+
+    ESP_LOGI(TAG, "Alarm event fPort %d: %s (v=%u st=%u/%u/%u btn=%u err=%u) stack free min %u B",
+             ALARM_SYNC_FPORT_EVENT, ret == ESP_OK ? "sent" : "FAILED",
+             (unsigned)ev.version, ev.state[0], ev.state[1], ev.state[2],
+             ev.button, ev.error, (unsigned)uxTaskGetStackHighWaterMark(NULL));
+    return ret;
+}
+
+/** Build the CayenneLPP reading and send it on the configured fPort. */
+static void send_reading(void)
+{
+    sensor_data_t data;
+    sensor_manager_get_data(&data);
+
+    cayenne_lpp_t lpp;
+    cayenne_lpp_reset(&lpp);
+
+    if (data.temp_hum_valid) {
+        cayenne_lpp_add_temperature(&lpp, 1, data.temperature);
+        cayenne_lpp_add_humidity(&lpp, 2, data.humidity);
+    }
+
+    if (data.thermocouple_valid) {
+        cayenne_lpp_add_temperature(&lpp, 4, data.thermocouple_temp);
+    }
+
+    size_t payload_size = cayenne_lpp_get_size(&lpp);
+    if (payload_size > 0) {
+        uint8_t port = config_get_lorawan_port();
+        lorawan_send(cayenne_lpp_get_buffer(&lpp), payload_size, port, false);
+    }
+}
+
+/**
+ * @brief Uplink task - periodic CayenneLPP readings and fPort 3 alarm events
+ *
+ * Schedule (all deadlines are absolute ticks, compared wrap-safe):
+ *  - periodic deadline: send the reading, then the event if the heartbeat is
+ *    due (>= 15 min since the last event sent) or an event is pending;
+ *  - heartbeat deadline (last event sent + 15 min): send the event alone;
+ *  - event signal: wait ~1.5 s to coalesce, send the event, then keep waiting
+ *    for the same periodic deadline (readings are never advanced).
+ * Not joined or a failed event send: sleep a 30 s retry delay (bounded by the
+ * periodic deadline) instead of waiting on the still-set pending bit.
  */
 static void uplink_task(void *param)
 {
@@ -236,49 +382,75 @@ static void uplink_task(void *param)
 
     ESP_LOGI(TAG, "LoRaWAN joined, starting uplinks");
 
+    TickType_t periodic_deadline = next_periodic_deadline();
+    TickType_t last_event_tick = 0;
+    bool event_ever_sent = false;   // false => heartbeat due (first event right after join)
+    bool retry_hold = false;        // sleep before waiting on the pending bit again
+
     while (1) {
-        uint32_t interval_s = config_get_uplink_interval();
-        if (interval_s < 10) interval_s = 10;
+        TickType_t now = xTaskGetTickCount();
+        bool joined = lorawan_is_joined();
+        bool heartbeat_due = !event_ever_sent ||
+                             tick_reached(now, last_event_tick + EVENT_HEARTBEAT_TICKS);
 
-#if CONFIG_WIFI_ENABLED
-        if (clock_sync_is_synced()) {
-            // Align to the next clock boundary (e.g., hourly at :00:00)
-            time_t now = time(NULL);
-            time_t next = ((now / (time_t)interval_s) + 1) * (time_t)interval_s;
-            // next - now is always in (0, interval_s] by the floor-division formula
-            uint32_t delay_ms = (uint32_t)((next - now) * 1000);
-            vTaskDelay(pdMS_TO_TICKS(delay_ms));
-        } else {
-            vTaskDelay(pdMS_TO_TICKS(interval_s * 1000));
-        }
-#else
-        vTaskDelay(pdMS_TO_TICKS(interval_s * 1000));
-#endif
-
-        if (!lorawan_is_joined()) {
+        // 1. Periodic reading (+ event if heartbeat due or pending)
+        if (tick_reached(now, periodic_deadline)) {
+            if (joined) {
+                send_reading();
+                if (heartbeat_due || alarm_events_wait(0)) {
+                    if (send_alarm_event() == ESP_OK) {
+                        last_event_tick = xTaskGetTickCount();
+                        event_ever_sent = true;
+                    } else {
+                        retry_hold = true;
+                    }
+                }
+            }
+            // Not joined: nothing sent, nothing cleared. Recompute after the
+            // sends (as before) so a backward clock step cannot fire a
+            // second reading right after the boundary.
+            periodic_deadline = next_periodic_deadline();
             continue;
         }
 
-        // Build CayenneLPP payload from sensor data
-        sensor_data_t data;
-        sensor_manager_get_data(&data);
+        TickType_t to_periodic = ticks_until(now, periodic_deadline);
 
-        cayenne_lpp_t lpp;
-        cayenne_lpp_reset(&lpp);
-
-        if (data.temp_hum_valid) {
-            cayenne_lpp_add_temperature(&lpp, 1, data.temperature);
-            cayenne_lpp_add_humidity(&lpp, 2, data.humidity);
+        // 2. Not joined, or a send just failed: bounded sleep, no busy loop
+        if (!joined || retry_hold) {
+            retry_hold = false;
+            vTaskDelay(to_periodic < EVENT_RETRY_TICKS ? to_periodic : EVENT_RETRY_TICKS);
+            continue;
         }
 
-        if (data.thermocouple_valid) {
-            cayenne_lpp_add_temperature(&lpp, 4, data.thermocouple_temp);
+        // 3. Heartbeat with no periodic reading due
+        if (heartbeat_due) {
+            if (send_alarm_event() == ESP_OK) {
+                last_event_tick = xTaskGetTickCount();
+                event_ever_sent = true;
+            } else {
+                retry_hold = true;
+            }
+            continue;
         }
 
-        size_t payload_size = cayenne_lpp_get_size(&lpp);
-        if (payload_size > 0) {
-            uint8_t port = config_get_lorawan_port();
-            lorawan_send(cayenne_lpp_get_buffer(&lpp), payload_size, port, false);
+        // 4. Wait for an event until the nearest deadline (always finite)
+        TickType_t to_heartbeat = ticks_until(now, last_event_tick + EVENT_HEARTBEAT_TICKS);
+        TickType_t timeout = to_periodic < to_heartbeat ? to_periodic : to_heartbeat;
+        if (!alarm_events_wait(timeout)) {
+            continue;   // a deadline was reached; handled on the next pass
+        }
+
+        if (!lorawan_is_joined()) {
+            retry_hold = true;   // pending bit untouched; sent after join
+            continue;
+        }
+
+        vTaskDelay(EVENT_COALESCE_TICKS);
+        if (send_alarm_event() == ESP_OK) {
+            last_event_tick = xTaskGetTickCount();
+            event_ever_sent = true;
+        } else {
+            retry_hold = true;
         }
     }
 }
