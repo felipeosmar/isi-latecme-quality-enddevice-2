@@ -225,6 +225,7 @@ static void display_task(void *param)
 
 // Platform alarm event (fPort 3) scheduling
 #define EVENT_HEARTBEAT_TICKS  pdMS_TO_TICKS(15 * 60 * 1000)  // 15 min since last event sent
+#define EVENT_HEARTBEAT_SLACK_TICKS pdMS_TO_TICKS(60 * 1000)   // piggyback heartbeat on a reading
 #define EVENT_RETRY_TICKS      pdMS_TO_TICKS(30 * 1000)       // after no join / failed send
 #define EVENT_COALESCE_TICKS   pdMS_TO_TICKS(1500)            // merge bursts into one event
 #define UPLINK_MAX_DELAY_TICKS ((TickType_t)0x3FFFFFFF)       // keep signed tick math valid
@@ -364,7 +365,8 @@ static void send_reading(void)
  *
  * Schedule (all deadlines are absolute ticks, compared wrap-safe):
  *  - periodic deadline: send the reading, then the event if the heartbeat is
- *    due (>= 15 min since the last event sent) or an event is pending;
+ *    due within 60 s (>= 14 min since the last event sent) or an event is
+ *    pending;
  *  - heartbeat deadline (last event sent + 15 min): send the event alone;
  *  - event signal: wait ~1.5 s to coalesce, send the event, then keep waiting
  *    for the same periodic deadline (readings are never advanced).
@@ -397,7 +399,12 @@ static void uplink_task(void *param)
         if (tick_reached(now, periodic_deadline)) {
             if (joined) {
                 send_reading();
-                if (heartbeat_due || alarm_events_wait(0)) {
+                // Heartbeat due within the slack rides on this reading instead
+                // of going out as a separate uplink seconds later.
+                bool hb_soon = !event_ever_sent ||
+                               tick_reached(now + EVENT_HEARTBEAT_SLACK_TICKS,
+                                            last_event_tick + EVENT_HEARTBEAT_TICKS);
+                if (hb_soon || alarm_events_wait(0)) {
                     if (send_alarm_event() == ESP_OK) {
                         last_event_tick = xTaskGetTickCount();
                         event_ever_sent = true;
@@ -417,6 +424,11 @@ static void uplink_task(void *param)
 
         // 2. Not joined, or a send just failed: bounded sleep, no busy loop
         if (!joined || retry_hold) {
+            if (!joined) {
+                // Force an event right after rejoin; also avoids the signed
+                // heartbeat comparison wrapping after a > 24.8-day outage.
+                event_ever_sent = false;
+            }
             retry_hold = false;
             vTaskDelay(to_periodic < EVENT_RETRY_TICKS ? to_periodic : EVENT_RETRY_TICKS);
             continue;

@@ -40,7 +40,7 @@ static inline bool alarm_sync_port_reserved(uint8_t port)
 }
 
 typedef enum {
-    ALARM_SYNC_OK        = 0,
+    ALARM_SYNC_OK         = 0,
     ALARM_SYNC_ERR_FORMAT = 1,
     ALARM_SYNC_ERR_ORDER  = 2,
     ALARM_SYNC_ERR_RANGE  = 3,
