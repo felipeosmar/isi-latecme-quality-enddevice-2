@@ -189,9 +189,8 @@ esp_err_t api_sensors_config_post_handler(httpd_req_t *req)
 
     for (int c = 0; c < 3; c++) {
         alarm_sync_channel_t *ch = &cand.ch[c];
-        bool cur_ok_lo = to_tenths(cur[c].low, &ch->low_d);
-        bool cur_ok_hi = to_tenths(cur[c].high, &ch->high_d);
-        (void)cur_ok_lo; (void)cur_ok_hi;   // stored values are always in range
+        to_tenths(cur[c].low, &ch->low_d);    // stored values are always in range
+        to_tenths(cur[c].high, &ch->high_d);
         ch->enabled = cur[c].enabled;
         int16_t cur_lo = ch->low_d, cur_hi = ch->high_d;
         bool cur_en = ch->enabled;

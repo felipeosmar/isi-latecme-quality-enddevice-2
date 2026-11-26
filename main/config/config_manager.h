@@ -148,9 +148,6 @@ esp_err_t config_apply_alarm_limits(const alarm_sync_limits_t *l, bool origin_lo
 uint16_t config_get_alarm_limits_version(void);
 bool     config_get_alarm_limits_origin_local(void);
 
-/** Mark last limits change as local (no save). */
-void config_mark_alarm_limits_local(void);
-
 // ============================================================================
 // Interface Configuration
 // ============================================================================

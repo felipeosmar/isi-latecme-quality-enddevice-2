@@ -876,7 +876,7 @@ void config_set_alarm_tc_high(float v)    { (void)v; }
 
 void config_get_alarm_block(alarm_channel_cfg_t out[3])
 {
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool locked = !s_config_mutex || xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) == pdTRUE;
     out[0].enabled = s_config.alarm_temp_enabled;
     out[0].low     = s_config.alarm_temp_low;
     out[0].high    = s_config.alarm_temp_high;
@@ -892,7 +892,7 @@ void config_get_alarm_block(alarm_channel_cfg_t out[3])
     out[2].low     = 0.0f;
     out[2].high    = 0.0f;
 #endif
-    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    if (locked && s_config_mutex) xSemaphoreGive(s_config_mutex);
 }
 
 esp_err_t config_apply_alarm_limits(const alarm_sync_limits_t *l, bool origin_local)
@@ -902,6 +902,18 @@ esp_err_t config_apply_alarm_limits(const alarm_sync_limits_t *l, bool origin_lo
         ESP_LOGE(TAG, "Failed to acquire config mutex for alarm limits");
         return ESP_ERR_TIMEOUT;
     }
+
+    // Snapshot for rollback if the save fails
+    const bool     old_t_en = s_config.alarm_temp_enabled;
+    const float    old_t_lo = s_config.alarm_temp_low, old_t_hi = s_config.alarm_temp_high;
+    const bool     old_h_en = s_config.alarm_hum_enabled;
+    const float    old_h_lo = s_config.alarm_hum_low, old_h_hi = s_config.alarm_hum_high;
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
+    const bool     old_c_en = s_config.alarm_tc_enabled;
+    const float    old_c_lo = s_config.alarm_tc_low, old_c_hi = s_config.alarm_tc_high;
+#endif
+    const uint16_t old_ver  = s_config.alarm_limits_version;
+    const bool     old_orig = s_config.alarm_limits_origin_local;
 
     if (!l->ch[0].keep) {
         s_config.alarm_temp_enabled = l->ch[0].enabled;
@@ -929,31 +941,40 @@ esp_err_t config_apply_alarm_limits(const alarm_sync_limits_t *l, bool origin_lo
     }
 
     esp_err_t ret = _config_save_internal();
+    if (ret != ESP_OK) {
+        s_config.alarm_temp_enabled = old_t_en;
+        s_config.alarm_temp_low     = old_t_lo;
+        s_config.alarm_temp_high    = old_t_hi;
+        s_config.alarm_hum_enabled  = old_h_en;
+        s_config.alarm_hum_low      = old_h_lo;
+        s_config.alarm_hum_high     = old_h_hi;
+#ifdef CONFIG_THERMOCOUPLE_ENABLED
+        s_config.alarm_tc_enabled   = old_c_en;
+        s_config.alarm_tc_low       = old_c_lo;
+        s_config.alarm_tc_high      = old_c_hi;
+#endif
+        s_config.alarm_limits_version      = old_ver;
+        s_config.alarm_limits_origin_local = old_orig;
+        ESP_LOGE(TAG, "Alarm limits save failed (%s); rolled back", esp_err_to_name(ret));
+    }
     if (s_config_mutex) xSemaphoreGive(s_config_mutex);
     return ret;
 }
 
 uint16_t config_get_alarm_limits_version(void)
 {
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool locked = !s_config_mutex || xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) == pdTRUE;
     uint16_t v = s_config.alarm_limits_version;
-    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    if (locked && s_config_mutex) xSemaphoreGive(s_config_mutex);
     return v;
 }
 
 bool config_get_alarm_limits_origin_local(void)
 {
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
+    bool locked = !s_config_mutex || xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000)) == pdTRUE;
     bool b = s_config.alarm_limits_origin_local;
-    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
+    if (locked && s_config_mutex) xSemaphoreGive(s_config_mutex);
     return b;
-}
-
-void config_mark_alarm_limits_local(void)
-{
-    if (s_config_mutex) xSemaphoreTake(s_config_mutex, pdMS_TO_TICKS(1000));
-    s_config.alarm_limits_origin_local = true;
-    if (s_config_mutex) xSemaphoreGive(s_config_mutex);
 }
 
 // ============================================================================
