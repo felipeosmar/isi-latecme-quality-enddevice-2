@@ -190,6 +190,10 @@ curl -X POST http://<ip>/api/lorawan/config \
 curl -X POST http://<ip>/api/lorawan/join
 ```
 
+### Platform-synced alarms
+
+Alarm limits (downlink fPort 11), alarm events (uplink fPort 3) and the `limites.html` page are documented in [docs/ALARMES_PLATAFORMA.md](docs/ALARMES_PLATAFORMA.md).
+
 ### System
 
 ```bash
