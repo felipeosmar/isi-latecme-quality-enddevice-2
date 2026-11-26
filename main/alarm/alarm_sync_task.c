@@ -18,11 +18,6 @@
 
 static const char *TAG = "alarm_sync";
 
-typedef struct {
-    uint8_t len;
-    uint8_t data[ALARM_SYNC_LIMITS_LEN];
-} limits_msg_t;
-
 static void alarm_sync_task(void *param)
 {
     (void)param;
@@ -33,7 +28,7 @@ static void alarm_sync_task(void *param)
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 
-    limits_msg_t msg;
+    lorawan_limits_msg_t msg;
     for (;;) {
         if (xQueueReceive(q, &msg, portMAX_DELAY) != pdTRUE) {
             continue;

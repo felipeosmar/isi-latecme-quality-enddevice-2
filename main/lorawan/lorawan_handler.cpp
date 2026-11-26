@@ -51,10 +51,6 @@ static SemaphoreHandle_t lorawan_mutex = nullptr;
 
 // fPort 11 downlinks: lorawan_send only copies bytes here; alarm_sync_task
 // parses/validates/saves outside the LoRaWAN mutex.
-typedef struct {
-    uint8_t len;                           // real downlink length, clamped to 255
-    uint8_t data[ALARM_SYNC_LIMITS_LEN];   // first min(len, 18) bytes
-} limits_msg_t;
 static QueueHandle_t s_limits_queue = nullptr;
 
 // ============================================================================
@@ -219,7 +215,7 @@ extern "C" esp_err_t lorawan_init(void)
     }
 
     if (!s_limits_queue) {
-        s_limits_queue = xQueueCreate(2, sizeof(limits_msg_t));
+        s_limits_queue = xQueueCreate(2, sizeof(lorawan_limits_msg_t));
         if (!s_limits_queue) {
             ESP_LOGE(TAG, "Failed to create limits queue");
             return ESP_ERR_NO_MEM;
@@ -415,7 +411,7 @@ extern "C" esp_err_t lorawan_send(const uint8_t *data, size_t len, uint8_t port,
             // App packages (202/200/201) are consumed inside RadioLib and are
             // untouched; other fPorts stay discarded.
             if (eventDown.fPort == ALARM_SYNC_FPORT_LIMITS && s_limits_queue) {
-                limits_msg_t msg = {};
+                lorawan_limits_msg_t msg = {};
                 msg.len = (uint8_t)(downlink_len > 255 ? 255 : downlink_len);
                 size_t n = downlink_len < ALARM_SYNC_LIMITS_LEN ? downlink_len : ALARM_SYNC_LIMITS_LEN;
                 memcpy(msg.data, downlink_data, n);

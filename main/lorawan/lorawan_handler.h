@@ -9,15 +9,22 @@
 #ifndef LORAWAN_HANDLER_H
 #define LORAWAN_HANDLER_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
+#include "alarm_sync.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** Item of the fPort 11 queue: len = real downlink length (clamped to 255). */
+typedef struct {
+    uint8_t len;
+    uint8_t data[ALARM_SYNC_LIMITS_LEN];
+} lorawan_limits_msg_t;
 
 /**
  * @brief LoRaWAN statistics
